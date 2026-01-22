@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.system.mapper.NoticeReadMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.base.system.entity.NoticeRead">
+        <id column="id" property="id" />
+        <result column="notice_id" property="noticeId" />
+        <result column="user_id" property="userId" />
+        <result column="read_time" property="readTime" />
+    </resultMap>
+
+</mapper>

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.system.mapper.OperationLogMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.base.system.entity.OperationLog">
+        <id column="id" property="id" />
+        <result column="module" property="module" />
+        <result column="operation" property="operation" />
+        <result column="method" property="method" />
+        <result column="params" property="params" />
+        <result column="result" property="result" />
+        <result column="ip" property="ip" />
+        <result column="location" property="location" />
+        <result column="user_agent" property="userAgent" />
+        <result column="status" property="status" />
+        <result column="error_msg" property="errorMsg" />
+        <result column="execute_time" property="executeTime" />
+        <result column="create_time" property="createTime" />
+        <result column="create_by" property="createBy" />
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, module, operation, method, params, result, ip, location,
+        user_agent, status, error_msg, execute_time, create_time, create_by
+    </sql>
+
+    <!-- 条件查询 -->
+    <sql id="Query_Condition">
+        <where>
+            <if test="module != null and module != ''">
+                AND module = #{module}
+            </if>
+            <if test="operation != null and operation != ''">
+                AND operation = #{operation}
+            </if>
+            <if test="createBy != null and createBy != ''">
+                AND create_by LIKE CONCAT('%', #{createBy}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+    </sql>
+
+</mapper>

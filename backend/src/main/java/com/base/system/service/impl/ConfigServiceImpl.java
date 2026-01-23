@@ -42,9 +42,9 @@ public class ConfigServiceImpl implements ConfigService {
         LambdaQueryWrapper<Config> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(request.getConfigKey()), Config::getConfigKey, request.getConfigKey())
                 .like(StringUtils.hasText(request.getConfigName()), Config::getConfigName, request.getConfigName())
-                .eq(request.getConfigType() != null, Config::getConfigType, request.getConfigType())
+                .eq(StringUtils.hasText(request.getType()), Config::getType, request.getType())
                 .eq(request.getStatus() != null, Config::getStatus, request.getStatus())
-                .orderByAsc(Config::getConfigType)
+                .orderByAsc(Config::getType)
                 .orderByDesc(Config::getCreateTime);
 
         // 分页查询
@@ -121,8 +121,8 @@ public class ConfigServiceImpl implements ConfigService {
             throw new BusinessException(ResultCode.DATA_NOT_FOUND);
         }
 
-        // 系统内置配置不允许删除
-        if (config.getConfigType() == 1) {
+        // 系统内置配置不允许删除（通过创建人判断）
+        if ("system".equals(config.getCreateBy())) {
             throw new BusinessException(ResultCode.OPERATION_NOT_ALLOWED.getCode(), "系统内置配置不允许删除");
         }
 
@@ -136,10 +136,10 @@ public class ConfigServiceImpl implements ConfigService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void batchDeleteConfigs(List<Long> ids) {
-        // 检查是否包含系统内置配置
+        // 检查是否包含系统内置配置（通过创建人判断）
         LambdaQueryWrapper<Config> wrapper = new LambdaQueryWrapper<>();
         wrapper.in(Config::getId, ids)
-                .eq(Config::getConfigType, 1);
+                .eq(Config::getCreateBy, "system");
         Long count = configMapper.selectCount(wrapper);
         if (count > 0) {
             throw new BusinessException(ResultCode.OPERATION_NOT_ALLOWED.getCode(), "系统内置配置不允许删除");

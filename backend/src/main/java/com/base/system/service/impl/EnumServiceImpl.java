@@ -37,7 +37,7 @@ public class EnumServiceImpl implements EnumService {
         // 构建查询条件
         LambdaQueryWrapper<Enum> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(request.getEnumType()), Enum::getEnumType, request.getEnumType())
-                .like(StringUtils.hasText(request.getEnumLabel()), Enum::getEnumLabel, request.getEnumLabel())
+                .like(StringUtils.hasText(request.getEnumCode()), Enum::getEnumCode, request.getEnumCode())
                 .eq(request.getStatus() != null, Enum::getStatus, request.getStatus())
                 .orderByAsc(Enum::getSort)
                 .orderByDesc(Enum::getCreateTime);

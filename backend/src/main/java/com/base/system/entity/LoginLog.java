@@ -1,19 +1,24 @@
 package com.base.system.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.base.common.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+
+import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
  * 登录日志实体类
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
 @TableName("sys_log_login")
-public class LoginLog extends BaseEntity {
+public class LoginLog implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * 日志ID
@@ -29,11 +34,13 @@ public class LoginLog extends BaseEntity {
     /**
      * 登录IP
      */
+    @TableField("ip")
     private String loginIp;
 
     /**
      * 登录地点
      */
+    @TableField("location")
     private String loginLocation;
 
     /**
@@ -55,4 +62,11 @@ public class LoginLog extends BaseEntity {
      * 提示信息
      */
     private String message;
+
+    /**
+     * 创建时间
+     */
+    @TableField(fill = FieldFill.INSERT)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createTime;
 }

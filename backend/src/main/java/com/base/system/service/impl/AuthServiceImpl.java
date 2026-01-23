@@ -16,8 +16,14 @@ import com.base.system.mapper.PermissionMapper;
 import com.base.system.mapper.RoleMapper;
 import com.base.system.mapper.SysUserMapper;
 import com.base.system.service.AuthService;
+import com.base.system.service.LoginLogService;
+import com.base.system.entity.LoginLog;
+import com.base.system.util.IpUtils;
 import com.base.system.util.JwtUtil;
 import com.base.system.util.RedisUtil;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import javax.servlet.http.HttpServletRequest;
 import com.base.util.CaptchaUtil;
 import com.base.util.SecurityUtils;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -59,6 +65,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private LoginLogService loginLogService;
 
     /**
      * 验证码过期时间（秒）
@@ -113,6 +122,7 @@ public class AuthServiceImpl implements AuthService {
         String retryKey = LOGIN_RETRY_PREFIX + username;
         Integer retryCount = redisUtil.get(retryKey, Integer.class);
         if (retryCount != null && retryCount >= maxRetry) {
+            saveLoginLog(username, 0, "账号已锁定");
             throw new BusinessException(ResultCode.ACCOUNT_LOCKED);
         }
 
@@ -136,6 +146,7 @@ public class AuthServiceImpl implements AuthService {
         if (user == null) {
             // 记录失败次数
             recordLoginFailure(username);
+            saveLoginLog(username, 0, "用户名或密码错误");
             throw new BusinessException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
         }
 
@@ -143,11 +154,13 @@ public class AuthServiceImpl implements AuthService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             // 记录失败次数
             recordLoginFailure(username);
+            saveLoginLog(username, 0, "用户名或密码错误");
             throw new BusinessException(ResultCode.USERNAME_OR_PASSWORD_ERROR);
         }
 
         // 5. 检查用户状态
         if (user.getStatus() == 0) {
+            saveLoginLog(username, 0, "账号已被禁用");
             throw new BusinessException(ResultCode.ACCOUNT_DISABLED);
         }
 
@@ -160,7 +173,8 @@ public class AuthServiceImpl implements AuthService {
         // 8. 存储 Token 到 Redis
         redisUtil.set(TOKEN_PREFIX + user.getId(), token, jwtExpiration, TimeUnit.MILLISECONDS);
 
-        // 9. 记录登录日志（TODO: 实现登录日志记录）
+        // 9. 记录登录日志
+        saveLoginLog(username, 1, "登录成功");
         log.info("用户登录成功，username: {}, userId: {}", username, user.getId());
 
         return new LoginResponse(token, jwtExpiration);
@@ -357,5 +371,99 @@ public class AuthServiceImpl implements AuthService {
         } else {
             log.warn("用户登录失败次数过多，账号已锁定，username: {}, 锁定时间: {} 分钟", username, lockTime);
         }
+    }
+
+    /**
+     * 记录登录日志
+     *
+     * @param username 用户名
+     * @param status   登录状态（0-失败 1-成功）
+     * @param message  提示信息
+     */
+    private void saveLoginLog(String username, Integer status, String message) {
+        try {
+            LoginLog loginLog = new LoginLog();
+            loginLog.setUsername(username);
+            loginLog.setStatus(status);
+            loginLog.setMessage(message);
+
+            // 获取请求信息
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                loginLog.setLoginIp(IpUtils.getIpAddress(request));
+
+                // 解析 User-Agent 获取浏览器和操作系统信息
+                String userAgent = request.getHeader("User-Agent");
+                if (userAgent != null) {
+                    loginLog.setBrowser(parseBrowser(userAgent));
+                    loginLog.setOs(parseOs(userAgent));
+                }
+            }
+
+            // 设置登录地点（简化处理，内网IP显示"内网IP"）
+            String ip = loginLog.getLoginIp();
+            if (ip != null && IpUtils.isInternalIp(ip)) {
+                loginLog.setLoginLocation("内网IP");
+            } else {
+                loginLog.setLoginLocation("未知");
+            }
+
+            loginLogService.saveLoginLog(loginLog);
+        } catch (Exception e) {
+            log.error("保存登录日志失败", e);
+        }
+    }
+
+    /**
+     * 解析浏览器信息
+     *
+     * @param userAgent User-Agent 字符串
+     * @return 浏览器名称
+     */
+    private String parseBrowser(String userAgent) {
+        if (userAgent == null) {
+            return "未知";
+        }
+        userAgent = userAgent.toLowerCase();
+        if (userAgent.contains("edg")) {
+            return "Edge";
+        } else if (userAgent.contains("chrome")) {
+            return "Chrome";
+        } else if (userAgent.contains("firefox")) {
+            return "Firefox";
+        } else if (userAgent.contains("safari")) {
+            return "Safari";
+        } else if (userAgent.contains("opera") || userAgent.contains("opr")) {
+            return "Opera";
+        } else if (userAgent.contains("msie") || userAgent.contains("trident")) {
+            return "IE";
+        }
+        return "未知";
+    }
+
+    /**
+     * 解析操作系统信息
+     *
+     * @param userAgent User-Agent 字符串
+     * @return 操作系统名称
+     */
+    private String parseOs(String userAgent) {
+        if (userAgent == null) {
+            return "未知";
+        }
+        userAgent = userAgent.toLowerCase();
+        if (userAgent.contains("windows")) {
+            return "Windows";
+        } else if (userAgent.contains("mac")) {
+            return "Mac OS";
+        } else if (userAgent.contains("linux")) {
+            return "Linux";
+        } else if (userAgent.contains("android")) {
+            return "Android";
+        } else if (userAgent.contains("iphone") || userAgent.contains("ipad")) {
+            return "iOS";
+        }
+        return "未知";
     }
 }

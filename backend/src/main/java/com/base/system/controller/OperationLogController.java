@@ -29,7 +29,7 @@ public class OperationLogController {
      */
     @ApiOperation("分页查询操作日志列表")
     @GetMapping("/page")
-    @PreAuthorize("hasAuthority('system:log:operation:list')")
+    @PreAuthorize("hasAuthority('log:operation:list')")
     public Result<Page<OperationLogResponse>> pageOperationLogs(OperationLogQueryRequest request) {
         Page<OperationLogResponse> page = operationLogService.pageOperationLogs(request);
         return Result.success(page);
@@ -40,7 +40,7 @@ public class OperationLogController {
      */
     @ApiOperation("根据ID获取操作日志详情")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('system:log:operation:query')")
+    @PreAuthorize("hasAuthority('log:operation:query')")
     public Result<OperationLogResponse> getOperationLogById(@PathVariable Long id) {
         OperationLogResponse response = operationLogService.getOperationLogById(id);
         return Result.success(response);
@@ -51,7 +51,7 @@ public class OperationLogController {
      */
     @ApiOperation("删除操作日志")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('system:log:operation:delete')")
+    @PreAuthorize("hasAuthority('log:operation:delete')")
     public Result<Void> deleteOperationLog(@PathVariable Long id) {
         operationLogService.deleteOperationLog(id);
         return Result.success();
@@ -62,7 +62,7 @@ public class OperationLogController {
      */
     @ApiOperation("批量删除操作日志")
     @DeleteMapping("/batch")
-    @PreAuthorize("hasAuthority('system:log:operation:delete')")
+    @PreAuthorize("hasAuthority('log:operation:delete')")
     public Result<Void> batchDeleteOperationLogs(@RequestBody List<Long> ids) {
         operationLogService.batchDeleteOperationLogs(ids);
         return Result.success();
@@ -73,7 +73,7 @@ public class OperationLogController {
      */
     @ApiOperation("清空操作日志")
     @DeleteMapping("/clear")
-    @PreAuthorize("hasAuthority('system:log:operation:delete')")
+    @PreAuthorize("hasAuthority('log:operation:delete')")
     public Result<Void> clearOperationLogs() {
         operationLogService.clearOperationLogs();
         return Result.success();

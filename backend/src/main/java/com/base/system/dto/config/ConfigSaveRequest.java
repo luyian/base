@@ -39,10 +39,10 @@ public class ConfigSaveRequest {
     private String configName;
 
     /**
-     * 配置类型（1-系统内置 2-用户自定义）
+     * 参数类型（string、number、boolean、json）
      */
-    @NotNull(message = "配置类型不能为空")
-    private Integer configType;
+    @NotBlank(message = "参数类型不能为空")
+    private String type;
 
     /**
      * 状态（0-禁用 1-正常）

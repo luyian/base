@@ -23,16 +23,21 @@ public class EnumSaveRequest {
     private String enumType;
 
     /**
+     * 枚举编码
+     */
+    @NotBlank(message = "枚举编码不能为空")
+    private String enumCode;
+
+    /**
      * 枚举值
      */
     @NotBlank(message = "枚举值不能为空")
     private String enumValue;
 
     /**
-     * 枚举标签
+     * 描述
      */
-    @NotBlank(message = "枚举标签不能为空")
-    private String enumLabel;
+    private String description;
 
     /**
      * 排序
@@ -45,9 +50,4 @@ public class EnumSaveRequest {
      */
     @NotNull(message = "状态不能为空")
     private Integer status;
-
-    /**
-     * 备注
-     */
-    private String remark;
 }

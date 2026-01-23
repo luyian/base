@@ -32,9 +32,9 @@ public class ConfigResponse {
     private String configName;
 
     /**
-     * 配置类型（1-系统内置 2-用户自定义）
+     * 参数类型（string、number、boolean、json）
      */
-    private Integer configType;
+    private String type;
 
     /**
      * 状态（0-禁用 1-正常）

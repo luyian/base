@@ -29,7 +29,7 @@ public class LoginLogController {
      */
     @ApiOperation("分页查询登录日志列表")
     @GetMapping("/page")
-    @PreAuthorize("hasAuthority('system:log:login:list')")
+    @PreAuthorize("hasAuthority('log:login:list')")
     public Result<Page<LoginLogResponse>> pageLoginLogs(LoginLogQueryRequest request) {
         Page<LoginLogResponse> page = loginLogService.pageLoginLogs(request);
         return Result.success(page);
@@ -40,7 +40,7 @@ public class LoginLogController {
      */
     @ApiOperation("根据ID获取登录日志详情")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('system:log:login:query')")
+    @PreAuthorize("hasAuthority('log:login:query')")
     public Result<LoginLogResponse> getLoginLogById(@PathVariable Long id) {
         LoginLogResponse response = loginLogService.getLoginLogById(id);
         return Result.success(response);
@@ -51,7 +51,7 @@ public class LoginLogController {
      */
     @ApiOperation("删除登录日志")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('system:log:login:delete')")
+    @PreAuthorize("hasAuthority('log:login:delete')")
     public Result<Void> deleteLoginLog(@PathVariable Long id) {
         loginLogService.deleteLoginLog(id);
         return Result.success();
@@ -62,7 +62,7 @@ public class LoginLogController {
      */
     @ApiOperation("批量删除登录日志")
     @DeleteMapping("/batch")
-    @PreAuthorize("hasAuthority('system:log:login:delete')")
+    @PreAuthorize("hasAuthority('log:login:delete')")
     public Result<Void> batchDeleteLoginLogs(@RequestBody List<Long> ids) {
         loginLogService.batchDeleteLoginLogs(ids);
         return Result.success();
@@ -73,7 +73,7 @@ public class LoginLogController {
      */
     @ApiOperation("清空登录日志")
     @DeleteMapping("/clear")
-    @PreAuthorize("hasAuthority('system:log:login:delete')")
+    @PreAuthorize("hasAuthority('log:login:delete')")
     public Result<Void> clearLoginLogs() {
         loginLogService.clearLoginLogs();
         return Result.success();

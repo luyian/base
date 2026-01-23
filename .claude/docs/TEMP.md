@@ -1107,6 +1107,30 @@
     - 进度条颜色根据使用率动态变化
 
 ### 2026-01-22
+- 实现登录日志记录功能
+  - 问题描述：登录日志没有数据，因为登录时没有调用保存登录日志的方法
+  - 修复方案：在 `AuthServiceImpl` 中添加登录日志记录逻辑
+  - 修改文件：`D:\workspace\base\backend\src\main\java\com\base\system\service\impl\AuthServiceImpl.java`
+  - 实现内容：
+    - 注入 `LoginLogService` 服务
+    - 创建 `saveLoginLog` 辅助方法：记录登录日志到数据库
+      - 获取请求信息（IP地址、User-Agent）
+      - 解析浏览器信息（Chrome、Firefox、Edge、Safari、Opera、IE）
+      - 解析操作系统信息（Windows、Mac OS、Linux、Android、iOS）
+      - 设置登录地点（内网IP显示"内网IP"，其他显示"未知"）
+    - 创建 `parseBrowser` 方法：从 User-Agent 解析浏览器名称
+    - 创建 `parseOs` 方法：从 User-Agent 解析操作系统名称
+    - 在登录成功时记录日志（状态=1，消息="登录成功"）
+    - 在登录失败时记录日志：
+      - 账号被锁定（状态=0，消息="账号已锁定"）
+      - 用户名或密码错误（状态=0，消息="用户名或密码错误"）
+      - 账号被禁用（状态=0，消息="账号已被禁用"）
+  - 业务规则：
+    - 登录日志记录在 `sys_log_login` 表
+    - 记录字段：用户名、登录IP、登录地点、浏览器、操作系统、状态、提示信息
+    - 登录成功和失败都会记录日志
+    - 日志记录失败不影响登录流程（异常被捕获并记录到控制台）
+
 - 修复监控模块权限缺失问题
   - 问题描述：访问角色管理页面返回 403 Forbidden，监控页面组件未找到
   - 原因分析：

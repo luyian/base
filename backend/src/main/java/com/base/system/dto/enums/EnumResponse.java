@@ -22,14 +22,19 @@ public class EnumResponse {
     private String enumType;
 
     /**
+     * 枚举编码
+     */
+    private String enumCode;
+
+    /**
      * 枚举值
      */
     private String enumValue;
 
     /**
-     * 枚举标签
+     * 描述
      */
-    private String enumLabel;
+    private String description;
 
     /**
      * 排序
@@ -40,11 +45,6 @@ public class EnumResponse {
      * 状态（0-禁用 1-正常）
      */
     private Integer status;
-
-    /**
-     * 备注
-     */
-    private String remark;
 
     /**
      * 创建时间

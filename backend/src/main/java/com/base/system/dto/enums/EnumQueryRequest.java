@@ -14,9 +14,9 @@ public class EnumQueryRequest {
     private String enumType;
 
     /**
-     * 枚举标签
+     * 枚举编码
      */
-    private String enumLabel;
+    private String enumCode;
 
     /**
      * 状态（0-禁用 1-正常）

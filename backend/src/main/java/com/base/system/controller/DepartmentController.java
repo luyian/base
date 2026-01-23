@@ -30,7 +30,7 @@ public class DepartmentController {
      */
     @ApiOperation("查询部门树")
     @GetMapping("/tree")
-    @PreAuthorize("hasAuthority('system:department:list')")
+    @PreAuthorize("hasAuthority('system:dept:list')")
     public Result<List<DepartmentResponse>> treeDepartments(DepartmentQueryRequest request) {
         List<DepartmentResponse> list = departmentService.treeDepartments(request);
         return Result.success(list);
@@ -41,7 +41,7 @@ public class DepartmentController {
      */
     @ApiOperation("根据ID获取部门详情")
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('system:department:query')")
+    @PreAuthorize("hasAuthority('system:dept:query')")
     public Result<DepartmentResponse> getDepartmentById(@PathVariable Long id) {
         DepartmentResponse department = departmentService.getDepartmentById(id);
         return Result.success(department);
@@ -52,7 +52,7 @@ public class DepartmentController {
      */
     @ApiOperation("新增部门")
     @PostMapping
-    @PreAuthorize("hasAuthority('system:department:add')")
+    @PreAuthorize("hasAuthority('system:dept:add')")
     public Result<Void> addDepartment(@Validated @RequestBody DepartmentSaveRequest request) {
         departmentService.addDepartment(request);
         return Result.success();
@@ -63,7 +63,7 @@ public class DepartmentController {
      */
     @ApiOperation("编辑部门")
     @PutMapping
-    @PreAuthorize("hasAuthority('system:department:edit')")
+    @PreAuthorize("hasAuthority('system:dept:edit')")
     public Result<Void> updateDepartment(@Validated @RequestBody DepartmentSaveRequest request) {
         departmentService.updateDepartment(request);
         return Result.success();
@@ -74,7 +74,7 @@ public class DepartmentController {
      */
     @ApiOperation("删除部门")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('system:department:delete')")
+    @PreAuthorize("hasAuthority('system:dept:delete')")
     public Result<Void> deleteDepartment(@PathVariable Long id) {
         departmentService.deleteDepartment(id);
         return Result.success();
@@ -85,7 +85,7 @@ public class DepartmentController {
      */
     @ApiOperation("获取所有部门树")
     @GetMapping("/all/tree")
-    @PreAuthorize("hasAuthority('system:department:list')")
+    @PreAuthorize("hasAuthority('system:dept:list')")
     public Result<List<DepartmentResponse>> getAllDepartmentTree() {
         List<DepartmentResponse> list = departmentService.getAllDepartmentTree();
         return Result.success(list);

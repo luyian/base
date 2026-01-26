@@ -41,8 +41,14 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
         wrapper.like(StrUtil.isNotBlank(request.getPermissionName()), Permission::getPermissionName, request.getPermissionName())
                 .like(StrUtil.isNotBlank(request.getPermissionCode()), Permission::getPermissionCode, request.getPermissionCode())
                 .eq(request.getType() != null, Permission::getType, request.getType())
-                .eq(request.getStatus() != null, Permission::getStatus, request.getStatus())
-                .orderByAsc(Permission::getSort)
+                .eq(request.getStatus() != null, Permission::getStatus, request.getStatus());
+
+        // 如果没有指定类型，默认只查询目录和菜单，不包括按钮
+        if (request.getType() == null) {
+            wrapper.in(Permission::getType, 1, 2);
+        }
+
+        wrapper.orderByAsc(Permission::getSort)
                 .orderByDesc(Permission::getCreateTime);
 
         // 查询所有权限
@@ -60,7 +66,14 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
         }
 
         PermissionResponse response = BeanUtil.copyProperties(permission, PermissionResponse.class);
-        response.setTypeName(permission.getType() == 1 ? "菜单" : "按钮");
+        // 设置类型名称：1-目录，2-菜单，3-按钮
+        if (permission.getType() == 1) {
+            response.setTypeName("目录");
+        } else if (permission.getType() == 2) {
+            response.setTypeName("菜单");
+        } else if (permission.getType() == 3) {
+            response.setTypeName("按钮");
+        }
         return response;
     }
 
@@ -197,7 +210,14 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
 
         return children.stream().map(permission -> {
             PermissionResponse response = BeanUtil.copyProperties(permission, PermissionResponse.class);
-            response.setTypeName(permission.getType() == 1 ? "菜单" : "按钮");
+            // 设置类型名称：1-目录，2-菜单，3-按钮
+            if (permission.getType() == 1) {
+                response.setTypeName("目录");
+            } else if (permission.getType() == 2) {
+                response.setTypeName("菜单");
+            } else if (permission.getType() == 3) {
+                response.setTypeName("按钮");
+            }
 
             // 递归查询子权限
             List<PermissionResponse> childrenList = buildTree(permissionMap, permission.getId());

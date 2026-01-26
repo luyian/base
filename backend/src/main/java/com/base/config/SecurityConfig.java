@@ -92,6 +92,7 @@ public class SecurityConfig {
                 .antMatchers(
                         "/auth/**",
                         "/swagger-ui/**",
+                        "/swagger-ui.html",
                         "/swagger-resources/**",
                         "/v2/api-docs",
                         "/v3/api-docs",

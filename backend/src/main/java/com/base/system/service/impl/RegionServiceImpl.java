@@ -77,7 +77,7 @@ public class RegionServiceImpl implements RegionService {
         wrapper.eq(Region::getDeleted, 0)
                 .eq(Region::getLevel, level)
                 .eq(Region::getStatus, 1)
-             Asc(Region::getSort);
+                .orderByAsc(Region::getSort);
         return regionMapper.selectList(wrapper);
     }
 
@@ -183,7 +183,7 @@ public class RegionServiceImpl implements RegionService {
         LambdaQueryWrapper<Region> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Region::getDeleted, 0)
                 .eq(Region::getParentId, id);
-   count = regionMapper.selectCount(wrapper);
+        Long count = regionMapper.selectCount(wrapper);
         if (count > 0) {
             throw new BusinessException(ResultCode.OPERATION_NOT_ALLOWED, "该区划下存在子区划，无法删除");
         }
@@ -203,7 +203,7 @@ public class RegionServiceImpl implements RegionService {
         // 分批插入，每批1000条
         int batchSize = 1000;
         int total = 0;
-         for (int i = 0; i < regionsize(); i += batchSize) {
+        for (int i = 0; i < regions.size(); i += batchSize) {
             int end = Math.min(i + batchSize, regions.size());
             List<Region> batch = regions.subList(i, end);
 
@@ -255,7 +255,8 @@ public class RegionServiceImpl implements RegionService {
      *
      * @param regions  区划列表
      * @param parentId 父级ID
-     * @return 树节点列表/
+     * @return 树节点列表
+     */
     private List<RegionTreeNode> buildRegionTree(List<Region> regions, Long parentId) {
         List<RegionTreeNode> treeNodes = new ArrayList<>();
 
@@ -271,7 +272,7 @@ public class RegionServiceImpl implements RegionService {
 
         for (Region region : currentLevel) {
             RegionTreeNode node = new RegionTreeNode();
-            tils.copyProperties(region, node);
+            BeanUtils.copyProperties(region, node);
 
             // 递归构建子节点
             List<RegionTreeNode> children = buildRegionTree(regions, region.getId());
@@ -295,7 +296,7 @@ public class RegionServiceImpl implements RegionService {
             return;
         }
 
-        pathList.add(region.getRegionN));
+        pathList.add(region.getRegionName());
 
         if (region.getParentId() != null && region.getParentId() > 0) {
             Region parent = regionMapper.selectById(region.getParentId());

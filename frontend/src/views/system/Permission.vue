@@ -21,8 +21,9 @@
         </el-form-item>
         <el-form-item label="权限类型">
           <el-select v-model="queryForm.type" placeholder="请选择权限类型" clearable>
-            <el-option label="菜单" :value="1" />
-            <el-option label="按钮" :value="2" />
+            <el-option label="目录" :value="1" />
+            <el-option label="菜单" :value="2" />
+            <el-option label="按钮" :value="3" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -60,7 +61,7 @@
         <el-table-column prop="permissionCode" label="权限编码" min-width="150" />
         <el-table-column prop="type" label="权限类型" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.type === 1 ? 'primary' : 'success'">
+            <el-tag :type="getTypeTagType(row.type)">
               {{ row.typeName }}
             </el-tag>
           </template>
@@ -135,8 +136,9 @@
           <el-col :span="12">
             <el-form-item label="权限类型" prop="type">
               <el-radio-group v-model="permissionForm.type">
-                <el-radio :value="1">菜单</el-radio>
-                <el-radio :value="2">按钮</el-radio>
+                <el-radio :value="1">目录</el-radio>
+                <el-radio :value="2">菜单</el-radio>
+                <el-radio :value="3">按钮</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -293,6 +295,16 @@ const permissionRules = {
   sort: [
     { required: true, message: '请输入排序', trigger: 'blur' }
   ]
+}
+
+// 获取类型标签颜色
+const getTypeTagType = (type) => {
+  const typeMap = {
+    1: 'info',      // 目录 - 灰色
+    2: 'primary',   // 菜单 - 蓝色
+    3: 'success'    // 按钮 - 绿色
+  }
+  return typeMap[type] || ''
 }
 
 // 查询权限树

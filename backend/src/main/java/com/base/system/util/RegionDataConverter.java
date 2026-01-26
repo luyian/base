@@ -1,15 +1,8 @@
 package com.base.system.util;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.base.system.entity.Region;
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -67,109 +60,6 @@ public class RegionDataConverter {
     }
 
     /**
-     * 从 JSON 文件读取并转换为 Region 实体列表
-     *
-     * @param jsonFilePath JSON 文件路径
-     * @return Region 实体列表
-     */
-    public static List<Region> convertFromJson(String jsonFilePath) {
-        List<Region> regions = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(new FileReader(jsonFilePath))) {
-            StringBuilder jsonContent = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                jsonContent.append(line);
-            }
-
-            // 解析 JSON 数组
-            JSONArray jsonArray = JSON.parseArray(jsonContent.toString());
-
-            for (int i = 0; i < jsonArray.size(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                Region region = convertJsonToRegion(jsonObject);
-                if (region != null) {
-                    regions.add(region);
-                       }
-
-            log.info("成功转换 {} 条行政区划数据", regions.size());
-
-        } catch (IOException e) {
-            log.error("读取 JSON 文件失败: {}", e.getMessage(), e);
-        } catch (Exception e) {
-            log.error("转换数据失败: {}", e.getMessage(), e);
-        }
-
-        return regions;
-    }
-
-    /**
-     * 将 JSON 对象转换为 Region 实体
-     *
-     * @param jsonObject JSON 对象
-     * @return Region 实体
-     */
-    private static Region convertJsonToRegion(JSONObject jsonObject) {
-        try {
-            Region region = new Region();
-
-            // 区划代码
-            String code = jsonObject.getString("code");
-            if (code == null || code.isEmpty()) {
-                return null;
-            }
-            region.setRegionCode(code);
-
-            // 区划名称
-            String name = jsonObject.getString("name");
-            if (name == null || name.isEmpty()) {
-                return null;
-            }
-            region.setRegionName(name);
-
-            // 判断层级
-            Integer level = determineLevel(code);
-            region.setLevel(level);
-
-            // 根据区划代码确定父级ID（需要在导入时处理）
-            // 这里先设置为0，实际导入时需要查询父级区划的ID
-            region.setParentId(0L);
-
-            // 简称（去掉省、市、区、县等后缀）
-            String shortName = removeAdministrativeSuffix(name);
-            region.setShortName(shortName);
-
-            // 拼音转换
-            String pinyin = convertToPinyin(shortName);
-            region.setPinyin(pinyin);
-
-            // 拼音首字母
-            String pinyinPrefix = getPinyinPrefix(pinyin);
-            region.setPinyinPrefix(pinyinPrefix);
-
-            // 全称（需要在导入时根据父级关系构建）
-            region.setFullName(name);
-
-            // 默认状态：启用
-        region.setStatus(1);
-
-            // 默认排序
-            region.setSort(0);
-
-            // 经纬度（如果 JSON 中有）
-            if (jsonObject.containsKey("longitude")) {
-                region.setLongitude(jsonObject.getBigDecimal("longitude"));
-            }
-            if (jsonObject.containsKey("latitude")) {
-                region.setLatitude(jsonObject.getBigDecimal("latitude"));
-            }
-
-            return region;
-
-        } catch (Exception e) {
-            log.error("转换单条数据失败: {}", e.getMessage(), e);
-            return null;
-            /**
      * 根据区划代码判断层级
      * 规则：
      * - 省级：后4位为0000（如：110000）
@@ -188,7 +78,7 @@ public class RegionDataConverter {
         String last2 = code.substring(4);
 
         if ("0000".equals(last4)) {
-            retur// 省级
+            return 1; // 省级
         } else if ("00".equals(last2)) {
             return 2; // 市级
         } else {
@@ -214,7 +104,7 @@ public class RegionDataConverter {
             return null;
         } else if (level == 2) {
             // 市级的父级是省级
-            return code.substring(0, 2) +00";
+            return code.substring(0, 2) + "0000";
         } else {
             // 区级的父级是市级
             return code.substring(0, 4) + "00";
@@ -268,7 +158,8 @@ public class RegionDataConverter {
      *
      * @param pinyin 拼音
      * @return 拼音首字母
-     * private static String getPinyinPrefix(String pinyin) {
+     */
+    private static String getPinyinPrefix(String pinyin) {
         if (pinyin == null || pinyin.isEmpty()) {
             return "";
         }
@@ -299,7 +190,8 @@ public class RegionDataConverter {
 
             sql.append(region.getParentId()).append(", ");
             sql.append("'").append(region.getRegionCode()).append("', ");
-            sql.append("'").append(region.getRegionName()).append("',             sql.append(region.getLevel()).append(", ");
+            sql.append("'").append(region.getRegionName()).append("', ");
+            sql.append(region.getLevel()).append(", ");
             sql.append(region.getSort()).append(", ");
             sql.append(region.getStatus()).append(", ");
             sql.append("'").append(region.getFullName()).append("', ");
@@ -310,7 +202,7 @@ public class RegionDataConverter {
             if (region.getLongitude() != null) {
                 sql.append(region.getLongitude());
             } else {
-                sql.appendLL");
+                sql.append("NULL");
             }
             sql.append(", ");
 

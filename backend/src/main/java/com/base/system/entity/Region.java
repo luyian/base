@@ -84,4 +84,9 @@ public class Region extends BaseEntity {
      * 纬度
      */
     private BigDecimal latitude;
+
+    /**
+     * 删除标志（0-未删除，1-已删除）
+     */
+    private Integer deleted;
 }

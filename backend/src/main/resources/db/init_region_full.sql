@@ -47,15 +47,15 @@ CREATE TABLE `sys_region` (
 DELETE FROM sys_permission WHERE id >= 108 AND id <= 10805;
 DELETE FROM sys_role_permission WHERE permission_id >= 108 AND permission_id <= 10805;
 
-INSERT INTO sys_permission (id, parent_id, permission_name, permission_code, permission_type, route_path, component_path, icon, sort, status, visible, remark, create_time, update_time, deleted)
-VALUES (108, 1, '行政区划', 'system:region', 1, '/system/region', 'system/Region', 'Location', 8, 1, 1, '行政区划管理', NOW(), NOW(), 0);
+INSERT INTO sys_permission (id, parent_id, permission_name, permission_code, type, path, component, icon, sort, status, visible, remark, create_time, update_time, deleted)
+VALUES (108, 1, '行政区划', 'system:region', 2, '/system/region', 'system/Region', 'Location', 8, 1, 1, '行政区划管理', NOW(), NOW(), 0);
 
-INSERT INTO sys_permission (id, parent_id, permission_name, permission_code, permission_type, sort, status, visible, remark, create_time, update_time, deleted) VALUES
-(10801, 108, '区划查询', 'system:region:query', 2, 1, 1, 1, '查询行政区划', NOW(), NOW(), 0),
-(10802, 108, '区划新增', 'system:region:add', 2, 2, 1, 1, '新增行政区划', NOW(), NOW(), 0),
-(10803, 108, '区划编辑', 'system:region:edit', 2, 3, 1, 1, '编辑行政区划', NOW(), NOW(), 0),
-(10804, 108, '区划删除', 'system:region:delete', 2, 4, 1, 1, '删除行政区划', NOW(), NOW(), 0),
-(10805, 108, '区划导入', 'system:region:import', 2, 5, 1, 1, '导入行政区划', NOW(), NOW(), 0);
+INSERT INTO sys_permission (id, parent_id, permission_name, permission_code, type, sort, status, visible, remark, create_time, update_time, deleted) VALUES
+(10801, 108, '区划查询', 'system:region:query', 3, 1, 1, 1, '查询行政区划', NOW(), NOW(), 0),
+(10802, 108, '区划新增', 'system:region:add', 3, 2, 1, 1, '新增行政区划', NOW(), NOW(), 0),
+(10803, 108, '区划编辑', 'system:region:edit', 3, 3, 1, 1, '编辑行政区划', NOW(), NOW(), 0),
+(10804, 108, '区划删除', 'system:region:delete', 3, 4, 1, 1, '删除行政区划', NOW(), NOW(), 0),
+(10805, 108, '区划导入', 'system:region:import', 3, 5, 1, 1, '导入行政区划', NOW(), NOW(), 0);
 
 INSERT INTO sys_role_permission (role_id, permission_id) VALUES
 (1, 108), (1, 10801), (1, 10802), (1, 10803), (1, 10804), (1, 10805);

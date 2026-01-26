@@ -114,7 +114,7 @@ public class RegionController {
      * 创建区划
      */
     @PostMapping
-    @Apiation("创建区划")
+    @ApiOperation("创建区划")
     @PreAuthorize("hasAuthority('system:region:add')")
     @OperationLog(module = "行政区划", operation = "新增")
     public Result<Void> createRegion(@Validated @RequestBody Region region) {
@@ -131,7 +131,7 @@ public class RegionController {
     @OperationLog(module = "行政区划", operation = "编辑")
     public Result<Void> updateRegion(@Validated @RequestBody Region region) {
         regionService.updateRegion(region);
-        returt.success();
+        return Result.success();
     }
 
     /**
@@ -152,7 +152,7 @@ public class RegionController {
     @PostMapping("/import")
     @ApiOperation("批量导入区划数据")
     @PreAuthorize("hasAuthority('system:region:import')")
-    @OperationLog(module = "行政区划", operatiosaveResult = false)
+    @OperationLog(module = "行政区划", operation = "导入", saveResult = false)
     public Result<Integer> importRegions(@RequestParam("file") MultipartFile file) {
         // TODO: 实现文件解析和导入逻辑
         return Result.success(0);

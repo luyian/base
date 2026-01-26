@@ -44,8 +44,7 @@
     <el-card class="table-card">
       <div class="toolbar">
         <el-button type="primary" :icon="Plus" @click="handleAdd">新增区划</el-button>
-        <el-button :icon="Expand" @click="handleExpandAll">展开全部</el-button>
-        <el-button :icon="Fold" @click="handleCollapseAll">折叠全部</el-button>
+        <el-button :icon="Refresh" @click="handleRefresh">刷新</el-button>
       </div>
 
       <!-- 区划树表格 -->
@@ -56,11 +55,12 @@
         row-key="id"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         v-loading="loading"
-        default-expand-all
+        lazy
+        :load="loadChildren"
       >
         <el-table-column prop="regionName" label="区划名称" min-width="200" />
         <el-table-column prop="regionCode" label="区划代码" min-width="150" />
-        <el-table-column prop=" label="层级" width="100">
+        <el-table-column prop="level" label="层级" width="100">
           <template #default="{ row }">
             <el-tag :type="getLevelTagType(row.level)">
               {{ getLevelText(row.level) }}
@@ -190,7 +190,7 @@
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubng="submitLoading">
+        <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
           确定
         </el-button>
       </template>
@@ -201,13 +201,15 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Plus, Edit, Delete, Expand, Fold } from '@element-plus/icons-vue'
+import { Search, Refresh, Plus, Edit, Delete } from '@element-plus/icons-vue'
 import {
   treeRegions,
   getRegionById,
   addRegion,
   updateRegion,
-  deleteRegion
+  deleteRegion,
+  getChildrenByParentId,
+  getRegionsByLevel
 } from '@/api/region'
 
 // 查询表单
@@ -302,12 +304,38 @@ const getLevelTagType = (level) => {
 const handleQuery = async () => {
   loading.value = true
   try {
-    const { data } = await treeRegions(queryForm)
-    regionTree.value = data
+    // 如果有搜索条件，使用树形查询
+    if (queryForm.regionName || queryForm.regionCode || queryForm.level || queryForm.status !== null) {
+      const { data } = await treeRegions(queryForm)
+      regionTree.value = data
+    } else {
+      // 无搜索条件时，只加载省级数据（懒加载模式）
+      const { data } = await getRegionsByLevel(1)
+      regionTree.value = data.map(item => ({
+        ...item,
+        hasChildren: true // 省级数据都有子级
+      }))
+    }
   } catch (error) {
     ElMessage.error('查询失败')
   } finally {
     loading.value = false
+  }
+}
+
+// 懒加载子级数据
+const loadChildren = async (row, treeNode, resolve) => {
+  try {
+    const { data } = await getChildrenByParentId(row.id)
+    // 标记是否有子级（市级和区级可能有子级，街道级没有）
+    const children = data.map(item => ({
+      ...item,
+      hasChildren: item.level < 4 // 只有省、市、区有子级，街道没有
+    }))
+    resolve(children)
+  } catch (error) {
+    ElMessage.error('加载子级数据失败')
+    resolve([])
   }
 }
 
@@ -370,24 +398,9 @@ const handleDelete = async (row) => {
   }
 }
 
-// 展开全部
-const handleExpandAll = () => {
-  toggleRowExpansion(regionTree.value, true)
-}
-
-// 折叠全部
-const handleCollapseAll = () => {
-  toggleRowExpansion(regionTree.value, false)
-}
-
-// 切换展开/折叠
-const toggleRowExpansion = (data, isExpand) => {
-  data.forEach(item => {
-    tableRef.value.toggleRowExpansion(item, isExpand)
-    if (item.children && item.children.length > 0) {
-      toggleRowExpansion(item.children, isExpand)
-    }
-  })
+// 刷新数据
+const handleRefresh = () => {
+  handleQuery()
 }
 
 // 提交表单
@@ -459,7 +472,8 @@ onMounted(() => {
   padding: 20px;
 }
 
-.search  margin-bottom: 20px;
+.search-card {
+  margin-bottom: 20px;
 }
 
 .search-form {

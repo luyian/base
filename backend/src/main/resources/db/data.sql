@@ -190,6 +190,18 @@ INSERT INTO `sys_config` (`config_key`, `config_value`, `config_name`, `descript
 ('captcha.enabled', 'true', '验证码开关', '是否开启验证码功能', 'boolean', 1, 'system'),
 ('captcha.type', 'math', '验证码类型', '验证码类型（math：数字运算，char：字符验证）', 'string', 1, 'system');
 
+-- 行政区划管理菜单
+INSERT INTO `sys_permission` (`id`, `parent_id`, `permission_name`, `permission_code`, `type`, `path`, `component`, `icon`, `sort`, `visible`, `status`, `create_by`) VALUES
+(108, 1, '行政区划', 'system:region:list', 2, '/system/region', 'system/Region', 'Location', 8, 1, 1, 'system');
+
+-- 行政区划管理按钮权限
+INSERT INTO `sys_permission` (`id`, `parent_id`, `permission_name`, `permission_code`, `type`, `path`, `component`, `icon`, `sort`, `visible`, `status`, `create_by`) VALUES
+(10801, 108, '区划查询', 'system:region:query', 3, NULL, NULL, NULL, 1, 1, 1, 'system'),
+(10802, 108, '区划新增', 'system:region:add', 3, NULL, NULL, NULL, 2, 1, 1, 'system'),
+(10803, 108, '区划编辑', 'system:region:edit', 3, NULL, NULL, NULL, 3, 1, 1, 'system'),
+(10804, 108, '区划删除', 'system:region:delete', 3, NULL, NULL, NULL, 4, 1, 1, 'system'),
+(10805, 108, '区划导入', 'system:region:import', 3, NULL, NULL, NULL, 5, 1, 1, 'system');
+
 -- ============================
 -- 初始化通知公告数据
 -- ============================

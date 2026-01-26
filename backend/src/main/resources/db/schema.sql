@@ -258,3 +258,35 @@ CREATE TABLE `sys_role_permission` (
     KEY `idx_role_id` (`role_id`),
     KEY `idx_permission_id` (`permission_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色权限关联表';
+
+-- ============================
+-- 行政区划表
+-- ============================
+DROP TABLE IF EXISTS `sys_region`;
+CREATE TABLE `sys_region` (
+    `id` BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `parent_id` BIGINT(20) DEFAULT 0 COMMENT '父级ID（0表示顶级）',
+    `region_code` VARCHAR(20) NOT NULL COMMENT '行政区划代码（统计用区划代码）',
+    `region_name` VARCHAR(100) NOT NULL COMMENT '行政区划名称',
+    `level` TINYINT(1) NOT NULL COMMENT '层级（1-省，2-市，3-区，4-街道）',
+    `sort` INT(11) DEFAULT 0 COMMENT '排序',
+    `status` TINYINT(1) DEFAULT 1 COMMENT '状态（0-禁用，1-启用）',
+    `full_name` VARCHAR(255) DEFAULT NULL COMMENT '全称（如：广东省广州市天河区）',
+    `short_name` VARCHAR(50) DEFAULT NULL COMMENT '简称',
+    `pinyin` VARCHAR(100) DEFAULT NULL COMMENT '拼音',
+    `pinyin_prefix` VARCHAR(50) DEFAULT NULL COMMENT '拼音首字母',
+    `longitude` DECIMAL(10, 6) DEFAULT NULL COMMENT '经度',
+    `latitude` DECIMAL(10, 6) DEFAULT NULL COMMENT '纬度',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `create_by` VARCHAR(50) DEFAULT NULL COMMENT '创建人',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `update_by` VARCHAR(50) DEFAULT NULL COMMENT '更新人',
+    `deleted` TINYINT(1) DEFAULT 0 COMMENT '删除标志（0-未删除，1-已删除）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_region_code` (`region_code`),
+    KEY `idx_parent_id` (`parent_id`),
+    KEY `idx_level` (`level`),
+    KEY `idx_region_name` (`region_name`),
+    KEY `idx_pinyin_prefix` (`pinyin_prefix`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='行政区划表';

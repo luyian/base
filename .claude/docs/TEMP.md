@@ -2,6 +2,73 @@
 
 ## 变更历史
 
+### 2026-01-26
+- 完成行政区划管理模块前端开发
+  - 创建行政区划管理页面 `D:\workspace\base\frontend\src\views\system\Region.vue`
+    - 搜索栏：支持按区划名称、区划代码、层级（1-省、2-市、3-区、4-街道）、状态查询
+    - 操作栏：新增区划、展开全部、折叠全部按钮
+    - 区划树表格：树形结构展示区划数据
+      - 列：区划名称、区划代码、层级（标签显示）、状态（标签显示）、排序、创建时间
+      - 操作列：新增、编辑、删除按钮
+    - 新增/编辑对话框：表单包含上级区划（树形选择器）、区划代码、区划名称、层级、简称、拼音、拼音首字母、状态、排序、备注
+    - 层级标签颜色：省（红色 danger）、市（橙色 warning）、区（绿色 success）、街道（灰色 info）
+    - 支持新增子区划（选择父级区划）
+    - 支持展开/折叠全部区划树节点
+    - 表单验证：区划代码长度 2-20 字符、区划名称长度 2-50 字符、简称长度不超过 20 字符、拼音长度不超过 100 字符、拼音首字母长度不超过 20 字符
+    - 状态显示：正常（绿色标签）、禁用（红色标签）
+    - 上级区划选择：树形选择器，支持选择任意层级的区划作为父级，包含"顶级区划"选项
+  - 创建地址选择组件 `D:\workspace\base\frontend\src\components\RegionCascader.vue`
+    - 基于 el-cascader 实现级联选择器
+    - 支持懒加载模式（动态加载下级数据）
+    - Props 配置：
+      - modelValue：绑定值（区划代码数组）
+      - level：最大层级（1-省、2-市、3-区、4-街道），默认 4
+      - showAllLevels：是否显示完整路径，默认 true
+      - placeholder：占位符，默认"请选择地址"
+    - Events 事件：
+      - update:modelValue：值变化事件
+      - change：选择变化事件
+    - 懒加载实现：
+      - 使用 getCascadeNodes API 动态加载子节点
+      - 根节点加载省级数据（parentId=0）
+      - 根据当前层级判断是否继续加载子节点
+      - 达到最大层级时设置为叶子节点
+    - 级联选择器配置：
+      - value：使用 regionCode 作为值
+      - label：使用 regionName 作为显示文本
+      - children：子节点字段
+      - lazy：启用懒加载
+      - lazyLoad：懒加载函数
+    - 支持清空选择和过滤搜索
+    - 自动初始化根节点数据
+  - 对接后端 API（`D:\workspace\base\frontend\src\api\region.js`）：
+    - treeRegions：查询行政区划树
+    - getRegionById：根据ID获取区划详情
+    - addRegion：新增行政区划
+    - updateRegion：编辑行政区划
+    - deleteRegion：删除行政区划
+    - getCascadeNodes：获取级联选择器数据（用于懒加载）
+    - getChildrenByParentId：根据父级ID获取子区划
+    - getRegionsByLevel：根据层级获取区划列表
+    - getFullPath：根据区划代码获取完整路径
+    - getByRegionCode：根据区划代码查询
+    - searchRegions：搜索行政区划
+    - importRegions：批量导入
+  - 业务规则说明
+    - 区划代码必须唯一
+    - 删除区划前需检查是否有子区划，如有则不允许删除
+    - 区划查询支持多条件组合查询（区划名称、区划代码、层级、状态）
+    - 区划树按排序字段升序、创建时间降序排列
+    - 层级包括：1-省、2-市、3-区、4-街道
+    - 地址选择组件支持懒加载，按需加载下级数据
+    - 地址选择组件支持限制最大层级，避免加载过多数据
+    - 级联选择器使用区划代码作为值，便于后端处理
+  - 文件清单
+    - 前端页面：`D:\workspace\base\frontend\src\views\system\Region.vue`
+    - 前端组件：`D:\workspace\base\frontend\src\components\RegionCascader.vue`
+    - API 接口：`D:\workspace\base\frontend\src\api\region.js`
+  - 已添加到 git 暂存区（未 commit）
+
 ### 2026-01-13
 - 完成个人中心页面开发
   - 创建个人中心页面 `D:\workspace\base\frontend\src\views\profile\Index.vue`
@@ -1251,6 +1318,218 @@
       - 目录结构
       - 备份与恢复
       - 监控与维护
+
+### 2026-01-26
+- 完成省市区街道四级行政区划数据管理模块开发
+  - 数据库设计
+    - 创建 `sys_region` 表：行政区划表
+      - 字段：id、parent_id、region_code、region_name、level、sort、status、full_name、short_name、pinyin、pinyin_prefix、longitude、latitude
+      - 索引：region_code 唯一索引、parent_id、level、region_name、pinyin_prefix、status
+      - 支持四级层级：1-省、2-市、3-区、4-街道
+  - 后端实现
+    - 创建实体类 `Region.java`：行政区划实体
+    - 创建 DTO 类：
+      - `RegionQueryRequest.java`：查询请求参数
+      - `RegionTreeNode.java`：树形节点
+      - `RegionCascadeNode.java`：级联选择节点
+    - 创建 Mapper 接口 `RegionMapper.java`：
+      - `selectRegionAndChildIds`：递归查询区划及所有子区划ID
+      - `selectByRegionCodes`：根据区划代码批量查询
+    - 创建 Service 层：
+      - `RegionService.java`：服务接口
+      - `RegionServiceImpl.java`：服务实现
+      - 核心方法：
+        - `getRegionTree`：获取树形结构（支持条件查询）
+        - `getChildrenByParentId`：根据父级ID查询子区划
+        - `getRegionsByLevel`：根据层级查询
+        - `getCascadeNodes`：获取级联选择器数据（懒加载）
+        - `getFullPath`：根据区划代码获取完整路径
+        - `getByRegionCode`：根据区划代码查询
+        - `createRegion`：创建区划（验证代码唯一性）
+        - `updateRegion`：更新区划
+        - `deleteRegion`：删除区划（验证无子区划）
+        - `batchImport`：批量导入（每批1000条）
+        - `searchRegions`：搜索区划（支持名称、拼音）
+    - 创建 Controller 控制器 `RegionController.java`：
+      - GET /system/region/tree：获取树形结构
+      - GET /system/region/children/{parentId}：根据父级ID查询
+      - GET /system/region/level/{level}：根据层级查询
+      - GET /system/region/cascade：级联选择器数据
+      - GET /system/region/fullPath/{regionCode}：获取完整路径
+      - GET /system/region/code/{regionCode}：根据代码查询
+      - GET /system/region/{id}：根据ID查询
+      - GET /system/region/search：搜索区划
+      - POST /system/region：创建区划（权限：system:region:add）
+      - PUT /system/region：更新区划（权限：system:region:edit）
+      - DELETE /system/region/{id}：删除区划（权限：system:region:delete）
+      - POST /system/region/import：批量导入（权限：system:region:import）
+  - 前端实现
+    - 创建 API 接口文件 `region.js`：
+      - treeRegions、getChildrenByParentId、getRegionsByLevel
+      - getCascadeNodes、getFullPath、getByRegionCode
+      - searchRegions、getRegionById
+      - addRegion、updateRegion、deleteRegion、importRegions
+    - 创建管理页面 `Region.vue`：
+      - 搜索栏：区划名称、区划代码、层级、状态
+      - 操作栏：新增区划、展开全部、折叠全部
+      - 树形表格：显示区划名称、代码、层级、状态、排序、创建时间
+      - 层级标签：省（红色）、市（橙色）、区（绿色）、街道（灰色）
+      - 操作列：新增子区划、编辑、删除
+      - 新增/编辑对话框：上级区划、代码、名称、层级、简称、拼音、拼音首字母、状态、排序、备注
+      - 表单验证：代码2-20字符、名称2-50字符、简称最多20字符
+    - 创建地址选择组件 `RegionCascader.vue`：
+      - 基于 el-cascader 实现
+      - 支持懒加载模式（动态加载下级数据）
+      - Props：modelValue（区划代码数组）、level（最大层级，默认4）、showAllLevels（显示完整路径，默认true）、placeholder
+      - Events：update:modelValue、change
+      - 使用 getCascadeNodes API 实现懒加载
+      - 根据层级自动判断是否为叶子节点
+  - 权限配置
+    - 菜单权限：行政区划（id=108，parent_id=1，path=/system/region，component=system/Region，icon=Location）
+    - 按钮权限：
+      - 区划查询（system:region:query）
+      - 区划新增（system:region:add）
+      - 区划编辑（system:region:edit）
+      - 区划删除（system:region:delete）
+      - 区划导入（system:region:import）
+    - 超级管理员自动拥有所有权限
+  - 业务规则
+    - 区划代码必须唯一（使用唯一索引）
+    - 删除区划前验证是否有子区划
+    - 支持逻辑删除（deleted字段）
+    - 树形查询按排序和创建时间排序
+    - 级联选择器懒加载模式，提升性能
+    - 批量导入每批1000条，避免内存溢出
+    - 搜索支持名称、拼音、拼音首字母三种方式
+    - 完整路径格式：省/市/区/街道
+  - 文件清单
+    - 后端文件（10个）：
+      - schema.sql（追加表结构）
+      - data.sql（追加权限配置）
+      - Region.java（实体类）
+      - RegionQueryRequest.java、RegionTreeNode.java、RegionCascadeNode.java（DTO）
+      - RegionMapper.java、RegionMapper.xml（Mapper）
+      - RegionService.java、RegionServiceImpl.java（Service）
+      - RegionController.java（Controller）
+    - 前端文件（3个）：
+      - region.js（API接口）
+      - Region.vue（管理页面）
+      - RegionCascad选择组件）
+  - 待完成任务
+    - 数据导入：需要下载开源数据并转换为SQL格式导入
+    - 数据源推荐：https://github.com/modood/Administrative-divisions-of-China
+    - 导入方式：执行SQL文件或使用后端导入接口
+
+- 完成行政区划数据导入工具和文档
+  - 创建数据转换工具类 `D:\workspace\base\backend\src\main\java\com\base\system\util\RegionDataConverter.java`
+    - 功能：将 GitHub 开源数据（JSON 格式）转换为 Region 实体
+    - 核心方法：
+      - `convertFromJson`：从 JSON 文件读取并转换为 Region 实体列表
+      - `convertJsonToRegion`：将单个 JSON 对象转换为 Region 实体
+      - `determineLevel`：根据区划代码判断层级（省/市/区）
+      - `getParentCode`：根据区划代码获取父级区划代码
+      - `removeAdministrativeSuffix`：去掉行政区划名称后缀（省、市、区、县等）
+      - `convertToPinyin`：转换为拼音（使用映射表）
+      - `getPinyinPrefix`：获取拼音首字母
+      - `generateInsertSql`：生成 SQL 插入语句
+    - 拼音映射表：内置 34 个省级行政区的拼音映射
+    - 层级判断规则：
+      - 省级：区划代码后 4 位为 0000（如：110000）
+      - 市级：区划代码后 2 位为 00，但后 4 位不为 0000（如：110100）
+      - 区级：区划代码后 2 位不为 00（如：110101）
+    - 父级关系规则：
+      - 省级：parentId = 0（顶级）
+      - 市级：父级代码 = 前 2 位 + "0000"
+      - 区级：父级代码 = 前 4 位 + "00"
+    - 支持从 JSON 文件读取数据并批量转换
+    - 支持生成标准 SQL 插入语句
+  - 创建测试数据 SQL 文件 `D:\workspace\base\backend\src\main\resources\db\region_data_sample.sql`
+    - 包含全国 34 个省级行政区（直辖市、省、自治区、特别行政区）
+    - 包含广东省 21 个市级行政区
+    - 包含广州市 11 个区级行政区
+    - 总计 66 条测试数据
+    - 使用变量关联父级 ID（@guangdong_id、@guangzhou_id）
+    - 数据字段完整：区划代码、名称、层级、排序、状态、全称、简称、拼音、拼音首字母
+    - 可直接执行导入数据库进行功能测试
+  - 创建数据导入说明文档 `D:\workspace\base\backend\src\main\resources\db\README_REGION.md`
+    - 数据源说明：推荐使用 GitHub 开源项目 Administrative-divisions-of-China
+    - 快速测试：使用 region_data_sample.sql 测试数据
+    - 完整数据导入：
+      - 方式一：下载 JSON 数据并使用 RegionDataConverter 转换
+      - 方式二：使用后端导入接口批量导入
+    - 数据处理说明：
+      - 层级判断规则详解
+      - 父级关系处理逻辑
+      - 拼音转换方案（映射表 + pinyin4j 库）
+    - 数据维护：
+      - 更新数据的建议
+      - 数据校验 SQL 语句
+      - 性能优化建议
+    - 常见问题解答：
+      - 前端显示不正常的排查方法
+      - 大数据量导入的分批策略
+      - 特殊行政区划的处理方式
+      - 拼音数据不准确的解决方案
+    - 附录：数据源更新记录、相关链接
+  - 文件清单（本次新增 3 个文件）：
+    - `RegionDataConverter.java`：数据转换工具类
+    - `region_data_sample.sql`：测试数据 SQL 文件
+    - `README_REGION.md`：数据导入说明文档
+  - 已添加到 git 暂存区（未 commit）
+
+- 完成完整的中国省市区三级数据导入
+  - 数据来源：从 GitHub 下载完整数据
+    - 数据源：https://github.com/modood/Administrative-divisions-of-China
+    - 使用文件：pca-code.json（省市区三级数据）
+    - 数据统计：共 3424 条区划数据
+      - 省级：31 条（直辖市、省、自治区）
+      - 市级：337 条（地级市、自治州、地区）
+      - 区级：3056 条（市辖区、县、县级市、旗）
+  - 数据转换脚本：`generate_sql.py`
+    - 功能：解析 JSON 数据并生成完整的 SQL 文件
+    - 核心逻辑：
+      - 递归解析嵌套的树形 JSON 结构
+      - 自动跳过"市辖区"、"县"等虚拟节点
+      - 根据区划代码长度判断层级（2位=省、4位=市、6位=区）
+      - 使用变量存储父级 ID，确保父子关系正确
+      - 拼音映射表支持 34 个省级行政区
+      - 自动去除行政区划名称后缀（省、市、区、县等）
+      - 生成拼音首字母（仅支持英文拼音）
+    - 批量插入优化：
+      - 省级数据：逐条插入（共 31 条）
+      - 市级数据：每批 100 条（共 337 条，分 4 批）
+      - 区级数据：每批 100 条（共 3056 条，分 31 批）
+      - 每批插入后添加进度提示
+  - 生成的 SQL 文件：`backend/src/main/resources/db/init_region_full.sql`
+    - 文件大小：865.67 KB
+    - 总行数：7439 行
+    - 文件结构：
+      - 表结构定义（DROP + CREATE TABLE）
+      - 权限配置（菜单权限 + 按钮权限）
+      - 省级数据（31 条，使用变量存储 ID）
+      - 市级数据（337 条，分批插入，关联父级变量）
+      - 区级数据（3056 条，分批插入，关联父级变量）
+      - 数据验证查询（统计各层级数量、示例数据）
+    - 特点：
+      - 使用 MySQL 变量（@变量名）存储父级 ID
+      - 确保父子关系正确关联
+      - 支持直接执行导入数据库
+      - 包含完整的表结构和权限配置
+      - 自动删除旧的权限配置避免冲突
+  - 数据质量：
+    - 区划代码：标准 6 位国标代码
+    - 区划名称：完整的官方名称
+    - 层级关系：父子关系正确
+    - 拼音数据：省级行政区拼音完整，其他区划使用中文（可后续优化）
+    - 拼音首字母：省级行政区有首字母，其他区划为空（可后续优化）
+  - 使用说明：
+    - 直接执行 SQL 文件即可导入完整数据
+    - 执行前会自动删除旧表和旧权限配置
+    - 执行后会显示数据验证结果
+    - 支持重复执行（幂等性）
+  - 文件清单（本次新增 1 个文件）：
+    - `init_region_full.sql`：完整的省市区三级数据 SQL 文件（3424 条数据）
+  - 已添加到 git 暂存区（未 commit）
 
 ### 2026-01-09
 - 初始化变更记录文件

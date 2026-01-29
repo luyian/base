@@ -87,9 +87,11 @@ router.beforeEach(async (to, from, next) => {
 
       // 将动态路由添加到主布局的children中
       if (dynamicRoutes && dynamicRoutes.length > 0) {
+        console.log('开始添加动态路由，共', dynamicRoutes.length, '个路由')
         dynamicRoutes.forEach(route => {
           // 路径已经是完整路径（如 /system/user），需要去掉开头的 / 作为子路由
           const routePath = route.path.startsWith('/') ? route.path.substring(1) : route.path
+          console.log('添加路由:', route.path, '-> 子路由路径:', routePath, '组件:', route.component)
           router.addRoute({
             path: '/',
             component: () => import('@/layout/Index.vue'),
@@ -99,6 +101,7 @@ router.beforeEach(async (to, from, next) => {
             }]
           })
         })
+        console.log('动态路由添加完成，当前所有路由:', router.getRoutes().map(r => r.path))
       }
 
       // 添加404路由（必须在最后）

@@ -36,7 +36,7 @@ public class MonitorController {
      */
     @GetMapping("/server")
     @ApiOperation("获取服务器信息")
-    @PreAuthorize("hasAuthority('system:monitor:server')")
+    @PreAuthorize("hasAuthority('monitor:server:view')")
     public Result<ServerInfoResponse> getServerInfo() {
         ServerInfoResponse serverInfo = monitorService.getServerInfo();
         return Result.success(serverInfo);
@@ -47,7 +47,7 @@ public class MonitorController {
      */
     @GetMapping("/cache")
     @ApiOperation("获取缓存信息")
-    @PreAuthorize("hasAuthority('system:monitor:cache')")
+    @PreAuthorize("hasAuthority('monitor:cache:view')")
     public Result<CacheInfoResponse> getCacheInfo() {
         CacheInfoResponse cacheInfo = monitorService.getCacheInfo();
         return Result.success(cacheInfo);
@@ -58,7 +58,7 @@ public class MonitorController {
      */
     @GetMapping("/cache/keys")
     @ApiOperation("获取缓存键列表")
-    @PreAuthorize("hasAuthority('system:monitor:cache')")
+    @PreAuthorize("hasAuthority('monitor:cache:view')")
     public Result<List<String>> getCacheKeys(
             @ApiParam(value = "匹配模式", example = "*") @RequestParam(required = false, defaultValue = "*") String pattern) {
         List<String> keys = monitorService.getCacheKeys(pattern);
@@ -70,7 +70,7 @@ public class MonitorController {
      */
     @GetMapping("/cache/value/{key}")
     @ApiOperation("获取缓存值")
-    @PreAuthorize("hasAuthority('system:monitor:cache')")
+    @PreAuthorize("hasAuthority('monitor:cache:view')")
     public Result<CacheKeyResponse> getCacheValue(@ApiParam(value = "缓存键") @PathVariable String key) {
         CacheKeyResponse cacheValue = monitorService.getCacheValue(key);
         return Result.success(cacheValue);
@@ -81,7 +81,7 @@ public class MonitorController {
      */
     @DeleteMapping("/cache/key/{key}")
     @ApiOperation("删除缓存键")
-    @PreAuthorize("hasAuthority('system:monitor:cache')")
+    @PreAuthorize("hasAuthority('monitor:cache:delete')")
     @OperationLog(module = "系统监控", operation = "删除缓存键")
     public Result<Boolean> deleteCacheKey(@ApiParam(value = "缓存键") @PathVariable String key) {
         Boolean result = monitorService.deleteCacheKey(key);
@@ -93,7 +93,7 @@ public class MonitorController {
      */
     @DeleteMapping("/cache/clear")
     @ApiOperation("清空缓存")
-    @PreAuthorize("hasAuthority('system:monitor:cache')")
+    @PreAuthorize("hasAuthority('monitor:cache:clear')")
     @OperationLog(module = "系统监控", operation = "清空缓存")
     public Result<Boolean> clearCache() {
         Boolean result = monitorService.clearCache();

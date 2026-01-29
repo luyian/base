@@ -4,7 +4,12 @@
  */
 
 // 导入所有可能的视图组件（使用懒加载）
-const modules = import.meta.glob('../views/**/*.vue')
+const modules = import.meta.glob('../views/**/*.vue', { eager: false })
+
+// 打印所有可用的组件模块（调试用）
+console.log('=== 所有可用的组件模块 ===')
+console.log(Object.keys(modules))
+console.log('===========================')
 
 /**
  * 将后端返回的菜单数据转换为Vue Router路由配置
@@ -22,6 +27,7 @@ export function generateRoutes(menus) {
 
     // 如果是菜单类型（type = 2）且有组件路径，生成路由
     if (menu.type === 2 && menu.component) {
+      console.log('生成路由 - 菜单:', menu.permissionName, '路径:', menu.path, '组件:', menu.component)
       const route = {
         path: menu.path,
         name: menu.permissionCode || `menu_${menu.id}`,
@@ -67,13 +73,26 @@ function loadComponent(componentPath) {
   // 构建完整的组件路径
   const fullPath = `../views${path}`
 
+  console.log('尝试加载组件:', componentPath, '-> 完整路径:', fullPath)
+
   // 从 modules 中查找对应的组件
   if (modules[fullPath]) {
+    console.log('✓ 组件找到:', fullPath)
     return modules[fullPath]
   }
 
+  // 尝试不区分大小写匹配（处理 Windows 路径问题）
+  const lowerFullPath = fullPath.toLowerCase()
+  for (const [key, value] of Object.entries(modules)) {
+    if (key.toLowerCase() === lowerFullPath) {
+      console.log('✓ 组件找到（不区分大小写）:', key)
+      return value
+    }
+  }
+
   // 如果找不到组件，返回一个默认的空组件
-  console.warn(`组件 ${fullPath} 未找到，使用默认组件`)
+  console.warn(`✗ 组件 ${fullPath} 未找到，使用默认组件`)
+  console.warn('可用的组件模块:', Object.keys(modules).join(', '))
   return () => import('../views/Dashboard.vue')
 }
 

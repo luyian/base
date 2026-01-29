@@ -27,8 +27,8 @@
 
     <!-- 操作栏 -->
     <el-card class="toolbar-card" shadow="never">
-      <el-button type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
-      <el-button type="danger" :icon="Delete" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除</el-button>
+      <el-button v-permission="'system:user:add'" type="primary" :icon="Plus" @click="handleAdd">新增</el-button>
+      <el-button v-permission="'system:user:delete'" type="danger" :icon="Delete" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除</el-button>
     </el-card>
 
     <!-- 表格 -->
@@ -74,10 +74,10 @@
         <el-table-column prop="createTime" label="创建时间" width="180" align="center" />
         <el-table-column label="操作" width="280" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="warning" link :icon="Key" @click="handleResetPassword(row)">重置密码</el-button>
-            <el-button type="success" link :icon="UserFilled" @click="handleAssignRole(row)">分配角色</el-button>
-            <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'system:user:edit'" type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'system:user:resetPwd'" type="warning" link :icon="Key" @click="handleResetPassword(row)">重置密码</el-button>
+            <el-button v-permission="'system:user:role'" type="success" link :icon="UserFilled" @click="handleAssignRole(row)">分配角色</el-button>
+            <el-button v-permission="'system:user:delete'" type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

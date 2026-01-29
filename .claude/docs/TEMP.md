@@ -2,6 +2,95 @@
 
 ## 变更历史
 
+### 2026-01-29
+- 修复刷新页面后权限数据丢失问题
+  - 问题描述：角色管理列表操作栏的按钮（编辑、分配权限、删除）一个都没有显示
+  - 原因分析：
+    - **权限编码不一致**：
+      - 数据库中：`system:role:assignPermission`（分配权限按钮）
+      - 前端代码中：`system:role:permission`
+      - 数据库中：`system:user:assignRole`（分配角色按钮）
+      - 前端代码中：`system:user:role`
+    - **缺少角色权限关联数据**：
+      - 数据库初始化脚本 `data.sql` 中没有 `sys_role_permission` 表的插入语句
+      - 导致超级管理员（role_id=1）没有被分配任何权限
+      - 用户登录后虽然调用了 `/auth/info` 接口，但返回的 `permissions` 列表为空
+      - 前端权限指令 `v-permission` 检查权限时返回 false，导致按钮被移除
+  - 修复方案：
+    - 创建修复脚本 `backend/src/main/resources/db/fix_role_permissions.sql`
+      - 修复权限编码：
+        - `system:role:assignPermission` → `system:role:permission`
+        - `system:user:assignRole` → `system:user:role`
+      - 为超级管理员分配所有权限：
+        - 清空超级管理员的旧权限（如果有）
+        - 查询所有启用的权限（deleted=0, status=1）
+        - 批量插入到 `sys_role_permission` 表
+      - 验证结果：查询超级管理员的权限数量和修复后的权限编码
+  - 执行步骤：
+    1. 在数据库中执行 `fix_role_permissions.sql` 脚本
+    2. 重新登录系统（清除旧的权限缓存）
+    3. 验证角色管理页面的操作栏按钮是否正常显示
+  - 影响范围：
+    - 所有需要权限控制的按钮
+    - 角色管理、用户管理等模块的操作按钮
+  - 修改文件清单：
+    - `backend/src/main/resources/db/fix_role_permissions.sql`（新建）
+  - 已添加到 git 暂存区（未 commit）
+
+- 修复角色权限分配功能
+  - 问题描述：角色管理页面虽然有"分配权限"按钮，但使用的是模拟数据，无法真正分配权限
+  - 原因分析：
+    - 前端已有 `getAllPermissionTree()` API 接口，但在角色管理页面中没有使用
+    - 部门树数据也使用的是模拟数据，没有调用真实接口
+    - 权限树选中逻辑不完善，会导致父节点被错误选中
+  - 修复方案：
+    - 修改 `frontend/src/views/system/Role.vue`
+      - 导入 `getAllPermissionTree` 和 `getAllDepartmentTree` API
+      - 在 `handleAssignPermissions` 方法中调用 `getAllPermissionTree()` 获取完整权限树
+      - 添加 `getLeafKeys` 方法：只选中叶子节点，避免父节点被错误选中
+      - 在 `loadDepartmentTree` 方法中调用 `getAllDepartmentTree()` 获取真实部门树
+      - 添加 `convertDeptTree` 方法：转换部门树数据格式（id -> value, deptName -> label）
+  - 功能说明：
+    - 点击"分配权限"按钮，弹出权限树对话框
+    - 权限树展示所有菜单和按钮权限（三级结构）
+    - 自动勾选角色已有的权限（只勾选叶子节点）
+    - 支持全选、半选、取消选中
+    - 提交时包含全选和半选的权限ID
+    - 数据权限选择"自定义"时，显示部门树选择器
+  - 权限控制粒度：
+    - 目录级别：一级菜单（如"系统管理"）
+    - 页面级别：二级菜单（如"用户管理"）
+    - 按钮级别：三级权限（如"新增"、"编辑"、"删除"）
+  - 修改文件清单：
+    - `frontend/src/views/system/Role.vue`
+  - 编译验证：已通过 `npm run build`
+  - 已添加到 git 暂存区（未 commit）
+
+- 修复部门表字段不匹配问题
+  - 问题描述：访问用户信息接口时报错 `Unknown column 'order_num' in 'field list'`
+  - 原因分析：
+    - 数据库表 `sys_dept` 使用的是 `sort` 字段（排序）
+    - 实体类 `Dept.java` 中定义的是 `orderNum` 字段
+    - DTO 类 `DeptTreeNode.java` 中也使用了 `orderNum` 字段
+    - MyBatis Plus 查询时找不到 `order_num` 字段导致 SQL 错误
+  - 修复方案：
+    - 修改 `backend/src/main/java/com/base/system/entity/Dept.java`
+      - 将 `orderNum` 字段改为 `sort`，与数据库表结构保持一致
+      - 更新字段注释为"排序"
+    - 修改 `backend/src/main/java/com/base/system/dto/DeptTreeNode.java`
+      - 将 `orderNum` 字段改为 `sort`，保持一致性
+  - 影响范围：
+    - 部门管理模块的所有查询操作
+    - 用户信息查询（关联部门信息）
+  - 修改文件清单：
+    - `backend/src/main/java/com/base/system/entity/Dept.java`（实体类）
+    - `backend/src/main/java/com/base/system/dto/DeptTreeNode.java`（DTO类）
+    - `backend/src/main/java/com/base/system/service/impl/DeptServiceImpl.java`（Service实现类）
+      - 第39行：`Dept::getOrderNum` 改为 `Dept::getSort`
+      - 第51行：`Dept::getOrderNum` 改为 `Dept::getSort`
+  - 编译验证：已通过 `mvn clean compile -DskipTests`
+  - 已添加到 git 暂存区（未 commit）
+
 ### 2026-01-26
 - 完成行政区划管理模块前端开发
   - 创建行政区划管理页面 `D:\workspace\base\frontend\src\views\system\Region.vue`
@@ -1530,6 +1619,111 @@
   - 文件清单（本次新增 1 个文件）：
     - `init_region_full.sql`：完整的省市区三级数据 SQL 文件（3424 条数据）
   - 已添加到 git 暂存区（未 commit）
+
+### 2026-01-26
+- 完成按钮级别权限控制功能开发
+  - 功能概述：实现前端按钮根据用户权限动态显示/隐藏，后端接口通过 @PreAuthorize 注解验证权限
+  - 前端实现
+    - 修改用户 Store `D:\workspace\base\frontend\src\store\user.js`
+      - 添加 `permissions` 状态：存储用户权限列表
+      - 添加 `setPermissions` 方法：设置权限列表
+      - 添加 `hasPermission` 方法：检查单个权限
+      - 添加 `hasAnyPermission` 方法：检查是否有任意一个权限（OR 逻辑）
+      - 添加 `hasAllPermissions` 方法：检查是否有所有权限（AND 逻辑）
+      - 添加 `loadUserInfo` 方法：从后端 `/auth/info` 接口获取用户信息和权限列表
+      - 更新 `logout` 方法：登出时清空权限列表
+      - 导入 `getUserInfo` API 方法
+    - 创建权限指令 `D:\workspace\base\frontend\src\directives\permission.js`
+      - 实现 `v-permission` 自定义指令
+      - 支持单个权限：`v-permission="'system:user:add'"`
+      - 支持多个权限（OR 逻辑）：`v-permission="['system:user:add', 'system:user:edit']"`
+      - 支持多个权限（AND 逻辑）：`v-permission:all="['system:user:add', 'system:user:edit']"`
+      - 无权限时移除 DOM 元素（而非隐藏）
+    - 创建指令统一导出文件 `D:\workspace\base\frontend\src\directives\index.js`
+      - 注册所有自定义指令
+      - 提供 install 方法供 Vue 应用使用
+    - 创建权限工具函数 `D:\workspace\base\frontend\src\utils\permission.js`
+      - `hasPermission(permission)`：检查单个权限
+      - `hasAnyPermission(permissions)`：检查是否有任意一个权限
+      - `hasAllPermissions(permissions)`：检查是否有所有权限
+      - 供 JS 代码中使用，无需在模板中使用指令
+    - 修改主入口文件 `D:\workspace\base\frontend\src\main.js`
+      - 导入 directives 模块
+      - 使用 `app.use(directives)` 注册自定义指令
+    - 修改登录页面 `D:\workspace\base\frontend\src\views\Login.vue`
+      - 登录成功后调用 `userStore.loadUserInfo()` 获取用户信息和权限
+      - 移除直接设置 userInfo 的代码，改为通过 loadUserInfo 方法获取
+    - 应用权限控制到用户管理页面 `D:\workspace\base\frontend\src\views\system\User.vue`
+      - 新增按钮：`v-permission="'system:user:add'"`
+      - 批量删除按钮：`v-permission="'system:user:delete'"`
+      - 编辑按钮：`v-permission="'system:user:edit'"`
+      - 重置密码按钮：`v-permission="'system:user:resetPwd'"`
+      - 分配角色按钮：`v-permission="'system:user:role'"`
+      - 删除按钮：`v-permission="'system:user:delete'"`
+    - 应用权限控制到角色管理页面 `D:\workspace\base\frontend\src\views\system\Role.vue`
+      - 新增角色按钮：`v-permission="'system:role:add'"`
+      - 批量删除按钮：`v-permission="'system:role:delete'"`
+      - 编辑按钮：`v-permission="'system:role:edit'"`
+      - 分配权限按钮：`v-permission="'system:role:permission'"`
+      - 删除按钮：`v-permission="'system:role:delete'"`
+  - 后端实现
+    - 后端已有完整的权限验证机制
+    - 使用 `@PreAuthorize("hasAuthority('xxx')")` 注解验证接口权限
+    - `/auth/info` 接口已返回用户权限列表（permissions 字段）
+    - 权限编码规范：`模块:资源:操作`（如 `system:user:add`）
+  - 核心机制
+    - 权限存储：登录后从 `/auth/info` 获取权限列表，存储在 Pinia store
+    - 权限检查：通过 `v-permission` 指令或工具函数检查权限
+    - 权限粒度：
+      - 菜单权限（type=1,2）：控制菜单显示（已实现动态路由）
+      - 按钮权限（type=3）：控制按钮显示（本次实现）
+      - 接口权限：后端 `@PreAuthorize` 验证（已实现）
+    - 安全原则：
+      - 前端权限控制仅用于 UI 展示优化
+      - 后端必须有完整的权限验证（`@PreAuthorize`）
+      - 前端隐藏按钮只是提升用户体验，不能作为安全防护
+  - 使用示例
+    - 模板中使用指令：
+      ```vue
+      <!-- 单个权限 -->
+      <el-button v-permission="'system:user:add'">新增</el-button>
+
+      <!-- 多个权限（OR 逻辑）- 任意一个即可 -->
+      <el-button v-permission="['system:user:edit', 'system:user:add']">编辑</el-button>
+
+      <!-- 多个权限（AND 逻辑）- 需要全部 -->
+      <el-button v-permission:all="['system:user:edit', 'system:user:query']">编辑</el-button>
+      ```
+    - JS 代码中使用：
+      ```javascript
+      import { hasPermission, hasAnyPermission } from '@/utils/permission'
+
+      // 检查单个权限
+      if (hasPermission('system:user:edit')) {
+        // 执行操作
+      }
+
+      // 检查多个权限
+      if (hasAnyPermission(['system:user:edit', 'system:user:add'])) {
+        // 执行操作
+      }
+      ```
+  - 文件清单（本次新增 3 个文件，修改 6 个文件）
+    - 新增文件：
+      - `frontend/src/directives/permission.js`：权限指令实现
+      - `frontend/src/directives/index.js`：指令统一导出
+      - `frontend/src/utils/permission.js`：权限工具函数
+    - 修改文件：
+      - `frontend/src/store/user.js`：添加权限存储和管理
+      - `frontend/src/main.js`：注册自定义指令
+      - `frontend/src/views/Login.vue`：登录后获取权限
+      - `frontend/src/views/system/User.vue`：应用按钮权限控制
+      - `frontend/src/views/system/Role.vue`：应用按钮权限控制
+  - 已添加到 git 暂存区（未 commit）
+  - 后续工作
+    - 可以将权限控制应用到其他页面（Permission.vue、Department.vue、Enum.vue、Config.vue 等）
+    - 测试不同角色的权限控制效果
+    - 验证前后端权限控制的一致性
 
 ### 2026-01-09
 - 初始化变更记录文件

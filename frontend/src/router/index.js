@@ -79,6 +79,9 @@ router.beforeEach(async (to, from, next) => {
 
   if (!userStore.routesLoaded) {
     try {
+      // 先加载用户信息和权限
+      await userStore.loadUserInfo()
+
       // 加载用户菜单和动态路由
       const dynamicRoutes = await userStore.loadMenus()
 
@@ -110,7 +113,15 @@ router.beforeEach(async (to, from, next) => {
       next('/login')
     }
   } else {
-    // 路由已加载，直接放行
+    // 路由已加载，但可能权限数据丢失（刷新页面），需要重新加载用户信息
+    if (!userStore.permissions || userStore.permissions.length === 0) {
+      try {
+        await userStore.loadUserInfo()
+      } catch (error) {
+        console.error('加载用户信息失败:', error)
+      }
+    }
+    // 直接放行
     next()
   }
 })

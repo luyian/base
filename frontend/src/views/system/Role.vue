@@ -35,8 +35,9 @@
     <!-- 操作栏 -->
     <el-card class="table-card">
       <div class="toolbar">
-        <el-button type="primary" :icon="Plus" @click="handleAdd">新增角色</el-button>
+        <el-button v-permission="'system:role:add'" type="primary" :icon="Plus" @click="handleAdd">新增角色</el-button>
         <el-button
+          v-permission="'system:role:delete'"
           type="danger"
           :icon="Delete"
           :disabled="selectedIds.length === 0"
@@ -78,13 +79,13 @@
         <el-table-column prop="createTime" label="创建时间" min-width="160" />
         <el-table-column label="操作" width="280" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">
+            <el-button v-permission="'system:role:edit'" type="primary" link :icon="Edit" @click="handleEdit(row)">
               编辑
             </el-button>
-            <el-button type="primary" link :icon="Key" @click="handleAssignPermissions(row)">
+            <el-button v-permission="'system:role:permission'" type="primary" link :icon="Key" @click="handleAssignPermissions(row)">
               分配权限
             </el-button>
-            <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">
+            <el-button v-permission="'system:role:delete'" type="danger" link :icon="Delete" @click="handleDelete(row)">
               删除
             </el-button>
           </template>
@@ -213,6 +214,8 @@ import {
   assignPermissions,
   getRolePermissionIds
 } from '@/api/role'
+import { getAllPermissionTree } from '@/api/permission'
+import { getAllDepartmentTree } from '@/api/department'
 
 // 查询表单
 const queryForm = reactive({
@@ -419,29 +422,42 @@ const handleAssignPermissions = async (row) => {
   currentRoleId.value = row.id
   permissionDialogVisible.value = true
 
-  // TODO: 获取权限树数据和角色已有权限
-  // 这里暂时使用模拟数据，等权限模块开发完成后再对接
-  permissionTree.value = [
-    {
-      id: 1,
-      permissionName: '系统管理',
-      children: [
-        { id: 2, permissionName: '用户管理' },
-        { id: 3, permissionName: '角色管理' },
-        { id: 4, permissionName: '菜单管理' }
-      ]
-    }
-  ]
-
   try {
-    const { data } = await getRolePermissionIds(row.id)
-    // 设置已选中的权限
+    // 获取所有权限树
+    const { data: treeData } = await getAllPermissionTree()
+    permissionTree.value = treeData
+
+    // 获取角色已有权限
+    const { data: permissionIds } = await getRolePermissionIds(row.id)
+
+    // 设置已选中的权限（只设置叶子节点，避免父节点自动选中）
     setTimeout(() => {
-      permissionTreeRef.value?.setCheckedKeys(data)
+      const leafKeys = getLeafKeys(treeData, permissionIds)
+      permissionTreeRef.value?.setCheckedKeys(leafKeys)
     }, 100)
   } catch (error) {
-    ElMessage.error('获取角色权限失败')
+    ElMessage.error('获取权限数据失败')
   }
+}
+
+// 获取叶子节点的权限ID（只选中叶子节点，父节点会自动半选）
+const getLeafKeys = (tree, checkedIds) => {
+  const leafKeys = []
+  const traverse = (nodes) => {
+    nodes.forEach(node => {
+      if (!node.children || node.children.length === 0) {
+        // 叶子节点
+        if (checkedIds.includes(node.id)) {
+          leafKeys.push(node.id)
+        }
+      } else {
+        // 非叶子节点，继续遍历
+        traverse(node.children)
+      }
+    })
+  }
+  traverse(tree)
+  return leafKeys
 }
 
 // 提交权限分配
@@ -497,38 +513,21 @@ const handleDataScopeChange = (value) => {
 // 加载部门树
 const loadDepartmentTree = async () => {
   try {
-    // TODO: 调用部门树接口
-    // const { data } = await getDepartmentTree()
-    // departmentTree.value = data
-
-    // 暂时使用模拟数据
-    departmentTree.value = [
-      {
-        value: 1,
-        label: '总公司',
-        children: [
-          {
-            value: 2,
-            label: '技术部',
-            children: [
-              { value: 3, label: '前端组' },
-              { value: 4, label: '后端组' }
-            ]
-          },
-          {
-            value: 5,
-            label: '市场部',
-            children: [
-              { value: 6, label: '销售组' },
-              { value: 7, label: '运营组' }
-            ]
-          }
-        ]
-      }
-    ]
+    const { data } = await getAllDepartmentTree()
+    // 转换数据格式：id -> value, deptName -> label
+    departmentTree.value = convertDeptTree(data)
   } catch (error) {
     ElMessage.error('加载部门树失败')
   }
+}
+
+// 转换部门树数据格式
+const convertDeptTree = (tree) => {
+  return tree.map(node => ({
+    value: node.id,
+    label: node.deptName,
+    children: node.children && node.children.length > 0 ? convertDeptTree(node.children) : undefined
+  }))
 }
 
 // 页面加载时查询数据

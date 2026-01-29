@@ -36,7 +36,7 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
         // 查询所有未删除的部门
         LambdaQueryWrapper<Dept> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Dept::getDeleted, 0)
-                .orderByAsc(Dept::getOrderNum);
+                .orderByAsc(Dept::getSort);
         List<Dept> deptList = deptMapper.selectList(wrapper);
 
         // 转换为树形结构
@@ -48,7 +48,7 @@ public class DeptServiceImpl extends ServiceImpl<DeptMapper, Dept> implements De
         LambdaQueryWrapper<Dept> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Dept::getParentId, parentId)
                 .eq(Dept::getDeleted, 0)
-                .orderByAsc(Dept::getOrderNum);
+                .orderByAsc(Dept::getSort);
         return deptMapper.selectList(wrapper);
     }
 

@@ -22,7 +22,7 @@ public class DeptTreeNode {
 
     private String deptCode;
 
-    private Integer orderNum;
+    private Integer sort;
 
     private String leader;
 

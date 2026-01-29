@@ -127,9 +127,11 @@ const handleLogin = async () => {
           captchaKey: loginForm.captchaKey
         })
 
-        // 保存 token 和用户信息
+        // 保存 token
         userStore.setToken(res.data.token)
-        userStore.setUserInfo(res.data.userInfo)
+
+        // 获取用户信息和权限
+        await userStore.loadUserInfo()
 
         ElMessage.success('登录成功')
         router.push('/')

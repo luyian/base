@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { getUserMenuTree } from '@/api/menu'
+import { getUserInfo } from '@/api/auth'
 import { generateRoutes, filterHiddenMenus } from '@/utils/route'
 
 export const useUserStore = defineStore('user', () => {
@@ -14,6 +15,8 @@ export const useUserStore = defineStore('user', () => {
   const routes = ref([])
   // 路由是否已加载
   const routesLoaded = ref(false)
+  // 用户权限列表
+  const permissions = ref([])
 
   // 设置 Token
   const setToken = (newToken) => {
@@ -34,6 +37,29 @@ export const useUserStore = defineStore('user', () => {
   // 设置路由
   const setRoutes = (routeList) => {
     routes.value = routeList
+  }
+
+  // 设置权限
+  const setPermissions = (permissionList) => {
+    permissions.value = permissionList || []
+  }
+
+  // 检查单个权限
+  const hasPermission = (permission) => {
+    if (!permission) return true
+    return permissions.value.includes(permission)
+  }
+
+  // 检查是否有任意一个权限（OR 逻辑）
+  const hasAnyPermission = (permissionList) => {
+    if (!permissionList || permissionList.length === 0) return true
+    return permissionList.some(p => permissions.value.includes(p))
+  }
+
+  // 检查是否有所有权限（AND 逻辑）
+  const hasAllPermissions = (permissionList) => {
+    if (!permissionList || permissionList.length === 0) return true
+    return permissionList.every(p => permissions.value.includes(p))
   }
 
   // 加载用户菜单和动态路由
@@ -70,6 +96,24 @@ export const useUserStore = defineStore('user', () => {
     }
   }
 
+  // 加载用户信息和权限
+  const loadUserInfo = async () => {
+    try {
+      const res = await getUserInfo()
+      if (res.code === 200 && res.data) {
+        setUserInfo(res.data)
+        setPermissions(res.data.permissions || [])
+        return true
+      } else {
+        console.error('获取用户信息失败:', res.message)
+        return false
+      }
+    } catch (error) {
+      console.error('加载用户信息失败:', error)
+      return false
+    }
+  }
+
   // 重置路由加载状态
   const resetRoutesLoaded = () => {
     routesLoaded.value = false
@@ -83,6 +127,7 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = null
     menus.value = []
     routes.value = []
+    permissions.value = []
     routesLoaded.value = false
     localStorage.removeItem('token')
   }
@@ -93,11 +138,17 @@ export const useUserStore = defineStore('user', () => {
     menus,
     routes,
     routesLoaded,
+    permissions,
     setToken,
     setUserInfo,
     setMenus,
     setRoutes,
+    setPermissions,
+    hasPermission,
+    hasAnyPermission,
+    hasAllPermissions,
     loadMenus,
+    loadUserInfo,
     resetRoutesLoaded,
     logout
   }

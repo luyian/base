@@ -42,9 +42,9 @@ public class Dept extends BaseEntity {
     private String deptCode;
 
     /**
-     * 显示顺序
+     * 排序
      */
-    private Integer orderNum;
+    private Integer sort;
 
     /**
      * 负责人

@@ -74,3 +74,10 @@ file:
       - application/vnd.openxmlformats-officedocument.wordprocessingml.document
       - application/vnd.ms-excel
       - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+# 股票数据配置
+stock:
+  itick:
+    base-url: https://api.itick.org
+    timeout: 30000
+    retry: 3

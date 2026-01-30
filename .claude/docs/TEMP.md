@@ -1,1730 +1,213 @@
 # 业务逻辑变更记录
 
+---
+
+## 股票数据分析功能
+
+> 基于需求文档 `stock-requirement.md`，已完成全部开发
+
+### 开发进度
+
+**状态**：✅ 全部完成
+
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| 第一阶段 | 基础工具类（HttpClientUtil、JsonUtil） | ✅ 完成 |
+| 第二阶段 | 数据库表 + 实体类 + Mapper | ✅ 完成 |
+| 第三阶段 | Token 管理模块 | ✅ 完成 |
+| 第四阶段 | 数据工厂模块 | ✅ 完成 |
+| 第五阶段 | iTick API 客户端 | ✅ 完成 |
+| 第六阶段 | 股票业务模块 | ✅ 完成 |
+| 第七阶段 | 前端页面开发 | ✅ 完成 |
+
+**下一步**：功能测试和验证
+
+### 文件清单
+
+**后端文件**：
+- `backend/src/main/java/com/base/common/util/HttpClientUtil.java` - HTTP 请求工具类
+- `backend/src/main/java/com/base/common/util/JsonUtil.java` - JSON 工具类
+- `backend/src/main/java/com/base/stock/` - 股票模块（entity、mapper、service、controller）
+- `backend/src/main/resources/db/stock_schema.sql` - 数据库表结构
+
+**前端文件**：
+- `frontend/src/api/stock.js` - API 接口
+- `frontend/src/views/stock/` - 股票相关页面
+
+---
+
 ## 变更历史
 
 ### 2026-01-29
-- 修复刷新页面后权限数据丢失问题
-  - 问题描述：角色管理列表操作栏的按钮（编辑、分配权限、删除）一个都没有显示
-  - 原因分析：
-    - **权限编码不一致**：
-      - 数据库中：`system:role:assignPermission`（分配权限按钮）
-      - 前端代码中：`system:role:permission`
-      - 数据库中：`system:user:assignRole`（分配角色按钮）
-      - 前端代码中：`system:user:role`
-    - **缺少角色权限关联数据**：
-      - 数据库初始化脚本 `data.sql` 中没有 `sys_role_permission` 表的插入语句
-      - 导致超级管理员（role_id=1）没有被分配任何权限
-      - 用户登录后虽然调用了 `/auth/info` 接口，但返回的 `permissions` 列表为空
-      - 前端权限指令 `v-permission` 检查权限时返回 false，导致按钮被移除
-  - 修复方案：
-    - 创建修复脚本 `backend/src/main/resources/db/fix_role_permissions.sql`
-      - 修复权限编码：
-        - `system:role:assignPermission` → `system:role:permission`
-        - `system:user:assignRole` → `system:user:role`
-      - 为超级管理员分配所有权限：
-        - 清空超级管理员的旧权限（如果有）
-        - 查询所有启用的权限（deleted=0, status=1）
-        - 批量插入到 `sys_role_permission` 表
-      - 验证结果：查询超级管理员的权限数量和修复后的权限编码
-  - 执行步骤：
-    1. 在数据库中执行 `fix_role_permissions.sql` 脚本
-    2. 重新登录系统（清除旧的权限缓存）
-    3. 验证角色管理页面的操作栏按钮是否正常显示
-  - 影响范围：
-    - 所有需要权限控制的按钮
-    - 角色管理、用户管理等模块的操作按钮
-  - 修改文件清单：
-    - `backend/src/main/resources/db/fix_role_permissions.sql`（新建）
-  - 已添加到 git 暂存区（未 commit）
 
-- 修复角色权限分配功能
-  - 问题描述：角色管理页面虽然有"分配权限"按钮，但使用的是模拟数据，无法真正分配权限
-  - 原因分析：
-    - 前端已有 `getAllPermissionTree()` API 接口，但在角色管理页面中没有使用
-    - 部门树数据也使用的是模拟数据，没有调用真实接口
-    - 权限树选中逻辑不完善，会导致父节点被错误选中
-  - 修复方案：
-    - 修改 `frontend/src/views/system/Role.vue`
-      - 导入 `getAllPermissionTree` 和 `getAllDepartmentTree` API
-      - 在 `handleAssignPermissions` 方法中调用 `getAllPermissionTree()` 获取完整权限树
-      - 添加 `getLeafKeys` 方法：只选中叶子节点，避免父节点被错误选中
-      - 在 `loadDepartmentTree` 方法中调用 `getAllDepartmentTree()` 获取真实部门树
-      - 添加 `convertDeptTree` 方法：转换部门树数据格式（id -> value, deptName -> label）
-  - 功能说明：
-    - 点击"分配权限"按钮，弹出权限树对话框
-    - 权限树展示所有菜单和按钮权限（三级结构）
-    - 自动勾选角色已有的权限（只勾选叶子节点）
-    - 支持全选、半选、取消选中
-    - 提交时包含全选和半选的权限ID
-    - 数据权限选择"自定义"时，显示部门树选择器
-  - 权限控制粒度：
-    - 目录级别：一级菜单（如"系统管理"）
-    - 页面级别：二级菜单（如"用户管理"）
-    - 按钮级别：三级权限（如"新增"、"编辑"、"删除"）
-  - 修改文件清单：
-    - `frontend/src/views/system/Role.vue`
-  - 编译验证：已通过 `npm run build`
-  - 已添加到 git 暂存区（未 commit）
+#### 1. 修复刷新页面后权限数据丢失问题
+- **问题**：角色管理列表操作栏按钮不显示
+- **原因**：
+  - 权限编码不一致（数据库 vs 前端代码）
+  - 缺少角色权限关联数据
+- **修复**：创建修复脚本 `fix_role_permissions.sql`
+- **文件**：`backend/src/main/resources/db/fix_role_permissions.sql`
 
-- 修复部门表字段不匹配问题
-  - 问题描述：访问用户信息接口时报错 `Unknown column 'order_num' in 'field list'`
-  - 原因分析：
-    - 数据库表 `sys_dept` 使用的是 `sort` 字段（排序）
-    - 实体类 `Dept.java` 中定义的是 `orderNum` 字段
-    - DTO 类 `DeptTreeNode.java` 中也使用了 `orderNum` 字段
-    - MyBatis Plus 查询时找不到 `order_num` 字段导致 SQL 错误
-  - 修复方案：
-    - 修改 `backend/src/main/java/com/base/system/entity/Dept.java`
-      - 将 `orderNum` 字段改为 `sort`，与数据库表结构保持一致
-      - 更新字段注释为"排序"
-    - 修改 `backend/src/main/java/com/base/system/dto/DeptTreeNode.java`
-      - 将 `orderNum` 字段改为 `sort`，保持一致性
-  - 影响范围：
-    - 部门管理模块的所有查询操作
-    - 用户信息查询（关联部门信息）
-  - 修改文件清单：
-    - `backend/src/main/java/com/base/system/entity/Dept.java`（实体类）
-    - `backend/src/main/java/com/base/system/dto/DeptTreeNode.java`（DTO类）
-    - `backend/src/main/java/com/base/system/service/impl/DeptServiceImpl.java`（Service实现类）
-      - 第39行：`Dept::getOrderNum` 改为 `Dept::getSort`
-      - 第51行：`Dept::getOrderNum` 改为 `Dept::getSort`
-  - 编译验证：已通过 `mvn clean compile -DskipTests`
-  - 已添加到 git 暂存区（未 commit）
+#### 2. 修复角色权限分配功能
+- **问题**：角色管理页面使用模拟数据
+- **修复**：调用真实 API 获取权限树和部门树
+- **文件**：`frontend/src/views/system/Role.vue`
+
+#### 3. 修复部门表字段不匹配问题
+- **问题**：`Unknown column 'order_num' in 'field list'`
+- **修复**：将 `orderNum` 字段改为 `sort`
+- **文件**：
+  - `backend/src/main/java/com/base/system/entity/Dept.java`
+  - `backend/src/main/java/com/base/system/dto/DeptTreeNode.java`
+  - `backend/src/main/java/com/base/system/service/impl/DeptServiceImpl.java`
+
+---
 
 ### 2026-01-26
-- 完成行政区划管理模块前端开发
-  - 创建行政区划管理页面 `D:\workspace\base\frontend\src\views\system\Region.vue`
-    - 搜索栏：支持按区划名称、区划代码、层级（1-省、2-市、3-区、4-街道）、状态查询
-    - 操作栏：新增区划、展开全部、折叠全部按钮
-    - 区划树表格：树形结构展示区划数据
-      - 列：区划名称、区划代码、层级（标签显示）、状态（标签显示）、排序、创建时间
-      - 操作列：新增、编辑、删除按钮
-    - 新增/编辑对话框：表单包含上级区划（树形选择器）、区划代码、区划名称、层级、简称、拼音、拼音首字母、状态、排序、备注
-    - 层级标签颜色：省（红色 danger）、市（橙色 warning）、区（绿色 success）、街道（灰色 info）
-    - 支持新增子区划（选择父级区划）
-    - 支持展开/折叠全部区划树节点
-    - 表单验证：区划代码长度 2-20 字符、区划名称长度 2-50 字符、简称长度不超过 20 字符、拼音长度不超过 100 字符、拼音首字母长度不超过 20 字符
-    - 状态显示：正常（绿色标签）、禁用（红色标签）
-    - 上级区划选择：树形选择器，支持选择任意层级的区划作为父级，包含"顶级区划"选项
-  - 创建地址选择组件 `D:\workspace\base\frontend\src\components\RegionCascader.vue`
-    - 基于 el-cascader 实现级联选择器
-    - 支持懒加载模式（动态加载下级数据）
-    - Props 配置：
-      - modelValue：绑定值（区划代码数组）
-      - level：最大层级（1-省、2-市、3-区、4-街道），默认 4
-      - showAllLevels：是否显示完整路径，默认 true
-      - placeholder：占位符，默认"请选择地址"
-    - Events 事件：
-      - update:modelValue：值变化事件
-      - change：选择变化事件
-    - 懒加载实现：
-      - 使用 getCascadeNodes API 动态加载子节点
-      - 根节点加载省级数据（parentId=0）
-      - 根据当前层级判断是否继续加载子节点
-      - 达到最大层级时设置为叶子节点
-    - 级联选择器配置：
-      - value：使用 regionCode 作为值
-      - label：使用 regionName 作为显示文本
-      - children：子节点字段
-      - lazy：启用懒加载
-      - lazyLoad：懒加载函数
-    - 支持清空选择和过滤搜索
-    - 自动初始化根节点数据
-  - 对接后端 API（`D:\workspace\base\frontend\src\api\region.js`）：
-    - treeRegions：查询行政区划树
-    - getRegionById：根据ID获取区划详情
-    - addRegion：新增行政区划
-    - updateRegion：编辑行政区划
-    - deleteRegion：删除行政区划
-    - getCascadeNodes：获取级联选择器数据（用于懒加载）
-    - getChildrenByParentId：根据父级ID获取子区划
-    - getRegionsByLevel：根据层级获取区划列表
-    - getFullPath：根据区划代码获取完整路径
-    - getByRegionCode：根据区划代码查询
-    - searchRegions：搜索行政区划
-    - importRegions：批量导入
-  - 业务规则说明
-    - 区划代码必须唯一
-    - 删除区划前需检查是否有子区划，如有则不允许删除
-    - 区划查询支持多条件组合查询（区划名称、区划代码、层级、状态）
-    - 区划树按排序字段升序、创建时间降序排列
-    - 层级包括：1-省、2-市、3-区、4-街道
-    - 地址选择组件支持懒加载，按需加载下级数据
-    - 地址选择组件支持限制最大层级，避免加载过多数据
-    - 级联选择器使用区划代码作为值，便于后端处理
-  - 文件清单
-    - 前端页面：`D:\workspace\base\frontend\src\views\system\Region.vue`
-    - 前端组件：`D:\workspace\base\frontend\src\components\RegionCascader.vue`
-    - API 接口：`D:\workspace\base\frontend\src\api\region.js`
-  - 已添加到 git 暂存区（未 commit）
 
-### 2026-01-13
-- 完成个人中心页面开发
-  - 创建个人中心页面 `D:\workspace\base\frontend\src\views\profile\Index.vue`
-  - 页面布局：左右分栏布局（左侧固定宽度，右侧自适应）
-  - 左侧个人信息卡片：
-    - 头像展示（圆形显示，hover 时显示上传提示）
-    - 点击头像可上传新头像（支持图片预览、格式验证、大小限制 2MB）
-    - 显示用户名、昵称、部门、角色列表（标签显示）、注册时间
-  - 右侧标签页：
-    - 基本信息标签页：
-      - 可编辑字段：昵称、邮箱、手机号、性别
-      - 表单验证：昵称长度 2-20 字符、邮箱格式、手机号格式
-      - 保存按钮、重置按钮
-    - 修改密码标签页：
-      - 旧密码输入框
-      - 新密码输入框（6-20 位）
-      - 确认密码输入框（验证两次密码一致性）
-      - 修改按钮、重置按钮
-      - 修改成功后自动跳转登录页
-  - 头像上传功能：
-    - 点击头像触发文件选择
-    - 支持图片格式验证
-    - 支持文件大小验证（最大 2MB）
-    - 上传成功后自动刷新用户信息
-    - 更新 store 中的用户信息
-  - 样式特点：
-    - 使用卡片布局
-    - 左侧固定宽度 300px（el-col :span="6"）
-    - 右侧自适应宽度（el-col :span="18"）
-    - 头像圆形显示，hover 时显示半透明遮罩和上传提示
-    - 表单样式美观，最大宽度 600px
-  - 对接 API：
-    - getProfile：获取个人信息
-    - updateProfile：更新个人信息
-    - updatePassword：修改密码
-    - uploadAvatar：上传头像
-  - 更新路由配置：将个人中心路由指向新页面 `/profile`
-- 完成通知公告管理前端页面开发
-  - 创建通知公告管理页面 `D:\workspace\base\frontend\src\views\system\Notice.vue`
-  - 实现搜索功能：支持按通知标题、通知类型（1-通知 2-公告）、通知级别（1-普通 2-重要 3-紧急）、状态（0-草稿 1-已发布）进行筛选
-  - 实现操作功能：新增通知、批量删除
-  - 实现表格展示：显示通知ID、标题、类型、级别、状态、发布人、发布时间、创建时间
-  - 实现表格操作：查看详情、编辑、发布（仅草稿状态显示）、删除
-  - 实现分页功能：支持 10/20/50/100 条每页
-  - 实现新增/编辑对话框：包含通知标题、通知类型、通知级别、状态、通知内容、备注字段
-  - 实现详情对话框：完整展示通知信息
-  - 样式优化：
-    - 类型标签：通知（蓝色 primary）、公告（绿色 success）
-    - 级别标签：普通（默认色）、重要（橙色 warning）、紧急（红色 danger）
-    - 状态标签：草稿（灰色 info）、已发布（绿色 success）
-  - 集成 Element Plus 图标：Search、Refresh、Plus、Delete、Edit、View、Promotion
-  - 表单验证：标题长度 2-100 字符、内容长度 10-5000 字符、必填项验证
-  - 对接后端 API：pageNotices、getNoticeById、addNotice、updateNotice、deleteNotice、batchDeleteNotices、publishNotice
+#### 1. 行政区划管理模块前端开发
+- **页面**：`frontend/src/views/system/Region.vue`
+- **组件**：`frontend/src/components/RegionCascader.vue`（地址选择组件）
+- **API**：`frontend/src/api/region.js`
+- **功能**：
+  - 树形结构展示区划数据
+  - 支持四级层级（省/市/区/街道）
+  - 懒加载级联选择器
 
-### 2026-01-12
-- 阅读产品需求文档，制定完整开发计划
-- 完成后端项目基础架构搭建
-  - 创建统一响应结构 Result<T> 和 ResultCode 枚举
-  - 实现全局异常处理器 GlobalExceptionHandler
-  - 创建自定义业务异常类 BusinessException
-  - 配置跨域 CorsConfig
-  - 配置 Knife4j 接口文档
-  - 配置 MyBatis Plus（分页插件、自动填充）
-  - 配置 Redis（序列化配置）
-  - 创建 Redis 工具类 RedisUtil
-  - 创建 JWT 工具类 JwtUtil
-  - 创建基础实体类 BaseEntity
-  - 创建 MyBatis Plus 自动填充处理器 MyMetaObjectHandler
-  - 创建测试控制器 TestController
-  - 添加 JWT 配置到 application.yml
-- 完成数据库设计与初始化
-  - 创建数据库表结构脚本 schema.sql
-    - sys_user：用户表（包含用户名、密码、昵称、邮箱、手机号、性别、部门ID、状态等字段）
-    - sys_role：角色表（包含角色名称、角色编码、数据权限范围等字段）
-    - sys_permission：权限/菜单表（树形结构，包含菜单、按钮两种类型）
-    - sys_dept：部门表（树形结构，包含部门名称、编码、负责人等字段）
-    - sys_enum：枚举表（存储系统枚举值，如性别、状态等）
-    - sys_config：全局变量表（存储系统配置参数）
-    - sys_log_operation：操作日志表（记录用户操作行为）
-    - sys_log_login：登录日志表（记录用户登录信息）
-    - sys_notice：通知公告表（包含通知类型、级别、状态等字段）
-    - sys_user_role：用户角色关联表
-    - sys_role_permission：角色权限关联表
-  - 创建初始化数据脚本 data.sql
-    - 初始化部门数据（总公司、技术部、市场部、财务部等）
-    - 初始化角色数据（超级管理员、系统管理员、普通用户）
-    - 初始化权限/菜单数据（系统管理、系统监控、日志管理等模块及其子菜单和按钮权限）
-    - 初始化用户数据（admin 超级管理员、test 测试用户，密码：admin123）
-    - 初始化用户角色关联数据
-    - 初始化角色权限关联数据（超级管理员拥有所有权限）
-    - 初始化枚举数据（性别、状态、通知类型、通知级别、数据权限范围等）
-    - 初始化全局变量数据（系统名称、版本、密码重试次数、验证码配置等）
-    - 初始化通知公告数据（欢迎通知、系统维护通知）
-- 完成前端项目初始化
-  - 创建 Vue 3 + Vite 项目结构
-  - 安装并配置 Element Plus 组件库
-  - 配置 Vue Router 路由系统
-    - 创建路由配置文件 router/index.js
-    - 实现路由守卫（登录验证、页面标题设置）
-    - 配置登录页和主布局路由
-  - 配置 Pinia 状态管理
-    - 创建 store/index.js 主入口
-    - 创建 store/user.js 用户状态管理模块（token、用户信息、登出等）
-  - 封装 Axios 请求工具
-    - 创建 utils/request.js
-    - 配置请求拦截器（自动添加 token）
-    - 配置响应拦截器（统一错误处理、401 跳转登录）
-  - 配置 Vite
-    - 添加路径别名 @ 指向 src 目录
-    - 配置开发服务器端口 3000
-    - 配置代理转发 /api 到后端 http://localhost:8080
-  - 创建全局样式文件 assets/styles/global.css
-    - 样式重置
-    - 滚动条美化
-    - 常用工具类（文本省略等）
-  - 创建基础布局组件 layout/Index.vue
-    - 侧边栏（可折叠、菜单导航）
-    - 顶部栏（折叠按钮、用户信息下拉菜单）
-    - 内容区（路由视图）
-  - 创建登录页面 views/Login.vue
-    - 用户名、密码、验证码输入
-    - 表单验证
-    - 登录逻辑（调用 API、保存 token、跳转首页）
-  - 创建首页 views/Dashboard.vue
-    - 统计卡片（用户、角色、权限、部门总数）
-    - 最近登录列表
-    - 系统通知时间线
-  - 创建认证 API 接口 api/auth.js
-    - 登录接口
-    - 获取验证码接口
-    - 登出接口
-    - 刷新 token 接口
-    - 获取用户信息接口
-  - 更新主入口文件 main.js
-    - 集成 Vue Router
-    - 集成 Pinia
-    - 集成 Element Plus
-    - 注册所有 Element Plus 图标
-    - 引入全局样式
-  - 前端项目测试通过，成功启动在 http://localhost:3000/
-- 完成登录认证模块开发
-  - 实现图形验证码生成功能
-    - 创建 CaptchaUtil 工具类（生成随机验证码、生成验证码图片）
-    - 验证码存储到 Redis，设置过期时间
-  - 实现登录认证服务
-    - 创建 AuthService 接口和 AuthServiceImpl 实现类
-    - 实现登录逻辑：验证码校验、用户名密码验证、Token 生成
-    - 实现登录失败次数限制（Redis 计数，超过次数锁定账号）
-    - 实现登出功能（删除 Redis 中的 Token）
-    - 实现 Token 刷新功能
-  - 创建认证控制器 AuthController
-    - GET /auth/captcha：获取验证码
-    - POST /auth/login：用户登录
-    - POST /auth/logout：用户登出
-    - POST /auth/refresh：刷新 Token
-  - 创建 DTO 类
-    - LoginRequest：登录请求参数（用户名、密码、验证码、验证码Key）
-    - LoginRes登录响应结果（Token、过期时间）
-    - CaptchaResponse：验证码响应结果（验证码Key、图片Base64、过期时间）
-- 完成 Spring Security 集成
-  - 创建 Spring Security 配置类 SecurityConfig
-    - 配置密码编码器 BCryptPasswordEncoder
-    - 配置认证管理器 AuthenticationManager
-    - 配置安全过滤器链（禁用 CSRF、配置无状态会话、配置白名单路径）
-    - 添加 JWT 认证过滤器到过滤器链
-  - 创建 JWT 认证过滤器 JwtAuthenticationFilter
-    - 从请求头中提取 Token
-    - 验证 Token 有效性
-    - 验证 Redis 中的 Token 是否一致
-    - 将认证信息设置到 SecurityContext
-  - 创建 JWT 认证入口点 JwtAuthenticationEntryPoint
-    - 处理未认证的请求，返回 401 错误
-  - 创建 JWT 访问拒绝处理器 JwtAccessDeniedHandler
-    - 处理权限不足的请求，返回 403 错误
-  - 创建自定义用户详情服务 CustomUserDetailsService
-    - 实现 UserDetailsService 接口
-    - 根据用户名加载用户信息
-    - 检查用户状态（是否禁用）
-    - 加载用户权限（临时添加默认权限 ROLE_USER）
-  - 创建 Security 工具类 SecurityUtils
-    - 获取当前登录用户前用户详情
-    - 获取当前认证对象
-    - 判断是否已认证
-  - 创建 MyBatis-Plus 自动填充配置 MyBatisPlusMetaObjectHandler
-    - 插入时自动填充创建时间、更新时间
-    - 更新时自动填充更新时间
-  - 创建 CORS 跨域配置 CorsConfig
-    - 允许所有域名跨域
-    - 允许所有请求头和请求方法
-    - 允许携带凭证
-  - 更新 AuthServiceImpl 的 logout 方法
-    - 从 SecurityContext 获取当前用户信息
-    - 删除 Redis 中的 Token
-  - 添加配置到 application.yml
-    - 验证码配置（过期时间 300 秒）
-    - 登录配置（最大重试次数 5 次、锁定时间 30 分钟）
-- 完成用户管理模块后端接口开发
-  - 创建用户相关 DTO 类
-    - UserQueryRequest：用户查询请求参数（用户名、昵称、手机号、状态、部门ID、分页参数）
-    - UserResponse：用户响应结果（用户基本信息、部门名称、角色列表、创建时间等）
-    - UserSaveRequest：用户保存请求参数（新增/编辑用户信息）
-    - UserResetPasswordRequest：重置密码请求参数（用户ID、新密码）
-    - UserAssignRoleRequest：分配角色请求参数（用户ID、角色ID列表）
-  - 创建用户服务接口 UserService 和实现类 UserServiceImpl
-    - pageUsers：分页查询用户列表（支持多条件查询、关联查询部门名称和角色列表）
-    - getUserById：根据ID获取用户详情（包含部门名称和角色列表）
-    - addUser：新增用户（用户名唯一性校验、密码加密、保存用户信息）
-    - updateUser：编辑用户（用户名唯一性校验、更新用户信息）
-    - deleteUser：删除用户（逻辑删除、不能删除超级管理员、删除用户角色关联）
-    - batchDeleteUsers：批量删除用户（不能删除超级管理员、批量删除用户和角色关联）
-    - toggleStatus：切换用户状态（不能禁用超级管理员）
-    - resetPassword：重置密码（密码加密）
-    - assignRoles：分配角色（删除原有角色关联、添加新的角色关联）
-    - getUserRoleIds：获取用户的角色ID列表
-  - 创建用户控制器 UserController
-    - GET /system/user/page：分页查询用户列表（权限：system:user:list）
-    - GET /system/user/{id}：根据ID获取用户详情（权限：system:user:query）
-    - POST /system/user：新增用户（权限：system:user:add）
-    - PUT /system/user：编辑用户（权限：system:user:edit）
-    - DELETE /system/user/{id}：删除用户（权限：system:user:delete）
-    - DELETE /system/user/batch：批量删除用户（权限：system:user:delete）
-    - PUT /system/user/{id}/status/{status}：切换用户状态（权限：system:user:edit）
-    - PUT /system/user/reset-password：重置密码（权限：system:user:resetPwd）
-    - PUT /system/user/assign-roles：分配角色（权限：system:user:role）
-    - GET /system/user/{userId}/roles：获取用户的角色ID列表（权限：system:user:query）
-  - 更新 ResultCode 枚举
-    - 添加 USER_NOT_FOUND（1010）：用户不存在
-    - 添加 USERNAME_ALREADY_EXISTS（1011）：用户名已存在
-    - 添加 OPERATION_NOT_ALLOWED（1012）：操作不允许
-  - 业务规则说明
-    - 超级管理员（用户名为 admin）不能被删除、不能被禁用
-    - 用户名必须唯一
-    - 新增用户时密码使用 BCrypt 加密
-    - 删除用户时同时删除用户角色关联关系
-    - 用户查询支持多条件组合查询（用户名、昵称、手机号、状态、部门ID）
-    - 用户列表返回时关联查询部门名称和角色列表
-- 完成用户管理模块前端页面开发
-  - 创建用户 API 接口文件 api/user.js
-    - pageUsers：分页查询用户列表
-    - getUserById：根据ID获取用户详情
-    - addUser：新增用户
-    - updateUser：编辑用户
-    - deleteUser：删除用户
-    - batchDeleteUsers：批量删除用户
-    - toggleUserStatus：切换用户状态
-    - resetPassword：重置密码
-    - assignRoles：分配角色
-    - getUserRoleIds：获取用户的角色ID列表
-  - 创建用户管理页面 views/system/User.vue
-    - 搜索栏：支持按用户名、昵称、手机号、状态查询
-    - 操作栏：新增用户、批量删除按钮
-    - 用户列表表格：显示用户ID、用户名、昵称、邮箱、手机号、性别、部门、角色、状态、创建时间
-    - 表格操作列：编辑、重置密码、分配角色、删除按钮
-    - 分页组件：支持切换每页显示数量和跳转页码
-    - 新增/编辑对话框：表单包含用户名、昵称、密码（新增时）、邮箱、手机号、性别、部门、状态、备注
-    - 重置密码对话框：输入新密码和确认密码
-    - 分配角色对话框：多选框选择角色
-  - 更新路由配置 router/index.js
-    - 添加用户管理页面路由 /system/user
-  - 页面功能说明
-    - 支持多条件组合查询用户
-    - 支持新增用户（用户名不可重复）
-    - 支持编辑用户（用户名不可修改）
-    - 支持删除单个用户或批量删除用户
-    - 支持切换用户状态（启用/禁用）
-    - 支持重置用户密码
-    - 支持为用户分配角色
-    - 表单验证：用户名长度2-20字符、密码长度6-20字符、邮箱格式、手机号格式
-    - 性别显示：男（蓝色标签）、女（红色标签）、未知（灰色标签）
-    - 角色显示：以标签形式展示用户拥有的所有角色
-- 完成角色管理模块后端接口开发
-  - 创建角色相关实体类
-    - Role：角色实体类（角色名称、角色编码、数据权限范围、状态、排序、备注）
-    - UserRole：用户角色关联实体类（用户ID、角色ID）
-    - RolePermission：角色权限关联实体类（角色ID、权限ID）
-  - 创建角色相关 Mapper 接口
-    - RoleMapper：角色数据访问接口
-    - UserRoleMapper：用户角色关联数据访问接口
-    - RolePermissionMapper：角色权限关联数据访问接口
-  - 创建角色相关 DTO 类
-    - RoleQueryRequest：角色查询请求参数（角色名称、角色编码、状态、分页参数）
-    - RoleResponse：角色响应结果（角色基本信息、数据权限范围名称、权限ID列表、创建时间等）
-    - RoleSaveRequest：角色保存请求参数（新增/编辑角色信息）
-    - RoleAssignPermissionRequest：分配权限请求参数（角色ID、权限ID列表）
-  - 创建角色服务接口 RoleService 和实现类 RoleServiceImpl
-    - pageRoles：分页查询角色列表（支持多条件查询、按排序和创建时间排序）
-    - getRoleById：根据ID获取角色详情（包含权限ID列表）
-    - addRole：新增角色（角色编码唯一性校验、保存角色信息）
-    - updateRole：编辑角色（角色编码唯一性校验、更新角色信息）
-    - deleteRole：删除角色（检查是否有用户使用该角色、删除角色和权限关联）
-    - batchDeleteRoles：批量删除角色
-    - toggleStatus：切换角色状态
-    - assignPermissions：分配权限（删除原有权限关联、添加新的权限关联）
-    - getRolePermissionIds：获取角色的权限ID列表
-    - listAllRoles：获取所有角色列表（不分页，仅返回正常状态的角色）
-  - 创建角色控制器 RoleController
-    - GET /system/role/page：分页查询角色列表（权限：system:role:list）
-    - GET /system/role/{id}：根据ID获取角色详情（权限：system:role:query）
-    - POST /system/role：新增角色（权限：system:role:add）
-    - PUT /system/role：编辑角色（权限：system:role:edit）
-    - DELETE /system/role/{id}：删除角色（权限：system:role:delete）
-    - DELETE /system/role/batch：批量删除角色（权限：system:role:delete）
-    - PUT /system/role/{id}/status/{status}：切换角色状态（权限：system:role:edit）
-    - PUT /system/role/assign-permissions：分配权限（权限：system:role:permission）
-    - GET /system/role/{roleId}/permissions：获取角色的权限ID列表（权限：system:role:query）
-    - GET /system/role/list：获取所有角色列表（权限：system:role:list）
-  - 业务规则说明
-    - 角色编码必须唯一
-    - 删除角色前需检查是否有用户使用该角色，如有则不允许删除
-    - 删除角色时同时删除角色权限关联关系
-    - 角色查询支持多条件组合查询（角色名称、角色编码、状态）
-    - 数据权限范围包括：1-全部数据、2-本部门及以下、3-本部门、4-仅本人、5-自定义
-    - 角色列表按排序字段升序、创建时间降序排列
-- 完成角色管理模块前端页面开发
-  - 创建角色 API 接口文件 api/role.js
-    - pageRoles：分页查询角色列表
-    - getRoleById：根据ID获取角色详情
-    - addRole：新增角色
-    - updateRole：编辑角色
-    - deleteRole：删除角色
-    - batchDeleteRoles：批量删除角色
-    - toggleRoleStatus：切换角色状态
-    - assignPermissions：分配权限
-    - getRolePermissionIds：获取角色的权限ID列表
-    - listAllRoles：获取所有角色列表（不分页）
-  - 创建角色管理页面 views/system/Role.vue
-    - 搜索栏：支持按角色名称、角色编码、状态查询
-    - 操作栏：新增角色、批量删除按钮
-    - 角色列表表格：显示角色ID、角色名称、角色编码、数据权限、状态、排序、创建时间
-    - 表格操作列：编辑、分配权限、删除按钮
-    - 分页组件：支持切换每页显示数量和跳转页码
-    - 新增/编辑对话框：表单包含角色名称、角色编码、数据权限范围、状态、排序、备注
-    - 分配权限对话框：树形结构选择权限（支持全选、半选）
-  - 更新路由配置 router/index.js
-    - 添加角色管理页面路由 /system/role
-  - 页面功能说明
-    - 支持多条件组合查询角色
-    - 支持新增角色（角色编码不可重复，必须为大写字母和下划线）
-    - 支持编辑角色（角色编码不可修改）
-    - 支持删除单个角色或批量删除角色
-    - 支持切换角色状态（启用/禁用）
-    - 支持为角色分配权限（树形结构，支持父子节点联动）
-    - 表单验证：角色名称长度2-20字符、角色编码长度2-20字符且只能包含大写字母和下划线
-    - 数据权限显示：全部数据（默认）、本部门及以下（绿色）、本部门（橙色）、仅本人（红色）、自定义（灰色）
-    - 状态切换：使用开关组件，实时切换角色状态
-- 完成权限/菜单管理模块后端接口开发
-  - 创建权限实体类 Permission
-    - 权限ID、父级ID、权限名称、权限编码、权限类型（1-菜单 2-按钮）
-    - 路由路径、组件路径、图标、状态、排序、是否可见、备注
-  - 创建权限 Mapper 接口 PermissionMapper
-  - 创建权限相关 DTO 类
-    - PermissionQueryRequest：权限查询请求参数（权限名称、权限编码、权限类型、状态）
-    - PermissionResponse：权限响应结果（权限基本信息、权限类型名称、子权限列表、创建时间等）
-    - PermissionSaveRequest：权限保存请求参数（新增/编辑权限信息）
-  - 创建权限服务接口 PermissionService 和实现类 PermissionServiceImpl
-    - treePermissions：查询权限树（支持多条件查询、按排序和创建时间排序、递归构建树形结构）
-    - getPermissionById：根据ID获取权限详情
-    - addPermission：新增权限（权限编码唯一性校验、保存权限信息）
-    - updatePermission：编辑权限（权限编码唯一性校验、更新权限信息）
-    - deletePermission：删除权限（检查是否有子权限、检查是否有角色使用该权限）
-    - getCurrentUserMenuTree：获取当前用户的菜单树（只查询菜单类型、正常状态、可见的权限）
-    - getAllPermissionTree：获取所有权限树（用于角色分配权限）
-    - buildPermissionTree：构建权限树（按父级ID分组、递归构建树形结构）
-  - 创建权限控制器 PermissionController
-    - GET /system/permission/tree：查询权限树（权限：system:permission:list）
-    - GET /system/permission/{id}：根据ID获取权限详情（权限：system:permission:query）
-    - POST /system/permission：新增权限（权限：system:permission:add）
-    - PUT /system/permission：编辑权限（权限：system:permission:edit）
-    - DELETE /system/permission/{id}：删除权限（权限：system:permission:delete）
-    - GET /system/permission/menu/tree：获取当前用户的菜单树（无需权限）
-    - GET /system/permission/all/tree：获取所有权限树（权限：system:permission:list）
-  - 业务规则说明
-    - 权限编码必须唯一
-    - 删除权限前需检查是否有子权限，如有则不允许删除
-    - 删除权限前需检查是否有角色使用该权限，如有则不允许删除
-    - 权限查询支持多条件组合查询（权限名称、权限编码、权限类型、状态）
-    - 权限类型包括：1-菜单、2-按钮
-    - 权限树按排序字段升序、创建时间降序排列
-    - 菜单权限包含路由路径、组件路径、图标等前端路由信息
-    - 按钮权限只包含权限编码，用于后端接口权限控制
-- 完成权限/菜单管理模块前端页面开发
-  - 创建权限 API 接口 api/permission.js
-    - treePermissions：查询权限树
-    - getPermissionById：根据ID获取权限详情
-    - addPermission：新增权限
-    - updatePermission：编辑权限
-    - deletePermission：删除权限
-    - getCurrentUserMenuTree：获取当前用户的菜单树
-    - getAllPermissionTree：获取所有权限树（用于角色分配权限）
-  - 创建权限管理页面 views/system/Permission.vue
-    - 搜索栏：权限名称、权限编码、权限类型、状态
-    - 操作栏：新增权限、展开全部、折叠全部按钮
-    - 权限树表格：树形结构展示权限数据
-      - 列：权限名称、权限编码、权限类型（标签显示）、图标、路由路径、组件路径、状态（标签显示）、可见（标签显示）、排序、创建时间
-      - 操作列：新增、编辑、删除按钮
-    - 新增/编辑对话框：表单包含上级权限（树形选择器）、权限类型、权限名称、权限编码、路由路径、组件路径、图标、是否可见、状态、排序、备注
-    - 权限类型切换：菜单类型显示路由路径、组件路径、图标、是否可见字段，按钮类型隐藏这些字段
-  - 更新路由配置 router/index.js
-    - 添加权限管理页面路由 /system/permission
-  - 页面功能说明
-    - 支持多条件组合查询权限
-    - 支持新增权限（权限编码不可重复）
-    - 支持新增子权限（选择父级权限）
-    - 支持编辑权限
-    - 支持删除权限（有子权限或被角色使用时不允许删除）
-    - 支持展开/折叠全部权限树节点
-    - 表单验证：权限名称长度2-20字符、权限编码长度2-50字符
-    - 权限类型：菜单（蓝色标签）、按钮（绿色标签）
-    - 状态显示：正常（绿色标签）、禁用（红色标签）
-    - 可见显示：显示（绿色标签）、隐藏（灰色标签）
-    - 上级权限选择：树形选择器，支持选择任意层级的权限作为父级
-    - 图标显示：表格和表单中实时显示图标组件
-- 完成部门管理模块后端接口开发
-  - 创建部门实体类 Department
-    - 部门ID、父级ID、部门名称、部门编码、负责人、联系电话、邮箱、状态、排序、备注
-  - 创建部门 Mapper 接口 DepartmentMapper
-  - 创建部门相关 DTO 类
-    - DepartmentQueryRequest：部门查询请求参数（部门名称、部门编码、状态）
-    - DepartmentResponse：部门响应结果（部门基本信息、子部门列表、创建时间等）
-    - DepartmentSaveRequest：部门保存请求参数（新增/编辑部门信息）
-  - 创建部门服务接口 DepartmentService 和实现类 DepartmentServiceImpl
-    - treeDepartments：查询部门树（支持多条件查询、按排序和创建时间排序、递归构建树形结构）
-    - getDepartmentById：根据ID获取部门详情
-    - addDepartment：新增部门（部门编码唯一性校验、保存部门信息）
-    - updateDepartment：编辑部门（部门编码唯一性校验、检查是否设置为自己的子部门或后代部门）
-    - deleteDepartment：删除部门（检查是否有子部门、检查是否有用户）
-    - getAllDepartmentTree：获取所有部门树（用于选择上级部门，只查询正常状态的部门）
-    - buildDepartmentTree：构建部门树（按父级ID分组、递归构建树形结构）
-    - isDescendant：判断目标部门是否是当前部门的后代（递归检查）
-  - 创建部门控制器 DepartmentController
-    - GET /system/department/tree：查询部门树（权限：system:department:list）
-    - GET /system/department/{id}：根据ID获取部门详情（权限：system:department:query）
-    - POST /system/department：新增部门（权限：system:department:add）
-    - PUT /system/department：编辑部门（权限：system:department:edit）
-    - DELETE /system/department/{id}：删除部门（权限：system:department:delete）
-    - GET /system/department/all/tree：获取所有部门树（权限：system:department:list）
-  - 业务规则说明
-    - 部门编码必须唯一
-    - 删除部门前需检查是否有子部门，如有则不允许删除
-    - 删除部门前需检查是否有用户，如有则不允许删除
-    - 编辑部门时不能将部门设置为自己的上级部门
-    - 编辑部门时不能将部门设置为自己的后代部门（递归检查）
-    - 部门查询支持多条件组合查询（部门名称、部门编码、状态）
-    - 部门树按排序字段升序、创建时间降序排列
-- 完成部门管理模块前端页面开发
-  - 创建部门 API 接口文件 api/department.js
-    - treeDepartments：查询部门树
-    - getDepartmentById：根据ID获取部门详情
-    - addDepartment：新增部门
-    - updateDepartment：编辑部门
-    - deleteDepartment：删除部门
-    - getAllDepartmentTree：获取所有部门树（用于选择上级部门）
-  - 创建部门管理页面 views/system/Department.vue
-    - 搜索栏：部门名称、部门编码、状态
-    - 操作栏：新增部门、展开全部、折叠全部按钮
-    - 部门树表格：树形结构展示部门数据
-      - 列：部门名称、部门编码、负责人、联系电话、邮箱、状态（标签显示）、排序、创建时间
-      - 操作列：新增、编辑、删除按钮
-    - 新增/编辑对话框：表单包含上级部门（树形选择器）、部门名称、部门编码、负责人、联系电话、邮箱、状态、排序、备注
-  - 更新路由配置 router/index.js
-    - 添加部门管理页面路由 /system/department
-  - 页面功能说明
-    - 支持多条件组合查询部门
-    - 支持新增部门（部门编码不可重复）
-    - 支持新增子部门（选择父级部门）
-    - 支持编辑部门
-    - 支持删除部门（有子部门或有用户时不允许删除）
-    - 支持展开/折叠全部部门树节点
-    - 表单验证：部门名称长度2-20字符、部门编码长度2-20字符、手机号格式、邮箱格式
-    - 状态显示：正常（绿色标签）、禁用（红色标签）
-    - 上级部门选择：树形选择器，支持选择任意层级的部门作为父级，包含"顶级部门"选项
-- 完成枚举管理模块后端接口开发
-  - 创建枚举实体类 Enum
-    - 枚举ID、枚举类型、枚举值、枚举标签、排序、状态、备注
-  - 创建枚举 Mapper 接口 EnumMapper
-  - 创建枚举相关 DTO 类
-    - EnumQueryRequest：枚举查询请求参数（枚举类型、枚举标签、状态、分页参数）
-    - EnumResponse：枚举响应结果（枚举基本信息、创建时间等）
-    - EnumSaveRequest：枚举保存请求参数（新增/编辑枚举信息）
-  - 创建枚举服务接口 EnumService 和实现类 EnumServiceImpl
-    - pageEnums：分页查询枚举列表（支持多条件查询、按排序和创建时间排序）
-    - getEnumById：根据ID获取枚举详情
-    - addEnum：新增枚举（枚举类型+枚举值唯一性校验、保存枚举信息、删除缓存）
-    - updateEnum：编辑枚举（枚举类型+枚举值唯一性校验、更新枚举信息、删除缓存）
-    - deleteEnum：删除枚举（删除枚举信息、删除缓存）
-    - batchDeleteEnums：批量删除枚举（批量删除、删除缓存）
-    - listByType：根据枚举类型查询枚举列表（优先从 Redis 缓存获取、缓存24小时）
-    - refreshCache：刷新枚举缓存（删除所有枚举类型的缓存）
-  - 创建枚举控制器 EnumController
-    - GET /system/enum/page：分页查询枚举列表（权限：system:enum:list）
-    - GET /system/enum/{id}：根据ID获取枚举详情（权限：system:enum:query）
-    - POST /system/enum：新增枚举（权限：system:enum:add）
-    - PUT /system/enum：编辑枚举（权限：system:enum:edit）
-    - DELETE /system/enum/{id}：删除枚举（权限：system:enum:delete）
-    - DELETE /system/enum/batch：批量删除枚举（权限：system:enum:delete）
-    - GET /system/enum/type/{enumType}：根据枚举类型查询枚举列表（无需权限）
-    - POST /system/enum/refresh-cache：刷新枚举缓存（权限：system:enum:edit）
-  - 业务规则说明
-    - 同一枚举类型下的枚举值必须唯一
-    - 枚举查询支持多条件组合查询（枚举类型、枚举标签、状态）
-    - 枚举列表按排序字段升序、创建时间降序排列
-    - 枚举数据使用 Redis 缓存，缓存键格式：enum:type:{枚举类型}，缓存时间24小时
-    - 新增、编辑、删除枚举时自动删除对应类型的缓存
-    - 支持手动刷新所有枚举缓存
-- 完成枚举管理模块前端页面开发
-  - 创建枚举 API 接口文件 api/enum.js
-    - pageEnums：分页查询枚举列表
-    - getEnumById：根据ID获取枚举详情
-    - addEnum：新增枚举
-    - updateEnum：编辑枚举
-    - deleteEnum：删除枚举
-    - batchDeleteEnums：批量删除枚举
-    - listByType：根据枚举类型查询枚举列表
-    - refreshCache：刷新枚举缓存
-  - 创建枚举管理页面 views/system/Enum.vue
-    - 搜索栏：枚举类型、枚举标签、状态
-    - 操作栏：新增枚举、批量删除、刷新缓存按钮
-    - 枚举列表表格：显示枚举ID、枚举类型、枚举值、枚举标签、状态（标签显示）、排序、备注、创建时间
-    - 表格操作列：编辑、删除按钮
-    - 分页组件：支持切换每页显示数量和跳转页码
-    - 新增/编辑对话框：表单包含枚举类型、枚举值、枚举标签、状态、排序、备注
-  - 更新路由配置 router/index.js
-    - 添加枚举管理页面路由 /system/enum
-  - 页面功能说明
-    - 支持多条件组合查询枚举
-    - 支持新增枚举（同一枚举类型下的枚举值不可重复）
-    - 支持编辑枚举
-    - 支持删除单个枚举或批量删除枚举
-    - 支持刷新枚举缓存
-    - 表单验证：枚举类型长度2-50字符、枚举值长度1-50字符、枚举标签长度1-50字符
-    - 状态显示：正常（绿色标签）、禁用（红色标签）
-- 完成全局变量管理模块后端接口开发
-  - 创建全局变量实体类 Config
-    - 配置ID、配置键、配置值、配置名称、配置类型（1-系统内置 2-用户自定义）、状态、备注
-  - 创建全局变量 Mapper 接口 ConfigMapper
-  - 创建全局变量相关 DTO 类
-    - ConfigQueryRequest：全局变量查询请求参数（配置键、配置名称、配置类型、状态、分页参数）
-    - ConfigResponse：全局变量响应结果（配置基本信息、创建时间等）
-    - ConfigSaveRequest：全局变量保存请求参数（新增/编辑配置信息）
-  - 创建全局变量服务接口 ConfigService 和实现类 ConfigServiceImpl
-    - pageConfigs：分页查询全局变量列表（支持多条件查询、按配置类型和创建时间排序）
-    - getConfigById：根据ID获取全局变量详情
-    - addConfig：新增全局变量（配置键唯一性校验、保存配置信息、删除缓存）
-    - updateConfig：编辑全局变量（配置键唯一性校验、更新配置信息、删除缓存）
-    - deleteConfig：删除全局变量（系统内置配置不允许删除、删除配置信息、删除缓存）
-    - batchDeleteConfigs：批量删除全局变量（系统内置配置不允许删除、批量删除、删除缓存）
-    - getConfigValueByKey：根据配置键获取配置值（优先从 Redis 缓存获取、缓存24小时）
-    - refreshCache：刷新全局变量缓存（删除所有配置的缓存）
-  - 创建全局变量控制器 ConfigController
-    - GET /system/config/page：分页查询全局变量列表（权限：system:config:list）
-    - GET /system/config/{id}：根据ID获取全局变量详情（权限：system:config:query）
-    - POST /system/config：新增全局变量（权限：system:config:add）
-    - PUT /system/config：编辑全局变量（权限：system:config:edit）
-    - DELETE /system/config/{id}：删除全局变量（权限：system:config:delete）
-    - DELETE /system/config/batch：批量删除全局变量（权限：system:config:delete）
-    - GET /system/config/key/{configKey}：根据配置键获取配置值（无需权限）
-    - POST /system/config/refresh-cache：刷新全局变量缓存（权限：system:config:edit）
-  - 业务规则说明
-    - 配置键必须唯一
-    - 系统内置配置（configType=1）不允许删除
-    - 全局变量查询支持多条件组合查询（配置键、配置名称、配置类型、状态）
-    - 全局变量列表按配置类型升序、创建时间降序排列
-    - 全局变量数据使用 Redis 缓存，缓存键格式：config:key:{配置键}，缓存时间24小时
-    - 新增、编辑、删除全局变量时自动删除对应配置键的缓存
-    - 支持手动刷新所有全局变量缓存
-- 完成全局变量管理模块前端页面开发
-  - 创建全局变量 API 接口文件 api/config.js
-    - pageConfigs：分页查询全局变量列表
-    - getConfigById：根据ID获取全局变量详情
-    - addConfig：新增全局变量
-    - updateConfig：编辑全局变量
-    - deleteConfig：删除全局变量
-    - batchDeleteConfigs：批量删除全局变量
-    - getConfigValueByKey：根据配置键获取配置值
-    - refreshCache：刷新全局变量缓存
-  - 创建全局变量管理页面 views/system/Config.vue
-    - 搜索栏：配置键、配置名称、配置类型、状态
-    - 操作栏：新增配置、批量删除、刷新缓存按钮
-    - 全局变量列表表格：显示配置ID、配置键、配置值、配置名称、配置类型（标签显示）、状态（标签显示）、备注、创建时间
-    - 表格操作列：编辑、删除按钮
-    - 分页组件：支持切换每页显示数量和跳转页码
-    - 新增/编辑对话框：表单包含配置键、配置值（文本域）、配置名称、配置类型、状态、备注
-  - 更新路由配置 router/index.js
-    - 添加全局变量管理页面路由 /system/config
-  - 页面功能说明
-    - 支持多条件组合查询全局变量
-    - 支持新增全局变量（配置键不可重复）
-    - 支持编辑全局变量
-    - 支持删除单个全局变量或批量删除全局变量（系统内置配置不允许删除）
-    - 支持刷新全局变量缓存
-    - 表单验证：配置键长度2-50字符、配置值长度不超过500字符、配置名称长度2-50字符
-    - 配置类型显示：系统内置（警告标签）、用户自定义（成功标签）
-    - 状态显示：正常（绿色标签）、禁用（红色标签）
+#### 2. 省市区三级数据导入
+- **数据源**：GitHub Administrative-divisions-of-China
+- **数据量**：3424 条（省31 + 市337 + 区3056）
+- **文件**：`backend/src/main/resources/db/init_region_full.sql`
+
+#### 3. 按钮级别权限控制
+- **前端实现**：
+  - 权限指令 `v-permission`
+  - 权限工具函数 `utils/permission.js`
+  - 用户 Store 添加权限管理
+- **使用示例**：
+  ```vue
+  <el-button v-permission="'system:user:add'">新增</el-button>
+  ```
+- **文件**：
+  - `frontend/src/directives/permission.js`
+  - `frontend/src/utils/permission.js`
+  - `frontend/src/store/user.js`
 
 ---
 
-## 开发计划
+### 2026-01-22
 
-### 第一阶段：项目基础架构搭建
+#### 1. 实现登录日志记录功能
+- **修复**：在 `AuthServiceImpl` 中添加登录日志记录逻辑
+- **功能**：记录登录成功/失败、IP、浏览器、操作系统等信息
+- **文件**：`backend/src/main/java/com/base/system/service/impl/AuthServiceImpl.java`
 
-#### 1. 后端项目初始化
-- [x] 创建 Spring Boot 项目结构
-- [x] 配置 Maven 依赖（Spring Boot 2.7.x、MyBatis Plus、Spring Security、JWT、Redis、Knife4j等）
-- [x] 配置多环境配置文件（dev、test、prod）
-- [x] 搭建统一响应结构（Result<T>）
-- [x] 实现全局异常处理器
-- [x] 配置跨域、日志、Swagger文档
+#### 2. 修复监控模块权限缺失问题
+- **修复**：补充服务器监控、缓存监控的权限数据
+- **文件**：
+  - `backend/src/main/resources/db/data.sql`
+  - `backend/src/main/resources/db/update_monitor_permission.sql`
 
-#### 2. 数据库设计与初始化
-- [ ] 设计并创建用户表（sys_user）
-- [ ] 设计并创建角色表（sys_role）
-- [ ] 设计并创建权限/菜单表（sys_permission）
-- [ ] 设计并创建部门表（sys_dept）
-- [ ] 设计并创建枚举表（sys_enum）
-- [ ] 设计并创建全局变量表（sys_config）
-- [ ] 设计并创建日志表（sys_log_operation、sys_log_login）
-- [ ] 设计并创建通知表（sys_notice）
-- [ ] 创建关联表（sys_user_role、sys_role_permission）
-- [ ] 初始化基础数据
-
-#### 3. 前端项目初始化
-- [ ] 创建 Vue 3 + Vite 项目
-- [ ] 配置 Element Plus 组件库
-- [ ] 配置 Vue Router 路由
-- [ ] 配置 Pinia 状态管理
-- [ ] 封装 Axios 请求工具
-- [ ] 搭建基础布局框架（侧边栏、顶部栏、内容区）
+#### 3. 修复登录报错问题
+- **问题1**：`sys_user` 表缺少 `remark` 字段
+- **问题2**：`BaseEntity` 中 `createBy/updateBy` 类型不匹配
+- **文件**：
+  - `backend/src/main/resources/db/schema.sql`
+  - `backend/src/main/java/com/base/common/entity/BaseEntity.java`
 
 ---
 
-### 第二阶段：认证与权限核心
+### 2026-01-15
 
-#### 4. 登录认证模块
-- [ ] 实现 JWT Token 生成与验证工具类
-- [ ] 实现图形验证码生成接口
-- [ ] 实现登录接口（账号密码 + 验证码校验）
-- [ ] 实现 Token 刷新接口
-- [ ] 实现登出接口
-- [ ] 实现登录失败次数限制（Redis计数）
-- [ ] 实现登录日志记录
-- [ ] 前端登录页面开发
-
-#### 5. Spring Security 集成
-- [ ] 配置 Security 过滤链
-- [ ] 实现 JWT 认证过滤器
-- [ ] 实现自定义 UserDetailsService
-- [ ] 实现权限注解支持（@PreAuthorize）
-- [ ] 实现动态权限加载
-- [ ] 配置白名单路径
-
----
-
-### 第三阶段：基础管理模块
-
-#### 6. 用户管理模块
-- [ ] 后端：用户分页查询接口
-- [ ] 后端：用户新增接口
-- [ ] 后端：用户编辑接口
-- [ ] 后端：用户删除接口（逻辑删除）
-- [ ] 后端：用户状态切换接口
-- [ ] 后端：重置密码接口
-- [ ] 后端：分配角色接口
-- [ ] 前端：用户列表页面
-- [ ] 前端：用户新增/编辑弹窗
-- [ ] 前端：角色分配弹窗
-
-#### 7. 角色管理模块
-- [ ] 后端：角色分页查询接口
-- [ ] 后端：角色新增接口
-- [ ] 后端：角色编辑接口
-- [ ] 后端：角色删除接口
-- [ ] 后端：分配权限接口
-- [ ] 后端：数据权限配置接口
-- [ ] 前端：角色列表页面
-- [ ] 前端：角色新增/编辑弹窗
-- [ ] 前端：权限分配树弹窗
-
-#### 8. 权限/菜单管理模块
-- [ ] 后端：权限树形查询接口
-- [ ] 后端：权限新增接口
-- [ ] 后端：权限编辑接口
-- [ ] 后端：权限删除接口
-- [ ] 后端：获取当前用户菜单接口
-- [ ] 前端：菜单树管理页面
-- [ ] 前端：菜单新增/编辑弹窗
-- [ ] 前端：实现动态路由生成
-
-#### 9. 部门管理模块
-- [ ] 后端：部门树形查询接口
-- [ ] 后端：部门新增接口
-- [ ] 后端：部门编辑接口
-- [ ] 后端：部门删除接口
-- [ ] 前端：部门树管理页面
-- [ ] 前端：部门新增/编辑弹窗
-
----
-
-### 第四阶段：辅助功能模块
-
-#### 10. 枚举管理模块
-- [ ] 后端：枚举分页查询接口
-- [ ] 后端：枚举新增接口
-- [ ] 后端：枚举编辑接口
-- [ ] 后端：枚举删除接口
-- [ ] 后端：按类型查询枚举接口
-- [ ] 后端：枚举 Redis 缓存机制
-- [ ] 前端：枚举管理页面
-
-#### 11. 全局变量管理模块
-- [ ] 后端：参数分页查询接口
-- [ ] 后端：参数新增接口
-- [ ] 后端：参数编辑接口
-- [ ] 后端：参数删除接口
-- [ ] 后端：按 Key 查询参数接口
-- [ ] 后端：刷新缓存接口
-- [ ] 前端：参数配置页面
-
-#### 12. 日志管理模块
-- [x] 后端：实现操作日志 AOP 切面
-- [x] 后端：操作日志查询接口
-- [x] 后端：登录日志查询接口
-- [x] 后端：日志清理接口
-- [x] 前端：操作日志查询页面
-- [x] 前端：登录日志查询页面
-
-#### 13. 通知公告模块
-- [ ] 后端：通知分页查询接口
-- [ ] 后端：通知新增接口
-- [ ] 后端：通知编辑接口
-- [ ] 后端：通知删除接口
-- [ ] 后端：通知发布接口
-- [ ] 后端：标记已读接口
-- [ ] 后端：获取未读数量接口
-- [ ] 前端：通知管理页面
-- [ ] 前端：通知详情页面
-- [ ] 前端：未读通知提醒组件
-
----
-
-### 第五阶段：完善与优化
-
-#### 14. 个人中心
-- [ ] 后端：获取个人信息接口
-- [ ] 后端：修改个人信息接口
-- [ ] 后端：修改密码接口
-- [ ] 后端：头像上传接口
-- [ ] 前端：个人中心页面
-
-#### 15. 数据权限实现
-- [ ] 实现数据权限 MyBatis 拦截器
-- [ ] 按部门过滤数据逻辑
-- [ ] 数据权限注解支持
-
-#### 16. 系统优化
-- [ ] 接口性能优化
-- [ ] Redis 缓存策略优化
-- [ ] 前端性能优化（懒加载、缓存）
-- [ ] 安全加固（XSS、SQL注入防护）
-
-#### 17. 测试与文档
-- [ ] 单元测试编写
-- [ ] 接口测试
-- [ ] 部署文档编写
-- [ ] 使用手册编写
-
----
-
-- 完成日志管理模块后端接口开发
-  - 创建操作日志实体类 OperationLog
-    - 操作模块、操作类型、请求方法、请求参数、返回结果、IP地址、User-Agent、执行时长、状态、错误信息
-  - 创建登录日志实体类 LoginLog
-    - 用户名、登录IP、登录地点、浏览器、操作系统、登录状态、登录消息、登录时间
-  - 创建日志 Mapper 接口
-    - OperationLogMapper：操作日志数据访问接口
-    - LoginLogMapper：登录日志数据访问接口
-  - 创建日志相关 DTO 类
-    - OperationLogQueryRequest：操作日志查询请求参数（模块、操作类型、操作人、状态、时间范围、分页参数）
-    - OperationLogResponse：操作日志响应结果（日志基本信息、创建时间等）
-    - LoginLogQueryRequest：登录日志查询请求参数（用户名、登录IP、登录状态、时间范围、分页参数）
-    - LoginLogResponse：登录日志响应结果（日志基本信息、登录时间等）
-  - 创建日志服务接口和实现类
-    - OperationLogService：操作日志服务接口
-    - OperationLogServiceImpl：操作日志服务实现类
-      - pageOperationLogs：分页查询操作日志（支持多条件查询、按创建时间降序排序）
-      - getOperationLogById：根据ID获取操作日志详情
-      - deleteOperationLog：删除操作日志
-      - batchDeleteOperationLogs：批量删除操作日志
-      - clearOperationLogs：清空操作日志
-    - LoginLogService：登录日志服务接口
-    - LoginLogServiceImpl：登录日志服务实现类
-      - pageLoginLogs：分页查询登录日志（支持多条件查询、按登录时间降序排序）
-      - getLoginLogById：根据ID获取登录日志详情
-      - deleteLoginLog：删除登录日志
-      - batchDeleteLoginLogs：批量删除登录日志
-      - clearLoginLogs：清空登录日志
-  - 创建日志控制器
-    - OperationLogController：操作日志控制器
-      - GET /system/log/operation/page：分页查询操作日志（权限：system:log:operation:list）
-      - GET /system/log/operation/{id}：根据ID获取操作日志详情（权限：system:log:operation:query）
-      - DELETE /system/log/operation/{id}：删除操作日志（权限：system:log:operation:delete）
-      - DELETE /system/log/operation/batch：批量删除操作日志（权限：system:log:operation:delete）
-      - DELETE /system/log/operation/clear：清空操作日志（权限：system:log:operation:clear）
-    - LoginLogController：登录日志控制器
-      - GET /system/log/login/page：分页查询登录日志（权限：system:log:login:list）
-      - GET /system/log/login/{id}：根据ID获取登录日志详情（权限：system:log:login:query）
-      - DELETE /system/log/login/{id}：删除登录日志（权限：system:log:login:delete）
-      - DELETE /system/log/login/batch：批量删除登录日志（权限：system:log:login:delete）
-      - DELETE /system/log/login/clear：清空登录日志（权限：system:log:login:clear）
-  - 创建 Mapper XML 文件
-    - OperationLogMapper.xml：操作日志 SQL 映射文件（分页查询、多条件查询）
-    - LoginLogMapper.xml：登录日志 SQL 映射文件（分页查询、多条件查询）
-  - 创建操作日志注解和切面
-    - @OperationLog 注解：用于标记需要记录操作日志的方法
-      - module：操作模块
-      - operation：操作类型
-      - saveParams：是否保存请求参数（默认 true）
-      - saveResult：是否保存返回结果（默认 true）
-    - OperationLogAspect 切面：自动记录操作日志
-      - 环绕通知：拦截标注了 @OperationLog 注解的方法
-      - 记录操作模块、操作类型、请求方法、请求参数、返回结果
-      - 记录 IP 地址、User-Agent、执行时长、操作状态、错误信息
-      - 自动获取当前登录用户
-      - 异步保存日志到数据库
-  - 创建 IP 工具类 IpUtils
-    - getIpAddress：获取客户端真实 IP 地址（支持代理、负载均衡）
-    - isInternalIp：判断是否为内网 IP
-  - 为 UserController 添加操作日志注解示例
-    - 新增用户、编辑用户、删除用户、批量删除用户、重置密码、分配角色等操作
-  - 业务规则说明
-    - 操作日志自动记录用户的操作行为（模块、操作类型、请求参数、返回结果、IP、执行时长等）
-    - 登录日志记录用户的登录信息（用户名、IP、地点、浏览器、操作系统、登录状态等日志查询支持多条件组合查询（模块、操作类型、操作人、状态、时间范围等）
-    - 支持删除单条日志、批量删除日志、清空所有日志
-    - 操作日志通过 AOP 切面自动记录，无需手动调用
-    - 请求参数和返回结果超过 2000 字符时自动截断
-    - 重置密码等敏感操作不保存返回结果（saveResult = false）
-- 完成日志管理模块前端页面开发
-  - 创建操作日志 API 接口文件 api/operationLog.js
-    - pageOperationLogs：分页查询操作日志列表
-    - getOperationLogById：根据ID获取操作日志详情
-    - deleteOperationLog：删除操作日志
-    - batchDeleteOperationLogs：批量删除操作日志
-    - clearOperationLogs：清空操作日志
-  - 创建登录日志 API 接口文件 api/loginLog.js
-    - pageLoginLogs：分页查询登录日志列表
-    - getLoginLogById：根据ID获取登录日志详情
-    - deleteLoginLog：删除登录日志
-    - batchDeleteLoginLogs：批量删除登录日志
-    - clearLoginLogs：清空登录日志
-  - 创建操作日志管理页面 views/system/OperationLog.vue
-    - 搜索栏：操作模块、操作类型、操作人、状态、操作时间范围
-    - 操作栏：批量删除、清空日志按钮
-    - 操作日志列表表格：显示日志ID、操作模块、操作类型（标签显示）、请求方法、请求URL、操作人、操作IP、操作地点、状态（标签显示）、操作时间(ms)、创建时间
-    - 表格操作列：详情、删除按钮
-    - 分页组件：支持切换每页显示数量和跳转页码
-    - 详情对话框：显示完整的日志信息（请求参数、响应结果、错误信息等）
-  - 创建登录日志管理页面 views/system/LoginLog.vue
-    - 搜索栏：用户名、登录IP、状态、登录时间范围
-    - 操作栏：批量删除、清空日志按钮
-    - 登录日志列表表格：显示日志ID、用户名、登录IP、登录地点、浏览器、操作系统、状态（标签显示）、提示信息、登录时间
-    - 表格操作列：详情、删除按钮
-    - 分页组件：支持切换每页显示数量和跳转页码
-    - 详情对话框：显示完整的登录日志信息
-  - 更新路由配置 router/index.js
-    - 添加操作日志管理页面路由 /system/log/operation
-    - 添加登录日志管理页面路由 /system/log/login
-  - 页面功能说明
-    - 支持多条件组合查询日志（操作模块、操作类型、操作人、状态、时间范围等）
-    - 支持查看日志详情（完整的请求参数、响应结果、错误信息等）
-    - 支持删除单条日志或批量删除日志
-    - 支持清空所有日志（需二次确认）
-    - 操作类型标签：新增（绿色）、修改（橙色）、删除（红色）、查询（灰色）、其他（默认）
-    - 状态标签：成功（绿色）、失败（红色）
-    - 日期时间范围选择器：支持选择开始时间和结束时间
-    - 表格支持多选：可批量删除多条日志
-    - 详情对话框：使用描述列表组件展示日志详细信息，请求参数和响应结果使用文本域展示
+#### 系统测试与文档
+- **单元测试**：密码加密、SQL注入防护、XSS防护
+- **接口测试**：认证、用户、角色、部门控制器
+- **文档**：
+  - `docs/使用手册.md`
+  - `docs/部署文档.md`
 
 ---
 
 ### 2026-01-14
-- 完成通知公告模块剩余功能开发
-  - 后端功能（已完成）
-    - 标记已读接口：POST /system/notice/{id}/read
-      - 获取当前用户ID
-      - 检查通知是否存在
-      - 检查是否已标记为已读（避免重复插入）
-      - 插入已读记录到 sys_notice_read 表
-    - 获取未读数量接口：GET /system/notice/unread/count
-      - 查询已发布的通知总数
-      - 查询当前用户已读的通知数
-      - 返回未读数量（总数 - 已读数）
-    - 获取我的通知列表接口：GET /system/notice/my
-      - 分页查询已发布的通知
-      - 关联查询当前用户的已读状态
-      - 返回通知列表（包含 isRead 字段）
-  - 前端功能（已完成）
-    - 我的通知页面：`D:\workspace\base\frontend\src\views\system\MyNotice.vue`
-      - 搜索栏：支持按标题、类型、级别筛选
-      - 通知列表：卡片式展示，未读通知高亮显示
-      - 未读标识：红点徽章标记未读通知
-      - 点击查看：自动标记为已读
-      - 详情对话框：显示完整通知内容
-      - 样式优化：未读通知使用蓝色背景，标题加粗
-    - 未读通知提醒组件：`D:\workspace\base\frontend\src\components\NoticeDropdown.vue`
-      - 下拉菜单：点击铃铛图标显示最新通知列表
-      - 未读徽章：显示未读通知数量（最大99+）
-      - 通知列表：显示最新5条通知，未读通知高亮
-      - 时间格式化：刚刚、X分钟前、X小时前、X天前
-      - 点击通知：查看详情并标记为已读
-      - 查看全部：跳转到我的通知页面
-      - 自动刷新：每30秒自动刷新未读数量
-      - 详情对话框：在下拉菜单中直接查看通知详情
-    - 布局集成：`D:\workspace\base\frontend\src\layout\Index.vue`
-      - 将 NoticeDropdown 组件集成到顶部栏
-      - 替换原有的 NoticeBadge 组件
-      - 位置：用户信息下拉菜单左侧
-    - 路由配置：`D:\workspace\base\frontend\src\router\index.js`
-      - 添加我的通知路由：/system/my-notice
-      - 路由元信息：标题"我的通知"、图标"Bell"
-      - 作为基础路由，所有用户都可访问
-  - 业务规则说明
-    - 通知阅读记录存储在 sys_notice_read 表
-    - 每个用户对每条通知只能有一条阅读记录
-    - 未读数量 = 已发布通知总数 - 当前用户已读数
-    - 点击查看通知时自动标记为已读
-    - 标记已读后触发未读数量更新事件
-    - 下拉菜单显示最新5条通知
-    - 未读通知使用蓝色背景和红点标识
-    - 通知详情支持在下拉菜单和独立页面中查看
-    - 自动刷新机制避免频繁请求后端
-- 完成前端动态路由功能开发
-  - 创建菜单API接口文件 `D:\workspace\base\frontend\src\api\menu.js`
-    - getUserMenuTree：获取当前用户的菜单树
-  - 创建路由工具文件 `D:\workspace\base\frontend\src\utils\route.js`
-    - generateRoutes：将后端返回的菜单数据转换为Vue Router路由配置
-    - loadComponent：动态加载组件（使用懒加载）
-    - filterHiddenMenus：过滤隐藏的菜单
-    - flattenMenus：将菜单树转换为扁平数组
-    - findMenuByCode：根据权限编码查找菜单
-  - 修改用户store `D:\workspace\base\frontend\src\store\user.js`
-    - 添加 menus 状态：存储用户菜单树
-    - 添加 routes 状态：存储动态路由配置
-    - 添加 routesLoaded 状态：标记路由是否已加载
-    - 添加 setMenus 方法：设置菜单数据
-    - 添加 setRoutes 方法：设置路由数据
-    - 添加 loadMenus 方法：从后端加载菜单并生成路由
-    - 添加 resetRoutesLoaded 方法：重置路由加载状态
-    - 更新 logout 方法：清除菜单和路由数据
-  - 修改路由配置文件 `D:\workspace\base\frontend\src\router\index.js`
-    - 将原有的静态路由改为基础路由（constantRoutes）
-    - 保留登录页、首页、个人中心等基础路由
-    - 移除所有业务模块的静态路由配置
-    - 在路由守卫中实现动态路由加载逻辑
-    - 首次访问时从后端获取菜单并生成路由
-    - 使用 router.addRoute() 动态添加路由到主布局
-    - 添加404路由作为兜底（在动态路由加载后添加）
-    - 路由加载失败时清除token并跳转登录页
-  - 修改布局组件 `D:\workspace\base\frontend\src\layout\Index.vue`
-    - 移除硬编码的菜单结构
-    - 使用动态菜单数据渲染侧边栏
-    - 支持多级菜单嵌套（最多三级）
-    - 支持菜单图标动态显示
-    - 首页菜单保持固定显示
-  - 功能特点
-    - 动态路由在用户登录后首次访问时自动加载
-    - 菜单数据缓存到store中，避免重复请求
-    - 路由组件使用懒加载方式（import.meta.glob）
-    - 支持多级菜单的路由嵌套
-    - 自动过滤隐藏的菜单（visible=0）
-    - 404路由在动态路由加载后添加，确保正确匹配
-    - 退出登录时清除动态路由和菜单数据
-  - 业务规则
-    - 只处理菜单类型的权限（permissionType=1）
-    - 按钮类型的权限（permissionType=2）不生成路由
-    - 组件路径自动补全（添加.vue后缀和views前缀）
-    - 组件未找到时使用默认组件（Dashboard）
-    - 路由路径使用后端返回的routePath字段
-    - 菜单名称使用permissionName字段
-    - 权限编码使用permissionCode字段
-- 完善个人中心后端接口功能
-  - 完善用户个人中心服务 `D:\workspace\base\backend\src\main\java\com\base\system\service\UserProfileService.java`
-    - 添加 uploadAvatar 方法：上传头像文件并返回访问URL
-  - 完善用户个人中心服务实现类 `D:\workspace\base\backend\src\main\java\com\base\system\service\impl\UserProfileServiceImpl.java`
-    - 注入 FileUploadUtil 工具类
-    - 实现 uploadAvatar 方法：
-      - 获取当前登录用户ID
-      - 验证用户是否存在
-      - 调用 FileUploadUtil 上传头像文件
-      - 删除旧头像文件（如果存在）
-      - 更新用户头像URL到数据库
-      - 返回新头像访问URL
-  - 完善用户个人中心控制器 `D:\workspace\base\backend\src\main\java\com\base\system\controller\UserProfileController.java`
-    - 添加 POST /system/profile/avatar 接口：上传头像文件
-      - 接收 MultipartFile 文件参数
-      - 调用 uploadAvatar 方法处理文件上传
-      - 返回头像访问URL
-    - 保留 PUT /system/profile/avatar 接口：更新头像URL（用于直接设置头像URL）
-  - 文件上传工具类已存在 `D:\workspace\base\backend\src\main\java\com\base\system\util\FileUploadUtil.java`
-    - uploadAvatar 方法：上传头像文件
-      - 验证文件不为空
-      - 验证文件类型（仅支持 jpg、jpeg、png）
-      - 验证文件大小（最大 2MB）
-      - 生成唯一文件名（UUID + 扩展名）
-      - 按日期创建子目录（yyyy/MM/dd）
-      - 保存文件到本地目录（upload/avatar/yyyy/MM/dd/）
-      - 返回文件访问URL（/upload/avatar/yyyy/MM/dd/文件名）
-    - deleteFile 方法：删除文件
-      - 将URL转换为文件路径
-      - 删除本地文件
-      - 返回删除结果
-  - 文件上传配置已存在
-    - application.yml 配置文件：
-      - file.upload.path：文件上传路径（D:/upload/）
-      - file.upload.prefix：文件访问前缀（/upload）
-      - file.upload.max-size：最大文件大小（10MB）
-      - file.upload.allowed-types：允许的文件类型列表
-    - FileUploadConfig 配置类：读取文件上传配置
-    - WebMvcConfig 配置类：配置静态资源映射（/upload/** 映射到本地上传目录）
-  - 业务规则说明
-    - 头像上传仅支持 jpg、jpeg、png 格式
-    - 头像文件大小限制 2MB
-    - 文件名使用 UUID 生成，避免重复
-    - 文件按日期分目录存储（yyyy/MM/dd）
-    - 上传新头像时自动删除旧头像文件
-    - 头像访问URL格式：/upload/avatar/yyyy/MM/dd/文件名
-    - 静态资源通过 /upload 路径访问
-  - 接口说明
-    - GET /system/profile：获取个人信息（包含用户基本信息、部门名称、角色列表）
-    - PUT /system/profile：更新个人信息（昵称、邮箱、手机号、性别）
-    - PUT /system/profile/password：修改密码（验证旧密码、加密新密码）
-    - POST /system/profile/avatar：上传头像文件（返回头像URL）
-    - PUT /system/profile/avatar：更新头像URL（直接设置头像URL）
 
-- 完成系统监控模块开发
-  - 后端实现
-    - 添加oshi依赖到pom.xml（版本6.4.0）：用于获取系统信息
-    - 创建服务器监控DTO `D:\workspace\base\backend\src\main\java\com\base\system\dto\monitor\ServerInfoResponse.java`
-      - CpuInfo：CPU信息（型号、核心数、使用率）
-      - MemoryInfo：内存信息（总内存、已用内存、可用内存、使用率）
-      - JvmInfo：JVM信息（版本、总内存、已用内存、可用内存、使用率、启动时间、运行时长）
-      - SystemInfo：系统信息（操作系统、架构、主机名、IP地址）
-      - DiskInfo：磁盘信息（磁盘名称、挂载路径、总空间、已用空间、可用空间、使用率）
-    - 创建缓存监控DTO `D:\workspace\base\backend\src\main\java\com\base\system\dto\monitor\CacheInfoResponse.java`
-      - Redis版本、运行模式、端口、客户端连接数
-      - 已用内存、最大内存、内存使用率
-      - 键总数、命中率、运行时长
-    - 创建缓存键DTO `D:\workspace\base\backend\src\main\java\com\base\system\dto\monitor\CacheKeyResponse.java`
-      - 缓存键、缓存值、过期时间（TTL）
-    - 创建监控服务接口 `D:\workspace\base\backend\src\main\java\com\base\system\service\MonitorService.java`
-      - getServerInfo：获取服务器信息
-      - getCacheInfo：获取Redis缓存信息
-      - getCacheKeys：获取缓存键列表（支持模式匹配）
-      - getCacheValue：获取缓存值
-      - deleteCacheKey：删除缓存键
-      - clearCache：清空缓存
-    - 创建监控服务实现类 `D:\workspace\base\backend\src\main\java\com\base\system\service\impl\MonitorServiceImpl.java`
-      - 使用oshi库获取CPU、内存、磁盘信息
-      - 使用Runtime和ManagementFactory获取JVM信息
-      - 使用RedisTemplate执行INFO命令获取Redis信息
-      - 使用RedisTemplate的keys方法获取缓存键列表
-      - 使用RedisTemplate的opsForValue方法获取缓存值和TTL
-      - 数据格式化：内存大小转换为GB/MB，时间格式化为天/小时/分钟
-    - 创建监控控制器 `D:\workspace\base\backend\src\main\java\com\base\system\controller\MonitorController.java`
-      - GET /system/monitor/server：获取服务器信息（权限：system:monitor:server）
-      - GET /system/monitor/cache：获取缓存信息（权限：system:monitor:cache）
-      - GET /system/monitor/cache/keys：获取缓存键列表（权限：system:monitor:cache）
-      - GET /system/monitor/cache/value/{key}：获取缓存值（权限：system:monitor:cache）
-      - DELETE /system/monitor/cache/key/{key}：删除缓存键（权限：system:monitor:cache）
-      - DELETE /system/monitor/cache/clear：清空缓存（权限：system:monitor:cache）
-  - 前端实现
-    - 完善监控API接口文件 `D:\workspace\base\frontend\src\api\monitor.js`
-      - getServerInfo：获取服务器信息
-      - getCacheInfo：获取缓存信息
-      - getCacheKeys：获取缓存键列表
-      - getCacheValue：获取缓存值
-      - deleteCacheKey：删除缓存键
-      - clearCache：清空缓存
-    - 完善服务器监控页面 `D:\workspace\base\frontend\src\views\monitor\Server.vue`
-      - CPU信息卡片：显示CPU型号、核心数、使用率（进度条）
-      - 内存信息卡片：显示总内存、已用内存、可用内存、使用率（进度条）
-      - JVM信息卡片：显示JVM版本、启动时间、运行时长、总内存、已用内存、可用内存、使用率（进度条）
-      - 系统信息卡片：显示操作系统、系统架构、主机名、IP地址
-      - 磁盘信息表格：显示磁盘名称、挂载路径、总空间、已用空间、可用空间、使用率（进度条）
-      - 自动刷新功能：每10秒自动刷新数据
-      - 进度条颜色：<60%绿色、60-80%橙色、>80%红n    - 完善缓存监控页面 `D:\workspace\base\frontend\src\views\monitor\Cache.vue`
-      - Redis信息卡片：显示Redis版本、运行模式、端口、客户端连接数
-      - 内存信息卡片：显示已用内存、最大内存、内存使用率（进度条）
-      - 性能信息卡片：显示键总数、命中率、运行时长
-      - 缓存键管理：
-        - 搜索框：支持模式匹配（*通配符）
-        - 缓存键列表表格：显示所有匹配的缓存键
-        - 操作按钮：查看值、删除键
-        - 清空缓存按钮：清空所有缓存（需二次确认）
-      - 缓存值详情对话框：显示缓存键、过期时间、缓存值（文本域）
-      - 自动刷新功能：每10秒自动刷新缓存信息
-  - 业务规则说明
-    - 服务器信息使用oshi库获取，支持跨平台
-    - JVM信息使用Java标准API获取
-    - Redis信息通过INFO命令获取
-    - 缓存键列表支持模式匹配（*通配符）
-    - 缓存值显示支持查看TTL（过期时间）
-    - 删除缓存键和清空缓存需要二次确认
-    - 所有监控接口都需要相应的权限 数据自动格式化：内存单位GB/MB、时间单位天/小时/分钟
-    - 进度条颜色根据使用率动态变化
+#### 1. 通知公告模块完善
+- **后端**：标记已读、获取未读数量、我的通知列表
+- **前端**：
+  - 我的通知页面 `views/system/MyNotice.vue`
+  - 未读通知提醒组件 `components/NoticeDropdown.vue`
 
-### 2026-01-22
-- 实现登录日志记录功能
-  - 问题描述：登录日志没有数据，因为登录时没有调用保存登录日志的方法
-  - 修复方案：在 `AuthServiceImpl` 中添加登录日志记录逻辑
-  - 修改文件：`D:\workspace\base\backend\src\main\java\com\base\system\service\impl\AuthServiceImpl.java`
-  - 实现内容：
-    - 注入 `LoginLogService` 服务
-    - 创建 `saveLoginLog` 辅助方法：记录登录日志到数据库
-      - 获取请求信息（IP地址、User-Agent）
-      - 解析浏览器信息（Chrome、Firefox、Edge、Safari、Opera、IE）
-      - 解析操作系统信息（Windows、Mac OS、Linux、Android、iOS）
-      - 设置登录地点（内网IP显示"内网IP"，其他显示"未知"）
-    - 创建 `parseBrowser` 方法：从 User-Agent 解析浏览器名称
-    - 创建 `parseOs` 方法：从 User-Agent 解析操作系统名称
-    - 在登录成功时记录日志（状态=1，消息="登录成功"）
-    - 在登录失败时记录日志：
-      - 账号被锁定（状态=0，消息="账号已锁定"）
-      - 用户名或密码错误（状态=0，消息="用户名或密码错误"）
-      - 账号被禁用（状态=0，消息="账号已被禁用"）
-  - 业务规则：
-    - 登录日志记录在 `sys_log_login` 表
-    - 记录字段：用户名、登录IP、登录地点、浏览器、操作系统、状态、提示信息
-    - 登录成功和失败都会记录日志
-    - 日志记录失败不影响登录流程（异常被捕获并记录到控制台）
+#### 2. 前端动态路由功能
+- **实现**：登录后从后端获取菜单，动态生成路由
+- **文件**：
+  - `frontend/src/api/menu.js`
+  - `frontend/src/utils/route.js`
+  - `frontend/src/store/user.js`
+  - `frontend/src/router/index.js`
 
-- 修复监控模块权限缺失问题
-  - 问题描述：访问角色管理页面返回 403 Forbidden，监控页面组件未找到
-  - 原因分析：
-    - data.sql 中缺少系统监控子菜单（服务器监控、缓存监控）的权限数据
-    - 组件路径配置不正确
-  - 修复方案：
-    - 在 `data.sql` 中补充监控模块的权限数据
-      - 服务器监控菜单（id=201, parent_id=2, path=/monitor/server, component=monitor/Server）
-      - 缓存监控菜单（id=202, parent_id=2, path=/monitor/cache, component=monitor/Cache）
-      - 服务器监控按钮权限（id=20101, permission_code=system:monitor:server）
-      - 缓存监控按钮权限（id=20201, permission_code=system:monitor:cache）
-    - 创建增量更新脚本 `update_monitor_permission.sql` 用于已有数据库的权限补充
-  - 修改文件：
-    - `D:\workspace\base\backend\src\main\resources\db\data.sql`
-    - `D:\workspace\base\backend\src\main\resources\db\update_monitor_permission.sql`（新建）
+#### 3. 个人中心头像上传
+- **功能**：上传头像文件、删除旧头像、更新数据库
+- **文件**：
+  - `backend/src/main/java/com/base/system/service/UserProfileService.java`
+  - `backend/src/main/java/com/base/system/controller/UserProfileController.java`
 
-- 修复登录报错问题
-  - 问题1：`User.java` 实体类中定义了 `remark` 字段，但数据库表 `sys_user` 中没有该字段
-    - 修复方案：在 `schema.sql` 中为 `sys_user` 表添加 `remark` 字段
-    - 修改文件：`D:\workspace\base\backend\src\main\resources\db\schema.sql`
-    - 对于已存在的数据库，需要执行 ALTER TABLE 语句添加字段
-  - 问题2：`BaseEntity` 中 `createBy` 和 `updateBy` 字段类型为 `Long`，但数据库中是 `VARCHAR(50)` 存储用户名
-    - 修复方案：将两个 BaseEntity 类中的 `createBy` 和 `updateBy` 字段类型从 `Long` 改为 `String`
-    - 修改文件：
-      - `D:\workspace\base\backend\src\main\java\com\base\common\entity\BaseEntity.java`
-      - `D:\workspace\base\backend\src\main\java\com\base\entity\BaseEntity.java`
+#### 4. 系统监控模块
+- **后端**：服务器信息（CPU/内存/磁盘/JVM）、Redis缓存信息
+- **前端**：
+  - 服务器监控页面 `views/monitor/Server.vue`
+  - 缓存监控页面 `views/monitor/Cache.vue`
 
-### 2026-01-15
-- 完成系统测试工作
-  - 单元测试
-    - 创建密码加密工具类测试 `D:\workspace\base\backend\src\test\java\com\base\util\PasswordEncoderUtilTest.java`
-      - 测试密码加密功能
-      - 测试密码验证功能
-      - 测试加密结果唯一性
-    - 创建SQL注入防护工具类测试 `D:\workspace\base\backend\src\test\java\com\base\util\SqlInjectionUtilTest.java`
-      - 测试SQL注入检测功能
-      - 测试各种SQL注入攻击模式
-      - 测试正常SQL语句不被误判
-    - 创建XSS防护工具类测试 `D:\workspace\base\backend\src\test\java\com\base\util\XssUtilTest.java`
-      - 测试XSS过滤功能
-      - 测试各种XSS攻击脚本
-      - 测试HTML转义功能
-  - 接口测试
-    - 创建认证控制器接口测试 `D:\workspace\base\backend\src\test\java\com\base\controller\AuthControllerTest.java`
-      - 测试获取验证码接口
-      - 测试登录接口（成功、失败、验证码错误等场景）
-      - 测试登出接口
-      - 测试刷新Token接口
-    - 创建用户控制器接口测试 `D:\workspace\base\backend\src\test\java\com\base\controller\UserControllerTest.java`
-      - 测试用户列表查询接口
-      - 测试用户详情查询接口
-      - 测试新增用户接口（成功、用户名重复等场景）
-      - 测试编辑用户接口
-      - 测试删除用户接口（单个、批量、超级管理员保护）
-      - 测试切换用户状态接口
-      - 测试重置密码接口
-      - 测试分配角色接口
-    - 创建角色控制器接口测试 `D:\workspace\base\backend\src\test\java\com\base\controller\RoleControllerTest.java`
-      - 测试角色列表查询接口
-      - 测试角色详情查询接口
-      - 测试新增角色接口（成功、角色编码重复等场景）
-      - 测试编辑角色接口
-      - 测试删除角色接口（单个、批量、角色被使用保护）
-      - 测试切换角色状态接口
-      - 测试分配权限接口
-      - 测试获取角色权限列表接口
-    - 创建部门控制器接口测试 `D:\workspace\base\backend\src\test\java\com\base\controller\DepartmentControllerTest.java`
-      - 测试部门树查询接口
-      - 测试部门详情查询接口
-      - 测试新增部门接口（成功、部门编码重复等场景）
-      - 测试编辑部门接口（成功、设置为自己的上级等场景）
-      - 测试删除部门接口（成功、有子部门、有用户等场景）
-      - 测试获取所有部门树接口
-- 完成系统文档编写
-  - 使用手册 `D:\workspace\base\docs\使用手册.md`
-    - 系统简介：系统概述、技术架构、系统特点
-    - 快速开始：环境要求、安装步骤、默认账号
-    - 功能模块详解：
-      - 登录认证：用户登录、退出登录
-      - 首页：统计卡片、最近登录、系统通知
-      - 用户管理：查询、新增、编辑、删除、重置密码、分配角色、切换状态
-      - 角色管理：查询、新增、编辑、删除、分配权限、切换状态
-      - 权限管理：查询、新增、编辑、删除、展开/折叠
-      - 部门管理：查询、新增、编辑、删除
-      - 枚举管理：查询、新增、编辑、删除、刷新缓存
-      - 全局变量管理：查询、新增、编辑、删除、刷新缓存
-      - 日志管理：操作日志、登录日志
-      - 通知公告：通知管理、我的通知
-      - 系统监控：服务器监控、缓存监控
-      - 个人中心：基本信息、修改密码
-    - 常见问题：登录相关、权限相关、操作相关、性能相关、其他问题
-    - 附录：系统配置说明、浏览器兼容性、更新日志
-  - 部署文档 `D:\workspace\base\docs\部署文档.md`
-    - 环境准备：服务器要求、软件环境
-    - 开发环境部署：
-      - 安装基础软件（JDK、MySQL、Redis、Node.js、Maven）
-      - 数据库初始化（创建数据库、导入脚本）
-      - 后端部署（修改配置、编译打包、启动服务）
-      - 前端部署（安装依赖、修改配置、启动服务）
-    - 生产环境部署：
-      - 后端生产部署（修改生产配置、编译打包、创建系统服务）
-      - 前端生产部署（修改生产配置、构建生产包、Nginx部署）
-      - HTTPS配置（申请SSL证书、配置HTTPS）  - Docker部署：
-      - 准备Dockerfile（后端Dockerfile、前端Dockerfile）
-      - Docker Compose部署（MySQL、Redis、后端、前端）
-      - 启动Docker容器
-      - Docker常用命令
-    - 常见问题：
-      - 数据库相关（连接失败、初始化失败）
-      - Redis相关（连接失败）
-      - 后端服务相关（启动失败、接口错误）
-      - 前端服务相关（页面无法访问、接口调用失败）
-      - Docker相关（容器启动失败、网络问题）
-      - 性能优化（系统响应慢、数据库查询慢）
-      - 安全相关（加强系统安全）
-    - 附录：
-      - 端口说明
-      - 目录结构
-      - 备份与恢复
-      - 监控与维护
+---
 
-### 2026-01-26
-- 完成省市区街道四级行政区划数据管理模块开发
-  - 数据库设计
-    - 创建 `sys_region` 表：行政区划表
-      - 字段：id、parent_id、region_code、region_name、level、sort、status、full_name、short_name、pinyin、pinyin_prefix、longitude、latitude
-      - 索引：region_code 唯一索引、parent_id、level、region_name、pinyin_prefix、status
-      - 支持四级层级：1-省、2-市、3-区、4-街道
-  - 后端实现
-    - 创建实体类 `Region.java`：行政区划实体
-    - 创建 DTO 类：
-      - `RegionQueryRequest.java`：查询请求参数
-      - `RegionTreeNode.java`：树形节点
-      - `RegionCascadeNode.java`：级联选择节点
-    - 创建 Mapper 接口 `RegionMapper.java`：
-      - `selectRegionAndChildIds`：递归查询区划及所有子区划ID
-      - `selectByRegionCodes`：根据区划代码批量查询
-    - 创建 Service 层：
-      - `RegionService.java`：服务接口
-      - `RegionServiceImpl.java`：服务实现
-      - 核心方法：
-        - `getRegionTree`：获取树形结构（支持条件查询）
-        - `getChildrenByParentId`：根据父级ID查询子区划
-        - `getRegionsByLevel`：根据层级查询
-        - `getCascadeNodes`：获取级联选择器数据（懒加载）
-        - `getFullPath`：根据区划代码获取完整路径
-        - `getByRegionCode`：根据区划代码查询
-        - `createRegion`：创建区划（验证代码唯一性）
-        - `updateRegion`：更新区划
-        - `deleteRegion`：删除区划（验证无子区划）
-        - `batchImport`：批量导入（每批1000条）
-        - `searchRegions`：搜索区划（支持名称、拼音）
-    - 创建 Controller 控制器 `RegionController.java`：
-      - GET /system/region/tree：获取树形结构
-      - GET /system/region/children/{parentId}：根据父级ID查询
-      - GET /system/region/level/{level}：根据层级查询
-      - GET /system/region/cascade：级联选择器数据
-      - GET /system/region/fullPath/{regionCode}：获取完整路径
-      - GET /system/region/code/{regionCode}：根据代码查询
-      - GET /system/region/{id}：根据ID查询
-      - GET /system/region/search：搜索区划
-      - POST /system/region：创建区划（权限：system:region:add）
-      - PUT /system/region：更新区划（权限：system:region:edit）
-      - DELETE /system/region/{id}：删除区划（权限：system:region:delete）
-      - POST /system/region/import：批量导入（权限：system:region:import）
-  - 前端实现
-    - 创建 API 接口文件 `region.js`：
-      - treeRegions、getChildrenByParentId、getRegionsByLevel
-      - getCascadeNodes、getFullPath、getByRegionCode
-      - searchRegions、getRegionById
-      - addRegion、updateRegion、deleteRegion、importRegions
-    - 创建管理页面 `Region.vue`：
-      - 搜索栏：区划名称、区划代码、层级、状态
-      - 操作栏：新增区划、展开全部、折叠全部
-      - 树形表格：显示区划名称、代码、层级、状态、排序、创建时间
-      - 层级标签：省（红色）、市（橙色）、区（绿色）、街道（灰色）
-      - 操作列：新增子区划、编辑、删除
-      - 新增/编辑对话框：上级区划、代码、名称、层级、简称、拼音、拼音首字母、状态、排序、备注
-      - 表单验证：代码2-20字符、名称2-50字符、简称最多20字符
-    - 创建地址选择组件 `RegionCascader.vue`：
-      - 基于 el-cascader 实现
-      - 支持懒加载模式（动态加载下级数据）
-      - Props：modelValue（区划代码数组）、level（最大层级，默认4）、showAllLevels（显示完整路径，默认true）、placeholder
-      - Events：update:modelValue、change
-      - 使用 getCascadeNodes API 实现懒加载
-      - 根据层级自动判断是否为叶子节点
-  - 权限配置
-    - 菜单权限：行政区划（id=108，parent_id=1，path=/system/region，component=system/Region，icon=Location）
-    - 按钮权限：
-      - 区划查询（system:region:query）
-      - 区划新增（system:region:add）
-      - 区划编辑（system:region:edit）
-      - 区划删除（system:region:delete）
-      - 区划导入（system:region:import）
-    - 超级管理员自动拥有所有权限
-  - 业务规则
-    - 区划代码必须唯一（使用唯一索引）
-    - 删除区划前验证是否有子区划
-    - 支持逻辑删除（deleted字段）
-    - 树形查询按排序和创建时间排序
-    - 级联选择器懒加载模式，提升性能
-    - 批量导入每批1000条，避免内存溢出
-    - 搜索支持名称、拼音、拼音首字母三种方式
-    - 完整路径格式：省/市/区/街道
-  - 文件清单
-    - 后端文件（10个）：
-      - schema.sql（追加表结构）
-      - data.sql（追加权限配置）
-      - Region.java（实体类）
-      - RegionQueryRequest.java、RegionTreeNode.java、RegionCascadeNode.java（DTO）
-      - RegionMapper.java、RegionMapper.xml（Mapper）
-      - RegionService.java、RegionServiceImpl.java（Service）
-      - RegionController.java（Controller）
-    - 前端文件（3个）：
-      - region.js（API接口）
-      - Region.vue（管理页面）
-      - RegionCascad选择组件）
-  - 待完成任务
-    - 数据导入：需要下载开源数据并转换为SQL格式导入
-    - 数据源推荐：https://github.com/modood/Administrative-divisions-of-China
-    - 导入方式：执行SQL文件或使用后端导入接口
+### 2026-01-13
 
-- 完成行政区划数据导入工具和文档
-  - 创建数据转换工具类 `D:\workspace\base\backend\src\main\java\com\base\system\util\RegionDataConverter.java`
-    - 功能：将 GitHub 开源数据（JSON 格式）转换为 Region 实体
-    - 核心方法：
-      - `convertFromJson`：从 JSON 文件读取并转换为 Region 实体列表
-      - `convertJsonToRegion`：将单个 JSON 对象转换为 Region 实体
-      - `determineLevel`：根据区划代码判断层级（省/市/区）
-      - `getParentCode`：根据区划代码获取父级区划代码
-      - `removeAdministrativeSuffix`：去掉行政区划名称后缀（省、市、区、县等）
-      - `convertToPinyin`：转换为拼音（使用映射表）
-      - `getPinyinPrefix`：获取拼音首字母
-      - `generateInsertSql`：生成 SQL 插入语句
-    - 拼音映射表：内置 34 个省级行政区的拼音映射
-    - 层级判断规则：
-      - 省级：区划代码后 4 位为 0000（如：110000）
-      - 市级：区划代码后 2 位为 00，但后 4 位不为 0000（如：110100）
-      - 区级：区划代码后 2 位不为 00（如：110101）
-    - 父级关系规则：
-      - 省级：parentId = 0（顶级）
-      - 市级：父级代码 = 前 2 位 + "0000"
-      - 区级：父级代码 = 前 4 位 + "00"
-    - 支持从 JSON 文件读取数据并批量转换
-    - 支持生成标准 SQL 插入语句
-  - 创建测试数据 SQL 文件 `D:\workspace\base\backend\src\main\resources\db\region_data_sample.sql`
-    - 包含全国 34 个省级行政区（直辖市、省、自治区、特别行政区）
-    - 包含广东省 21 个市级行政区
-    - 包含广州市 11 个区级行政区
-    - 总计 66 条测试数据
-    - 使用变量关联父级 ID（@guangdong_id、@guangzhou_id）
-    - 数据字段完整：区划代码、名称、层级、排序、状态、全称、简称、拼音、拼音首字母
-    - 可直接执行导入数据库进行功能测试
-  - 创建数据导入说明文档 `D:\workspace\base\backend\src\main\resources\db\README_REGION.md`
-    - 数据源说明：推荐使用 GitHub 开源项目 Administrative-divisions-of-China
-    - 快速测试：使用 region_data_sample.sql 测试数据
-    - 完整数据导入：
-      - 方式一：下载 JSON 数据并使用 RegionDataConverter 转换
-      - 方式二：使用后端导入接口批量导入
-    - 数据处理说明：
-      - 层级判断规则详解
-      - 父级关系处理逻辑
-      - 拼音转换方案（映射表 + pinyin4j 库）
-    - 数据维护：
-      - 更新数据的建议
-      - 数据校验 SQL 语句
-      - 性能优化建议
-    - 常见问题解答：
-      - 前端显示不正常的排查方法
-      - 大数据量导入的分批策略
-      - 特殊行政区划的处理方式
-      - 拼音数据不准确的解决方案
-    - 附录：数据源更新记录、相关链接
-  - 文件清单（本次新增 3 个文件）：
-    - `RegionDataConverter.java`：数据转换工具类
-    - `region_data_sample.sql`：测试数据 SQL 文件
-    - `README_REGION.md`：数据导入说明文档
-  - 已添加到 git 暂存区（未 commit）
+#### 1. 个人中心页面
+- **文件**：`frontend/src/views/profile/Index.vue`
+- **功能**：头像上传、基本信息编辑、修改密码
 
-- 完成完整的中国省市区三级数据导入
-  - 数据来源：从 GitHub 下载完整数据
-    - 数据源：https://github.com/modood/Administrative-divisions-of-China
-    - 使用文件：pca-code.json（省市区三级数据）
-    - 数据统计：共 3424 条区划数据
-      - 省级：31 条（直辖市、省、自治区）
-      - 市级：337 条（地级市、自治州、地区）
-      - 区级：3056 条（市辖区、县、县级市、旗）
-  - 数据转换脚本：`generate_sql.py`
-    - 功能：解析 JSON 数据并生成完整的 SQL 文件
-    - 核心逻辑：
-      - 递归解析嵌套的树形 JSON 结构
-      - 自动跳过"市辖区"、"县"等虚拟节点
-      - 根据区划代码长度判断层级（2位=省、4位=市、6位=区）
-      - 使用变量存储父级 ID，确保父子关系正确
-      - 拼音映射表支持 34 个省级行政区
-      - 自动去除行政区划名称后缀（省、市、区、县等）
-      - 生成拼音首字母（仅支持英文拼音）
-    - 批量插入优化：
-      - 省级数据：逐条插入（共 31 条）
-      - 市级数据：每批 100 条（共 337 条，分 4 批）
-      - 区级数据：每批 100 条（共 3056 条，分 31 批）
-      - 每批插入后添加进度提示
-  - 生成的 SQL 文件：`backend/src/main/resources/db/init_region_full.sql`
-    - 文件大小：865.67 KB
-    - 总行数：7439 行
-    - 文件结构：
-      - 表结构定义（DROP + CREATE TABLE）
-      - 权限配置（菜单权限 + 按钮权限）
-      - 省级数据（31 条，使用变量存储 ID）
-      - 市级数据（337 条，分批插入，关联父级变量）
-      - 区级数据（3056 条，分批插入，关联父级变量）
-      - 数据验证查询（统计各层级数量、示例数据）
-    - 特点：
-      - 使用 MySQL 变量（@变量名）存储父级 ID
-      - 确保父子关系正确关联
-      - 支持直接执行导入数据库
-      - 包含完整的表结构和权限配置
-      - 自动删除旧的权限配置避免冲突
-  - 数据质量：
-    - 区划代码：标准 6 位国标代码
-    - 区划名称：完整的官方名称
-    - 层级关系：父子关系正确
-    - 拼音数据：省级行政区拼音完整，其他区划使用中文（可后续优化）
-    - 拼音首字母：省级行政区有首字母，其他区划为空（可后续优化）
-  - 使用说明：
-    - 直接执行 SQL 文件即可导入完整数据
-    - 执行前会自动删除旧表和旧权限配置
-    - 执行后会显示数据验证结果
-    - 支持重复执行（幂等性）
-  - 文件清单（本次新增 1 个文件）：
-    - `init_region_full.sql`：完整的省市区三级数据 SQL 文件（3424 条数据）
-  - 已添加到 git 暂存区（未 commit）
+#### 2. 通知公告管理页面
+- **文件**：`frontend/src/views/system/Notice.vue`
+- **功能**：通知列表、新增/编辑、发布、删除
 
-### 2026-01-26
-- 完成按钮级别权限控制功能开发
-  - 功能概述：实现前端按钮根据用户权限动态显示/隐藏，后端接口通过 @PreAuthorize 注解验证权限
-  - 前端实现
-    - 修改用户 Store `D:\workspace\base\frontend\src\store\user.js`
-      - 添加 `permissions` 状态：存储用户权限列表
-      - 添加 `setPermissions` 方法：设置权限列表
-      - 添加 `hasPermission` 方法：检查单个权限
-      - 添加 `hasAnyPermission` 方法：检查是否有任意一个权限（OR 逻辑）
-      - 添加 `hasAllPermissions` 方法：检查是否有所有权限（AND 逻辑）
-      - 添加 `loadUserInfo` 方法：从后端 `/auth/info` 接口获取用户信息和权限列表
-      - 更新 `logout` 方法：登出时清空权限列表
-      - 导入 `getUserInfo` API 方法
-    - 创建权限指令 `D:\workspace\base\frontend\src\directives\permission.js`
-      - 实现 `v-permission` 自定义指令
-      - 支持单个权限：`v-permission="'system:user:add'"`
-      - 支持多个权限（OR 逻辑）：`v-permission="['system:user:add', 'system:user:edit']"`
-      - 支持多个权限（AND 逻辑）：`v-permission:all="['system:user:add', 'system:user:edit']"`
-      - 无权限时移除 DOM 元素（而非隐藏）
-    - 创建指令统一导出文件 `D:\workspace\base\frontend\src\directives\index.js`
-      - 注册所有自定义指令
-      - 提供 install 方法供 Vue 应用使用
-    - 创建权限工具函数 `D:\workspace\base\frontend\src\utils\permission.js`
-      - `hasPermission(permission)`：检查单个权限
-      - `hasAnyPermission(permissions)`：检查是否有任意一个权限
-      - `hasAllPermissions(permissions)`：检查是否有所有权限
-      - 供 JS 代码中使用，无需在模板中使用指令
-    - 修改主入口文件 `D:\workspace\base\frontend\src\main.js`
-      - 导入 directives 模块
-      - 使用 `app.use(directives)` 注册自定义指令
-    - 修改登录页面 `D:\workspace\base\frontend\src\views\Login.vue`
-      - 登录成功后调用 `userStore.loadUserInfo()` 获取用户信息和权限
-      - 移除直接设置 userInfo 的代码，改为通过 loadUserInfo 方法获取
-    - 应用权限控制到用户管理页面 `D:\workspace\base\frontend\src\views\system\User.vue`
-      - 新增按钮：`v-permission="'system:user:add'"`
-      - 批量删除按钮：`v-permission="'system:user:delete'"`
-      - 编辑按钮：`v-permission="'system:user:edit'"`
-      - 重置密码按钮：`v-permission="'system:user:resetPwd'"`
-      - 分配角色按钮：`v-permission="'system:user:role'"`
-      - 删除按钮：`v-permission="'system:user:delete'"`
-    - 应用权限控制到角色管理页面 `D:\workspace\base\frontend\src\views\system\Role.vue`
-      - 新增角色按钮：`v-permission="'system:role:add'"`
-      - 批量删除按钮：`v-permission="'system:role:delete'"`
-      - 编辑按钮：`v-permission="'system:role:edit'"`
-      - 分配权限按钮：`v-permission="'system:role:permission'"`
-      - 删除按钮：`v-permission="'system:role:delete'"`
-  - 后端实现
-    - 后端已有完整的权限验证机制
-    - 使用 `@PreAuthorize("hasAuthority('xxx')")` 注解验证接口权限
-    - `/auth/info` 接口已返回用户权限列表（permissions 字段）
-    - 权限编码规范：`模块:资源:操作`（如 `system:user:add`）
-  - 核心机制
-    - 权限存储：登录后从 `/auth/info` 获取权限列表，存储在 Pinia store
-    - 权限检查：通过 `v-permission` 指令或工具函数检查权限
-    - 权限粒度：
-      - 菜单权限（type=1,2）：控制菜单显示（已实现动态路由）
-      - 按钮权限（type=3）：控制按钮显示（本次实现）
-      - 接口权限：后端 `@PreAuthorize` 验证（已实现）
-    - 安全原则：
-      - 前端权限控制仅用于 UI 展示优化
-      - 后端必须有完整的权限验证（`@PreAuthorize`）
-      - 前端隐藏按钮只是提升用户体验，不能作为安全防护
-  - 使用示例
-    - 模板中使用指令：
-      ```vue
-      <!-- 单个权限 -->
-      <el-button v-permission="'system:user:add'">新增</el-button>
+---
 
-      <!-- 多个权限（OR 逻辑）- 任意一个即可 -->
-      <el-button v-permission="['system:user:edit', 'system:user:add']">编辑</el-button>
+### 2026-01-12
 
-      <!-- 多个权限（AND 逻辑）- 需要全部 -->
-      <el-button v-permission:all="['system:user:edit', 'system:user:query']">编辑</el-button>
-      ```
-    - JS 代码中使用：
-      ```javascript
-      import { hasPermission, hasAnyPermission } from '@/utils/permission'
+#### 项目基础架构搭建
 
-      // 检查单个权限
-      if (hasPermission('system:user:edit')) {
-        // 执行操作
-      }
+**后端**：
+- 统一响应结构 `Result<T>`
+- 全局异常处理器
+- JWT 工具类、Redis 工具类
+- MyBatis Plus 配置
+- Spring Security 集成
 
-      // 检查多个权限
-      if (hasAnyPermission(['system:user:edit', 'system:user:add'])) {
-        // 执行操作
-      }
-      ```
-  - 文件清单（本次新增 3 个文件，修改 6 个文件）
-    - 新增文件：
-      - `frontend/src/directives/permission.js`：权限指令实现
-      - `frontend/src/directives/index.js`：指令统一导出
-      - `frontend/src/utils/permission.js`：权限工具函数
-    - 修改文件：
-      - `frontend/src/store/user.js`：添加权限存储和管理
-      - `frontend/src/main.js`：注册自定义指令
-      - `frontend/src/views/Login.vue`：登录后获取权限
-      - `frontend/src/views/system/User.vue`：应用按钮权限控制
-      - `frontend/src/views/system/Role.vue`：应用按钮权限控制
-  - 已添加到 git 暂存区（未 commit）
-  - 后续工作
-    - 可以将权限控制应用到其他页面（Permission.vue、Department.vue、Enum.vue、Config.vue 等）
-    - 测试不同角色的权限控制效果
-    - 验证前后端权限控制的一致性
+**数据库**：
+- 用户表、角色表、权限表、部门表
+- 枚举表、全局变量表、日志表、通知表
+- 初始化数据（admin/test 用户）
 
-### 2026-01-09
-- 初始化变更记录文件
-- 阅读并分析产品需求文档，准备完善建议
+**前端**：
+- Vue 3 + Vite + Element Plus + Pinia
+- Axios 封装、路由配置
+- 登录页面、首页、基础布局
+
+**功能模块**：
+- 登录认证（验证码、JWT Token、登录失败限制）
+- 用户管理（CRUD、重置密码、分配角色）
+- 角色管理（CRUD、分配权限）
+- 权限/菜单管理（树形结构）
+- 部门管理（树形结构）
+- 枚举管理（Redis缓存）
+- 全局变量管理（Redis缓存）
+- 日志管理（操作日志、登录日志）
+
+---
+
+## 开发计划变更记录
+
+| 日期 | 变更内容 |
+|------|----------|
+| 2026-01-29 | 股票数据分析功能开发完成 |
+| 2026-01-26 | 行政区划管理模块、按钮权限控制 |
+| 2026-01-14 | 通知公告完善、动态路由、系统监控 |
+| 2026-01-12 | 项目基础架构搭建、核心功能模块开发 |

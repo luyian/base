@@ -2,7 +2,10 @@
   <div class="watchlist-container">
     <!-- 操作栏 -->
     <el-card class="action-card" shadow="never">
-      <el-button type="primary" :icon="Refresh" @click="handleBatchSync" :loading="syncing">
+      <el-button type="default" :icon="Refresh" @click="fetchWatchlist">
+        刷新列表
+      </el-button>
+      <el-button type="primary" :icon="Download" @click="handleBatchSync" :loading="syncing">
         批量同步K线
       </el-button>
       <el-button type="danger" :icon="Delete" @click="handleBatchDelete" :disabled="selectedIds.length === 0">
@@ -32,9 +35,10 @@
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="150" align="center" />
         <el-table-column prop="createTime" label="添加时间" width="180" align="center" />
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column label="操作" width="280" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="View" @click="handleView(row)">查看K线</el-button>
+            <el-button type="primary" link :icon="View" @click="handleViewDayKline(row)">日K线</el-button>
+            <el-button type="success" link :icon="TrendCharts" @click="handleViewMinuteKline(row)">分钟K线</el-button>
             <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -68,15 +72,43 @@
         <el-button type="primary" @click="confirmBatchSync" :loading="syncing">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 分钟K线弹窗 -->
+    <el-dialog
+      v-model="klineDialogVisible"
+      :title="`${currentStock.stockName || currentStock.stockCode} - 分钟K线`"
+      width="90%"
+      top="5vh"
+      destroy-on-close
+    >
+      <div class="kline-toolbar">
+        <el-radio-group v-model="klineType" @change="handleKlineTypeChange">
+          <el-radio-button :label="1">1分钟</el-radio-button>
+          <el-radio-button :label="5">5分钟</el-radio-button>
+        </el-radio-group>
+        <el-button :icon="Refresh" @click="refreshKline" :loading="klineLoading" style="margin-left: 16px">
+          刷新
+        </el-button>
+      </div>
+      <MinuteKlineChart
+        v-loading="klineLoading"
+        :data="klineData"
+        :stock-name="currentStock.stockName"
+        :k-type="klineType"
+        :has-more="hasMoreKline"
+        @load-more="loadMoreKline"
+      />
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Refresh, Delete, View } from '@element-plus/icons-vue'
+import { Refresh, Delete, View, Download, TrendCharts } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listWatchlist, deleteWatchlist, batchDeleteWatchlist, batchSyncKline } from '@/api/stock'
+import { listWatchlist, deleteWatchlist, batchDeleteWatchlist, batchSyncKline, getMinuteKline } from '@/api/stock'
 import { useRouter } from 'vue-router'
+import MinuteKlineChart from '../components/MinuteKlineChart.vue'
 
 const router = useRouter()
 
@@ -90,6 +122,16 @@ const syncForm = ref({
   startDate: '',
   endDate: ''
 })
+
+// 分钟K线相关状态
+const klineDialogVisible = ref(false)
+const klineLoading = ref(false)
+const klineType = ref(1)
+const klineData = ref([])
+const hasMoreKline = ref(false)
+const earliestTimestamp = ref(null)
+const currentStock = ref({})
+const loadingMore = ref(false)
 
 // 获取自选列表
 const fetchWatchlist = async () => {
@@ -109,9 +151,68 @@ const handleSelectionChange = (selection) => {
   selectedIds.value = selection.map(item => item.id)
 }
 
-// 查看K线
-const handleView = (row) => {
+// 查看日K线（跳转详情页）
+const handleViewDayKline = (row) => {
   router.push(`/stock/detail/${row.stockCode}`)
+}
+
+// 查看分钟K线（打开弹窗）
+const handleViewMinuteKline = (row) => {
+  currentStock.value = row
+  klineType.value = 1
+  klineData.value = []
+  hasMoreKline.value = false
+  earliestTimestamp.value = null
+  klineDialogVisible.value = true
+  fetchKlineData()
+}
+
+// 获取分钟K线数据
+const fetchKlineData = async (et = null) => {
+  klineLoading.value = true
+  try {
+    const res = await getMinuteKline(currentStock.value.stockCode, klineType.value, et, 100)
+    if (res.data) {
+      if (et) {
+        // 加载更多历史数据，插入到前面
+        klineData.value = [...res.data.klineList, ...klineData.value]
+      } else {
+        klineData.value = res.data.klineList || []
+      }
+      hasMoreKline.value = res.data.hasMore
+      earliestTimestamp.value = res.data.earliestTimestamp
+    }
+  } catch (error) {
+    ElMessage.error(error.message || '获取K线数据失败')
+  } finally {
+    klineLoading.value = false
+    loadingMore.value = false
+  }
+}
+
+// K线类型切换
+const handleKlineTypeChange = () => {
+  klineData.value = []
+  hasMoreKline.value = false
+  earliestTimestamp.value = null
+  fetchKlineData()
+}
+
+// 刷新K线
+const refreshKline = () => {
+  klineData.value = []
+  hasMoreKline.value = false
+  earliestTimestamp.value = null
+  fetchKlineData()
+}
+
+// 加载更多历史数据
+const loadMoreKline = () => {
+  if (loadingMore.value || !hasMoreKline.value || !earliestTimestamp.value) {
+    return
+  }
+  loadingMore.value = true
+  fetchKlineData(earliestTimestamp.value)
 }
 
 // 删除单个
@@ -195,5 +296,10 @@ onMounted(() => {
 }
 .table-card {
   margin-bottom: 15px;
+}
+.kline-toolbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 16px;
 }
 </style>

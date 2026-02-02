@@ -1,5 +1,6 @@
 package com.base.stock.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.base.entity.BaseEntity;
 import io.swagger.annotations.ApiModel;
@@ -43,4 +44,18 @@ public class Watchlist extends BaseEntity {
      */
     @ApiModelProperty("备注")
     private String remark;
+
+    /**
+     * 股票名称（关联查询）
+     */
+    @TableField(exist = false)
+    @ApiModelProperty("股票名称")
+    private String stockName;
+
+    /**
+     * 市场（关联查询）
+     */
+    @TableField(exist = false)
+    @ApiModelProperty("市场")
+    private String market;
 }

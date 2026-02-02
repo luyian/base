@@ -46,7 +46,14 @@
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link :icon="View" @click="handleView(row)">查看K线</el-button>
-            <el-button type="success" link :icon="Star" @click="handleAddWatchlist(row)">加自选</el-button>
+            <el-button
+              :type="isInWatchlist(row.stockCode) ? 'warning' : 'success'"
+              link
+              :icon="isInWatchlist(row.stockCode) ? StarFilled : Star"
+              @click="handleToggleWatchlist(row)"
+            >
+              {{ isInWatchlist(row.stockCode) ? '取消自选' : '加自选' }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -121,10 +128,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Search, Refresh, View, Star, Download } from '@element-plus/icons-vue'
+import { ref, onMounted, computed } from 'vue'
+import { Search, Refresh, View, Star, StarFilled, Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { listStocks, addWatchlist, syncStockList, batchSyncAllKline } from '@/api/stock'
+import { listStocks, addWatchlist, deleteWatchlist, listWatchlist, syncStockList, batchSyncAllKline } from '@/api/stock'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -132,6 +139,9 @@ const router = useRouter()
 const loading = ref(false)
 const tableData = ref([])
 const total = ref(0)
+
+// 自选股票映射：stockCode -> watchlistId
+const watchlistMap = ref(new Map())
 
 const queryForm = ref({
   page: 1,
@@ -223,17 +233,53 @@ const handleView = (row) => {
   router.push(`/stock/detail/${row.stockCode}`)
 }
 
-const handleAddWatchlist = async (row) => {
+// 判断是否在自选中
+const isInWatchlist = (stockCode) => {
+  return watchlistMap.value.has(stockCode)
+}
+
+// 加载自选列表
+const loadWatchlist = async () => {
   try {
-    await addWatchlist(row.stockCode, '')
-    ElMessage.success('添加自选成功')
+    const res = await listWatchlist()
+    const map = new Map()
+    ;(res.data || []).forEach(item => {
+      map.set(item.stockCode, item.id)
+    })
+    watchlistMap.value = map
   } catch (error) {
-    ElMessage.error(error.message || '添加自选失败')
+    console.error('获取自选列表失败', error)
+  }
+}
+
+// 切换自选状态
+const handleToggleWatchlist = async (row) => {
+  const stockCode = row.stockCode
+  if (isInWatchlist(stockCode)) {
+    // 取消自选
+    try {
+      const watchlistId = watchlistMap.value.get(stockCode)
+      await deleteWatchlist(watchlistId)
+      watchlistMap.value.delete(stockCode)
+      ElMessage.success('取消自选成功')
+    } catch (error) {
+      ElMessage.error(error.message || '取消自选失败')
+    }
+  } else {
+    // 添加自选
+    try {
+      const res = await addWatchlist(stockCode, '')
+      watchlistMap.value.set(stockCode, res.data)
+      ElMessage.success('添加自选成功')
+    } catch (error) {
+      ElMessage.error(error.message || '添加自选失败')
+    }
   }
 }
 
 onMounted(() => {
   handleQuery()
+  loadWatchlist()
 })
 </script>
 

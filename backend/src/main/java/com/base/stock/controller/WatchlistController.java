@@ -1,11 +1,13 @@
 package com.base.stock.controller;
 
 import com.base.common.result.Result;
+import com.base.stock.dto.MinuteKlineResponse;
 import com.base.stock.entity.Watchlist;
 import com.base.stock.service.WatchlistService;
 import com.base.system.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -92,5 +94,20 @@ public class WatchlistController {
         Long userId = SecurityUtils.getCurrentUserId();
         boolean inWatchlist = watchlistService.isInWatchlist(userId, stockCode);
         return Result.success(inWatchlist);
+    }
+
+    /**
+     * 获取分钟K线数据
+     */
+    @ApiOperation("获取分钟K线数据")
+    @GetMapping("/minute-kline")
+    @PreAuthorize("hasAuthority('stock:watchlist:list')")
+    public Result<MinuteKlineResponse> getMinuteKline(
+            @ApiParam("股票代码") @RequestParam String stockCode,
+            @ApiParam("K线类型：1=1分钟，5=5分钟") @RequestParam(defaultValue = "1") int kType,
+            @ApiParam("结束时间戳（毫秒），用于分页加载历史数据") @RequestParam(required = false) Long et,
+            @ApiParam("返回条数") @RequestParam(defaultValue = "100") int limit) {
+        MinuteKlineResponse response = watchlistService.getMinuteKline(stockCode, kType, et, limit);
+        return Result.success(response);
     }
 }

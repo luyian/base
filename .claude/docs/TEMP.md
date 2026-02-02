@@ -19,6 +19,7 @@
 | 第五阶段 | iTick API 客户端 | ✅ 完成 |
 | 第六阶段 | 股票业务模块 | ✅ 完成 |
 | 第七阶段 | 前端页面开发 | ✅ 完成 |
+| 第八阶段 | 分钟K线查看功能 | ✅ 完成 |
 
 **下一步**：功能测试和验证
 
@@ -40,7 +41,70 @@
 
 ### 2026-02-02
 
-#### 1. 股票拉取全部K线功能
+#### 1. 分钟K线图表横轴优化（第二阶段）
+- **问题**：之前使用 `interval: 'auto'` 优化了横轴刻度，但缩放后标签仍然密集，因为 `interval: 'auto'` 是基于全部数据计算的
+- **修复**：
+  - 添加 `currentZoomStart` 和 `currentZoomEnd` 变量记录当前缩放范围
+  - 在 `datazoom` 事件处理中更新缩放范围变量
+  - 将 `interval: 'auto'` 改为回调函数，根据可视范围内的数据点数量动态计算显示间隔
+  - 目标：无论缩放到什么程度，横轴始终保持约 10 个刻度标签
+- **文件**：`frontend/src/views/stock/components/MinuteKlineChart.vue`
+
+#### 2. 分钟K线图表横轴优化
+- **问题**：分钟K线图表横轴刻度太密集，每个数据点都显示完整日期时间，导致标签重叠
+- **修复**：
+  - 添加 `interval: 'auto'` 让 ECharts 自动计算合适的刻度间隔
+  - 自定义 `formatter` 函数实现智能日期显示：
+    - 第一个标签显示 `MM-DD` 换行 `HH:mm` 格式
+    - 日期变化时显示 `MM-DD` 换行 `HH:mm` 格式
+    - 同一天内只显示 `HH:mm` 时间
+- **文件**：`frontend/src/views/stock/components/MinuteKlineChart.vue`
+
+#### 2. 自选股分钟K线查看功能
+- **需求**：在自选股页面添加分钟K线查看功能，支持1分钟/5分钟K线切换，支持左滑加载更多历史数据
+- **实现**：
+  - 后端：
+    - `ITickApiClient` 接口新增 `fetchMinuteKlineData` 方法
+    - `ITickApiClientImpl` 实现分钟K线数据获取，复用 Token 轮询机制
+    - 新增 `MinuteKlineResponse` DTO 类，包含 K线数据列表、是否有更多数据、最早时间戳等字段
+    - `WatchlistService` 新增 `getMinuteKline` 方法
+    - `WatchlistController` 新增 `/stock/watchlist/minute-kline` 接口
+  - 前端：
+    - `stock.js` 新增 `getMinuteKline` API 方法
+    - 新增 `MinuteKlineChart.vue` 组件，基于 ECharts 实现分钟K线图表，支持 dataZoom 事件监听
+    - 修改 `watchlist/index.vue`，将"查看K线"按钮改为打开弹窗，添加 K线类型切换和刷新功能
+- **文件**：
+  - `backend/src/main/java/com/base/stock/client/ITickApiClient.java` - 新增接口方法
+  - `backend/src/main/java/com/base/stock/client/impl/ITickApiClientImpl.java` - 实现分钟K线获取
+  - `backend/src/main/java/com/base/stock/dto/MinuteKlineResponse.java` - 新建 DTO
+  - `backend/src/main/java/com/base/stock/service/WatchlistService.java` - 新增接口方法
+  - `backend/src/main/java/com/base/stock/service/impl/WatchlistServiceImpl.java` - 实现业务逻辑
+  - `backend/src/main/java/com/base/stock/controller/WatchlistController.java` - 新增 API 接口
+  - `frontend/src/api/stock.js` - 新增 API 方法
+  - `frontend/src/views/stock/components/MinuteKlineChart.vue` - 新建组件
+  - `frontend/src/views/stock/watchlist/index.vue` - 添加弹窗和交互
+
+#### 2. K线数据精准拉取优化
+- **问题**：`fetchKlineData()` 方法的 `startDate` 和 `endDate` 参数被完全忽略，`limit=100` 硬编码
+- **修复**：
+  - 根据日期范围动态计算 `limit`：`limit = min((endDate - startDate) 的自然日天数 + 1, 100)`
+  - 添加 `et` 参数：将 `endDate` 转换为毫秒级时间戳（当天 23:59:59）
+  - 新增导入：`java.time.ZoneId`、`java.time.temporal.ChronoUnit`
+- **文件**：`backend/src/main/java/com/base/stock/client/impl/ITickApiClientImpl.java`
+
+#### 2. 修复自选列表不显示股票名称和市场问题
+- **问题**：自选列表页面股票名称、市场列显示为空
+- **原因**：`Watchlist` 实体只有 `stockCode`，没有关联查询 `stk_stock_info` 表获取股票名称和市场
+- **修复**：
+  - `Watchlist` 实体添加 `stockName` 和 `market` 字段（`@TableField(exist = false)`）
+  - `WatchlistMapper` 添加 `selectListWithStockInfo` 方法，关联查询股票信息
+  - `WatchlistServiceImpl.listByUserId()` 改用关联查询方法
+- **文件**：
+  - `backend/src/main/java/com/base/stock/entity/Watchlist.java`
+  - `backend/src/main/java/com/base/stock/mapper/WatchlistMapper.java`
+  - `backend/src/main/java/com/base/stock/service/impl/WatchlistServiceImpl.java`
+
+#### 3. 股票拉取全部K线功能
 - **需求**：添加"拉取全部"按钮，支持时间范围，不再只是拉取关注的股票
 - **实现**：
   - 后端新增 `batchSyncAllKlineData` 方法，支持按市场拉取所有股票K线数据

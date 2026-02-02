@@ -27,4 +27,15 @@ public interface ITickApiClient {
      * @return JSON 字符串
      */
     String fetchKlineData(String stockCode, String period, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 获取分钟K线数据（实时查询，不存库）
+     *
+     * @param stockCode 股票代码
+     * @param kType     K线类型：1=1分钟，5=5分钟
+     * @param et        结束时间戳（毫秒），用于分页加载历史数据，为null时获取最新数据
+     * @param limit     返回条数，默认100
+     * @return JSON 字符串
+     */
+    String fetchMinuteKlineData(String stockCode, int kType, Long et, int limit);
 }

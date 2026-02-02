@@ -1,5 +1,6 @@
 package com.base.stock.service;
 
+import com.base.stock.dto.MinuteKlineResponse;
 import com.base.stock.entity.Watchlist;
 
 import java.util.List;
@@ -67,4 +68,15 @@ public interface WatchlistService {
      * @return 是否已添加
      */
     boolean isInWatchlist(Long userId, String stockCode);
+
+    /**
+     * 获取分钟K线数据（实时查询，不存库）
+     *
+     * @param stockCode 股票代码
+     * @param kType     K线类型：1=1分钟，5=5分钟
+     * @param et        结束时间戳（毫秒），用于分页加载历史数据
+     * @param limit     返回条数
+     * @return 分钟K线响应
+     */
+    MinuteKlineResponse getMinuteKline(String stockCode, int kType, Long et, int limit);
 }

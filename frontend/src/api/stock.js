@@ -295,3 +295,18 @@ export function batchSyncAllKline(market, startDate, endDate) {
     params: { market, startDate, endDate }
   })
 }
+
+/**
+ * 获取分钟K线数据
+ * @param {string} stockCode 股票代码
+ * @param {number} kType K线类型：1=1分钟，5=5分钟
+ * @param {number} et 结束时间戳（毫秒），用于分页加载历史数据
+ * @param {number} limit 返回条数，默认100
+ */
+export function getMinuteKline(stockCode, kType = 1, et = null, limit = 100) {
+  return request({
+    url: '/stock/watchlist/minute-kline',
+    method: 'get',
+    params: { stockCode, kType, et, limit }
+  })
+}

@@ -130,6 +130,13 @@
             <version>${oshi.version}</version>
         </dependency>
 
+        <!-- OpenCC4j 简繁体转换 -->
+        <dependency>
+            <groupId>com.github.houbb</groupId>
+            <artifactId>opencc4j</artifactId>
+            <version>1.8.1</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>

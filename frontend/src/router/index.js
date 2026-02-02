@@ -116,8 +116,10 @@ router.beforeEach(async (to, from, next) => {
 
   if (!userStore.routesLoaded) {
     try {
-      // 先加载用户信息和权限
-      await userStore.loadUserInfo()
+      // 先加载用户信息和权限（如果还没有加载）
+      if (!userStore.userInfo) {
+        await userStore.loadUserInfo()
+      }
 
       // 加载用户菜单和动态路由
       const dynamicRoutes = await userStore.loadMenus()

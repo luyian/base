@@ -71,6 +71,12 @@ public class ApiToken extends BaseEntity {
     private Integer dailyUsed;
 
     /**
+     * 连续失败次数
+     */
+    @ApiModelProperty("连续失败次数")
+    private Integer failCount;
+
+    /**
      * 过期时间（null表示永不过期）
      */
     @ApiModelProperty("过期时间")

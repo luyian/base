@@ -49,22 +49,40 @@ public class DataFactoryImpl implements DataFactory {
 
         // 判断源数据是数组还是对象
         String trimmed = sourceJson.trim();
-        if (trimmed.startsWith("[")) {
-            // 数组
-            JSONArray array = JSON.parseArray(sourceJson);
-            for (int i = 0; i < array.size(); i++) {
-                JSONObject obj = array.getJSONObject(i);
+        JSONArray dataArray = null;
+
+        if (trimmed.startsWith("{")) {
+            // iTick API 返回格式: {"code":0,"msg":"ok","data":[...]}
+            JSONObject responseObj = JSON.parseObject(sourceJson);
+            if (responseObj.containsKey("data") && responseObj.get("data") != null) {
+                Object data = responseObj.get("data");
+                if (data instanceof JSONArray) {
+                    dataArray = (JSONArray) data;
+                } else if (data instanceof JSONObject) {
+                    // 单个对象包装成数组
+                    dataArray = new JSONArray();
+                    dataArray.add(data);
+                }
+            } else {
+                // 普通对象，直接处理
+                T target = transformObject(responseObj, config, targetClass);
+                if (target != null) {
+                    result.add(target);
+                }
+                return result;
+            }
+        } else if (trimmed.startsWith("[")) {
+            // 直接是数组
+            dataArray = JSON.parseArray(sourceJson);
+        }
+
+        if (dataArray != null) {
+            for (int i = 0; i < dataArray.size(); i++) {
+                JSONObject obj = dataArray.getJSONObject(i);
                 T target = transformObject(obj, config, targetClass);
                 if (target != null) {
                     result.add(target);
                 }
-            }
-        } else if (trimmed.startsWith("{")) {
-            // 单个对象
-            JSONObject obj = JSON.parseObject(sourceJson);
-            T target = transformObject(obj, config, targetClass);
-            if (target != null) {
-                result.add(target);
             }
         }
 

@@ -2,6 +2,7 @@ package com.base.stock.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.base.common.util.ChineseConvertUtil;
 import com.base.stock.entity.StockInfo;
 import com.base.stock.entity.StockKline;
 import com.base.stock.mapper.StockInfoMapper;
@@ -33,13 +34,30 @@ public class StockServiceImpl implements StockService {
         LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
 
         wrapper.eq(StockInfo::getDeleted, 0)
-                .eq(market != null && !market.isEmpty(), StockInfo::getMarket, market)
-                .and(keyword != null && !keyword.isEmpty(), w ->
-                        w.like(StockInfo::getStockCode, keyword)
-                                .or()
-                                .like(StockInfo::getStockName, keyword))
-                .orderByAsc(StockInfo::getStockCode);
+                .eq(market != null && !market.isEmpty(), StockInfo::getMarket, market);
 
+        // 支持简繁体互查
+        if (keyword != null && !keyword.isEmpty()) {
+            String traditional = ChineseConvertUtil.toTraditional(keyword);
+            String simplified = ChineseConvertUtil.toSimplified(keyword);
+
+            wrapper.and(w -> {
+                // 按股票代码查询
+                w.like(StockInfo::getStockCode, keyword);
+                // 按原始关键字查询股票名称
+                w.or().like(StockInfo::getStockName, keyword);
+                // 按繁体关键字查询（如果与原始不同）
+                if (!traditional.equals(keyword)) {
+                    w.or().like(StockInfo::getStockName, traditional);
+                }
+                // 按简体关键字查询（如果与原始不同）
+                if (!simplified.equals(keyword)) {
+                    w.or().like(StockInfo::getStockName, simplified);
+                }
+            });
+        }
+
+        wrapper.orderByAsc(StockInfo::getStockCode);
         return stockInfoMapper.selectPage(pageParam, wrapper);
     }
 

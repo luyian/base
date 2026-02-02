@@ -29,6 +29,13 @@ public class TokenManagerServiceImpl implements TokenManagerService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public String getNextToken(String provider) {
+        ApiToken token = getNextTokenEntity(provider);
+        return token.getTokenValue();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public ApiToken getNextTokenEntity(String provider) {
         // 查询可用的 Token 列表
         LambdaQueryWrapper<ApiToken> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ApiToken::getProvider, provider)
@@ -61,7 +68,7 @@ public class TokenManagerServiceImpl implements TokenManagerService {
             apiTokenMapper.updateById(token);
 
             log.debug("获取 Token 成功，tokenId: {}, provider: {}", token.getId(), provider);
-            return token.getTokenValue();
+            return token;
         }
 
         log.error("所有 Token 已达到每日限额，provider: {}", provider);
@@ -76,6 +83,36 @@ public class TokenManagerServiceImpl implements TokenManagerService {
             token.setUseCount(token.getUseCount() + 1);
             token.setDailyUsed(token.getDailyUsed() + 1);
             apiTokenMapper.updateById(token);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void recordTokenFailure(Long tokenId) {
+        ApiToken token = apiTokenMapper.selectById(tokenId);
+        if (token != null) {
+            int failCount = (token.getFailCount() == null ? 0 : token.getFailCount()) + 1;
+            token.setFailCount(failCount);
+
+            // 失败次数超过3次，自动作废
+            if (failCount >= 3) {
+                token.setStatus(0);
+                log.warn("Token 连续失败 {} 次，已自动作废，tokenId: {}", failCount, tokenId);
+            } else {
+                log.warn("Token 请求失败，当前失败次数: {}，tokenId: {}", failCount, tokenId);
+            }
+
+            apiTokenMapper.updateById(token);
+        }
+    }
+
+    @Override
+    public void resetTokenFailure(Long tokenId) {
+        ApiToken token = apiTokenMapper.selectById(tokenId);
+        if (token != null && token.getFailCount() != null && token.getFailCount() > 0) {
+            token.setFailCount(0);
+            apiTokenMapper.updateById(token);
+            log.debug("Token 失败计数已重置，tokenId: {}", tokenId);
         }
     }
 
@@ -113,6 +150,9 @@ public class TokenManagerServiceImpl implements TokenManagerService {
         }
         if (apiToken.getDailyLimit() == null) {
             apiToken.setDailyLimit(0);
+        }
+        if (apiToken.getFailCount() == null) {
+            apiToken.setFailCount(0);
         }
         apiTokenMapper.insert(apiToken);
         log.info("Token 添加成功，tokenId: {}", apiToken.getId());

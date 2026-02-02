@@ -41,6 +41,12 @@ public class StockSyncServiceImpl implements StockSyncService {
         // 拉取数据
         String json = iTickApiClient.fetchStockList(market);
 
+        // 检查 API 返回是否有错误
+        if (json != null && json.contains("\"code\":1")) {
+            log.error("iTick API 返回错误: {}", json);
+            throw new RuntimeException("iTick API 调用失败: " + json);
+        }
+
         // 转换数据
         List<StockInfo> stockList = dataFactory.transform(json, "itick_stock_list", StockInfo.class);
 
@@ -159,6 +165,53 @@ public class StockSyncServiceImpl implements StockSyncService {
         }
 
         log.info("批量同步K线数据完成，userId: {}, totalCount: {}", userId, totalCount);
+        return totalCount;
+    }
+
+    @Override
+    public int batchSyncAllKlineData(String market, LocalDate startDate, LocalDate endDate) {
+        log.info("开始批量同步所有股票K线数据，market: {}, startDate: {}, endDate: {}", market, startDate, endDate);
+
+        // 查询股票列表
+        LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StockInfo::getStatus, 1)
+                .eq(StockInfo::getDeleted, 0);
+        if (market != null && !market.isEmpty()) {
+            wrapper.eq(StockInfo::getMarket, market);
+        }
+
+        List<StockInfo> stockList = stockInfoMapper.selectList(wrapper);
+
+        if (stockList.isEmpty()) {
+            log.warn("没有找到股票数据，market: {}", market);
+            return 0;
+        }
+
+        log.info("共找到 {} 只股票需要同步", stockList.size());
+
+        int totalCount = 0;
+        int successCount = 0;
+        int failCount = 0;
+
+        for (StockInfo stock : stockList) {
+            try {
+                int count = syncKlineData(stock.getStockCode(), startDate, endDate);
+                totalCount += count;
+                successCount++;
+                log.debug("同步成功，stockCode: {}, count: {}", stock.getStockCode(), count);
+            } catch (Exception e) {
+                failCount++;
+                log.error("同步K线数据失败，stockCode: {}", stock.getStockCode(), e);
+                // 如果是 Token 相关错误，可能需要停止同步
+                if (e.getMessage() != null && e.getMessage().contains("没有可用的 Token")) {
+                    log.error("没有可用的 Token，停止同步");
+                    break;
+                }
+            }
+        }
+
+        log.info("批量同步所有股票K线数据完成，market: {}, 成功: {}, 失败: {}, 总记录数: {}",
+                market, successCount, failCount, totalCount);
         return totalCount;
     }
 }

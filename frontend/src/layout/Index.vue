@@ -85,7 +85,7 @@
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <el-icon><User /></el-icon>
-              <span>{{ userInfo?.username || '管理员' }}</span>
+              <span>{{ userInfo?.nickname || userInfo?.username || '管理员' }}</span>
             </span>
             <template #dropdown>
               <el-dropdown-menu>

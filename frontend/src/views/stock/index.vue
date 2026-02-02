@@ -16,6 +16,8 @@
         <el-form-item>
           <el-button type="primary" :icon="Search" @click="handleQuery">查询</el-button>
           <el-button :icon="Refresh" @click="handleReset">重置</el-button>
+          <el-button type="warning" :icon="Download" @click="handleOpenSyncDialog">同步股票</el-button>
+          <el-button type="success" :icon="Download" @click="handleOpenSyncAllDialog">拉取全部K线</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -61,14 +63,68 @@
         style="margin-top: 20px; justify-content: flex-end"
       />
     </el-card>
+
+    <!-- 同步股票对话框 -->
+    <el-dialog v-model="syncDialogVisible" title="同步股票数据" width="400px">
+      <el-form :model="syncForm" label-width="80px">
+        <el-form-item label="市场">
+          <el-select v-model="syncForm.market" placeholder="请选择市场" style="width: 100%">
+            <el-option label="港股" value="HK" />
+            <el-option label="沪市" value="SH" />
+            <el-option label="深市" value="SZ" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="syncDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="syncLoading" @click="handleSyncStockList">开始同步</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 拉取全部K线对话框 -->
+    <el-dialog v-model="syncAllDialogVisible" title="拉取全部K线数据" width="450px">
+      <el-form :model="syncAllForm" label-width="80px">
+        <el-form-item label="市场">
+          <el-select v-model="syncAllForm.market" placeholder="全部市场" clearable style="width: 100%">
+            <el-option label="全部市场" value="" />
+            <el-option label="港股" value="HK" />
+            <el-option label="沪市" value="SH" />
+            <el-option label="深市" value="SZ" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="时间范围">
+          <el-date-picker
+            v-model="syncAllForm.dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-alert
+            title="提示：拉取全部股票K线数据可能需要较长时间，请耐心等待"
+            type="warning"
+            :closable="false"
+            show-icon
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="syncAllDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="syncAllLoading" @click="handleSyncAllKline">开始拉取</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Search, Refresh, View, Star } from '@element-plus/icons-vue'
+import { Search, Refresh, View, Star, Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { listStocks, addWatchlist } from '@/api/stock'
+import { listStocks, addWatchlist, syncStockList, batchSyncAllKline } from '@/api/stock'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -83,6 +139,62 @@ const queryForm = ref({
   market: '',
   keyword: ''
 })
+
+// 同步股票相关
+const syncDialogVisible = ref(false)
+const syncLoading = ref(false)
+const syncForm = ref({
+  market: 'HK'
+})
+
+// 拉取全部K线相关
+const syncAllDialogVisible = ref(false)
+const syncAllLoading = ref(false)
+const syncAllForm = ref({
+  market: '',
+  dateRange: []
+})
+
+const handleOpenSyncDialog = () => {
+  syncDialogVisible.value = true
+}
+
+const handleOpenSyncAllDialog = () => {
+  syncAllForm.value = {
+    market: '',
+    dateRange: []
+  }
+  syncAllDialogVisible.value = true
+}
+
+const handleSyncStockList = async () => {
+  syncLoading.value = true
+  try {
+    const res = await syncStockList(syncForm.value.market)
+    ElMessage.success(`同步成功，共同步 ${res.data} 条股票数据`)
+    syncDialogVisible.value = false
+    handleQuery()
+  } catch (error) {
+    ElMessage.error(error.message || '同步失败')
+  } finally {
+    syncLoading.value = false
+  }
+}
+
+const handleSyncAllKline = async () => {
+  syncAllLoading.value = true
+  try {
+    const startDate = syncAllForm.value.dateRange?.[0] || null
+    const endDate = syncAllForm.value.dateRange?.[1] || null
+    const res = await batchSyncAllKline(syncAllForm.value.market, startDate, endDate)
+    ElMessage.success(`拉取成功，共同步 ${res.data} 条K线数据`)
+    syncAllDialogVisible.value = false
+  } catch (error) {
+    ElMessage.error(error.message || '拉取失败')
+  } finally {
+    syncAllLoading.value = false
+  }
+}
 
 const handleQuery = async () => {
   loading.value = true

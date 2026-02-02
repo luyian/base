@@ -3,6 +3,7 @@ package com.base.stock.client.impl;
 import com.base.common.util.HttpClientUtil;
 import com.base.stock.client.ITickApiClient;
 import com.base.stock.config.ITickConfig;
+import com.base.stock.entity.ApiToken;
 import com.base.stock.service.TokenManagerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,47 +32,105 @@ public class ITickApiClientImpl implements ITickApiClient {
 
     @Override
     public String fetchStockList(String market) {
-        String url = iTickConfig.getBaseUrl() + "/stock/symbols?region=" + market;
-        Map<String, String> headers = buildHeaders();
+        String region = market.toLowerCase();
+        String url = iTickConfig.getBaseUrl() + "/symbol/list?type=stock&region=" + region;
 
         log.info("拉取股票列表，market: {}, url: {}", market, url);
 
-        return HttpClientUtil.getWithRetry(url, headers, iTickConfig.getRetry());
+        return executeWithTokenFailureHandling(url);
     }
 
     @Override
     public String fetchKlineData(String stockCode, String period, LocalDate startDate, LocalDate endDate) {
+        String code = stockCode;
+        String region = "hk";
+
+        if (stockCode.contains(".")) {
+            String[] parts = stockCode.split("\\.");
+            code = parts[0];
+            if (parts.length > 1) {
+                region = parts[1].toLowerCase();
+            }
+        }
+
+        int kType = 8;
+        if ("week".equalsIgnoreCase(period)) {
+            kType = 9;
+        } else if ("month".equalsIgnoreCase(period)) {
+            kType = 10;
+        }
+
         StringBuilder urlBuilder = new StringBuilder(iTickConfig.getBaseUrl());
         urlBuilder.append("/stock/kline");
-        urlBuilder.append("?symbol=").append(stockCode);
-        urlBuilder.append("&period=").append(period != null ? period : "day");
-
-        if (startDate != null) {
-            urlBuilder.append("&start=").append(startDate.format(DATE_FORMATTER));
-        }
-        if (endDate != null) {
-            urlBuilder.append("&end=").append(endDate.format(DATE_FORMATTER));
-        }
+        urlBuilder.append("?region=").append(region);
+        urlBuilder.append("&code=").append(code);
+        urlBuilder.append("&kType=").append(kType);
+        urlBuilder.append("&limit=100");
 
         String url = urlBuilder.toString();
-        Map<String, String> headers = buildHeaders();
 
         log.info("拉取K线数据，stockCode: {}, period: {}, url: {}", stockCode, period, url);
 
-        return HttpClientUtil.getWithRetry(url, headers, iTickConfig.getRetry());
+        return executeWithTokenFailureHandling(url);
+    }
+
+    /**
+     * 执行请求并处理 Token 失败
+     *
+     * @param url 请求地址
+     * @return 响应内容
+     */
+    private String executeWithTokenFailureHandling(String url) {
+        ApiToken token = tokenManagerService.getNextTokenEntity(PROVIDER);
+        Map<String, String> headers = buildHeaders(token.getTokenValue());
+
+        log.info("请求头: {}", headers);
+
+        try {
+          String response = HttpClientUtil.getWithRetry(url, headers, iTickConfig.getRetry());
+            log.info("响应内容: {}", response);
+
+            if (response != null && isTokenError(response)) {
+                log.error("Token 认证失败，tokenId: {}, response: {}", token.getId(), response);
+                tokenManagerService.recordTokenFailure(token.getId());
+                throw new RuntimeException("Token 认证失败: " + response);
+            }
+
+            tokenManagerService.resetTokenFailure(token.getId());
+            return response;
+        } catch (Exception e) {
+            if (e.getMessage() == null || !e.getMessage().contains("Token 认证失败")) {
+                log.error("请求失败，tokenId: {}, error: {}", token.getId(), e.getMessage());
+                tokenManagerService.recordTokenFailure(token.getId());
+            }
+            throw e;
+        }
+    }
+
+    /**
+     * 判断是否为 Token 相关错误
+     *
+     * @param response 响应内容
+     * @return 是否为 Token 错误
+     */
+    private boolean isTokenError(String response) {
+        return response.contains("\"code\":1") &&
+                (response.contains("token") || response.contains("Token") ||
+                 response.contains("unauthorized") || response.contains("Unauthorized") ||
+                 response.contains("authentication") || response.contains("Authentication"));
     }
 
     /**
      * 构建请求头（包含 Token）
+     *
+     * @param tokenValue Token 值
+     * @return 请求头
      */
-    private Map<String, String> buildHeaders() {
+    private Map<String, String> buildHeaders(String tokenValue) {
         Map<String, String> headers = new HashMap<>();
+        headers.put("accept", "application/json");
         headers.put("Content-Type", "application/json");
-
-        // 从 Toke器获取可用 Token
-        String token = tokenManagerService.getNextToken(PROVIDER);
-        headers.put("token", token);
-
+        headers.put("token", tokenValue);
         return headers;
     }
 }

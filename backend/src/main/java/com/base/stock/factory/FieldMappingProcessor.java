@@ -53,6 +53,9 @@ public class FieldMappingProcessor {
                     return convertToDate(sourceValue, mapping.getDateFormat());
                 case "datetime":
                     return convertToDateTime(sourceValue, mapping.getDateFormat());
+                case "timestamp":
+                    // 毫秒时间戳转 LocalDate
+                    return convertTimestampToDate(sourceValue);
                 case "boolean":
                     return convertToBoolean(sourceValue);
                 default:
@@ -149,6 +152,24 @@ public class FieldMappingProcessor {
         }
         String str = value.toString().trim().toLowerCase();
         return "true".equals(str) || "1".equals(str) || "yes".equals(str);
+    }
+
+    /**
+     * 毫秒时间戳转 LocalDate
+     */
+    private static LocalDate convertTimestampToDate(Object value) {
+        if (value instanceof Number) {
+            long timestamp = ((Number) value).longValue();
+            // 如果是秒级时间戳，转换为毫秒
+            if (timestamp < 10000000000L) {
+                timestamp *= 1000;
+            }
+            return LocalDateTime.ofInstant(
+                    java.time.Instant.ofEpochMilli(timestamp),
+                    java.time.ZoneId.systemDefault()
+            ).toLocalDate();
+        }
+        throw new IllegalArgumentException("timestamp 类型需要数字值: " + value);
     }
 
     private static Object parseDefaultValue(FieldMapping mapping) {

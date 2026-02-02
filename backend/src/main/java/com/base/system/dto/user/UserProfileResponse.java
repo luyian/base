@@ -24,9 +24,9 @@ public class UserProfileResponse {
     private String username;
 
     /**
-     * 姓名
+     * 昵称
      */
-    private String name;
+    private String nickname;
 
     /**
      * 邮箱

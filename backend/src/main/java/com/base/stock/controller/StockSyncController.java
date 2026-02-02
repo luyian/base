@@ -5,6 +5,7 @@ import com.base.stock.service.StockSyncService;
 import com.base.system.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -61,6 +62,23 @@ public class StockSyncController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
         Long userId = SecurityUtils.getCurrentUserId();
         int count = stockSyncService.batchSyncKlineData(userId, startDate, endDate);
+        return Result.success(count);
+    }
+
+  /**
+     * 批量同步所有股票的 K 线数据
+     */
+    @ApiOperation("批量同步所有股票的K线数据")
+    @PostMapping("/kline/all")
+    @PreAuthorize("hasAuthority('stock:sync:execute')")
+    public Result<Integer> batchSyncAllKline(
+            @ApiParam("市场代码（HK/SH/SZ），为空则同步所有市场")
+            @RequestParam(required = false) String market,
+            @ApiParam("开始日期")
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @ApiParam("结束日期")
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
+        int count = stockSyncService.batchSyncAllKlineData(market, startDate, endDate);
         return Result.success(count);
     }
 }

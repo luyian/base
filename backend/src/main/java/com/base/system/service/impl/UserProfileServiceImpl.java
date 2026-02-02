@@ -90,7 +90,7 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
 
         // 更新用户信息
-        user.setNickname(request.getName());
+        user.setNickname(request.getNickname());
         user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
         user.setGender(request.getGender());

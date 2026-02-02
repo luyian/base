@@ -284,3 +284,14 @@ export function batchSyncKline(startDate, endDate) {
     params: { startDate, endDate }
   })
 }
+
+/**
+ * 批量同步所有股票的 K 线数据
+ */
+export function batchSyncAllKline(market, startDate, endDate) {
+  return request({
+    url: '/stock/sync/kline/all',
+    method: 'post',
+    params: { market, startDate, endDate }
+  })
+}

@@ -38,6 +38,93 @@
 
 ## 变更历史
 
+### 2026-02-02
+
+#### 1. 股票拉取全部K线功能
+- **需求**：添加"拉取全部"按钮，支持时间范围，不再只是拉取关注的股票
+- **实现**：
+  - 后端新增 `batchSyncAllKlineData` 方法，支持按市场拉取所有股票K线数据
+  - 新增 API 接口 `POST /stock/sync/kline/all`，支持 market、startDate、endDate 参数
+  - 前端股票列表页面添加"拉取全部K线"按钮
+  - 弹窗支持选择市场（全部/港股/沪市/深市）和时间范围
+- **文件**：
+  - `backend/src/main/java/com/base/stock/service/StockSyncService.java` - 新增接口方法
+  - `backend/src/main/java/com/base/stock/service/impl/StockSyncServiceImpl.java` - 实现拉取全部逻辑
+  - `backend/src/main/java/com/base/stock/controller/StockSyncController.java` - 新增 API
+  - `frontend/src/api/stock.js` - 新增 batchSyncAllKline 接口
+  - `frontend/src/views/stock/index.vue` - 添加拉取全部K线按钮和对话框
+
+#### 2. Token 失败三次自动作废
+- **需求**：Token 失败三次以上就直接作废，不再使用
+- **实现**：
+  - ApiToken 实体新增 `failCount` 字段记录连续失败次数
+  - TokenManagerService 新增 `recordTokenFailure` 和 `resetTokenFailure` 方法
+  - ITickApiClientImpl 在请求失败时记录失败次数，成功时重置
+  - 当失败次数达到3次时，自动将 Token 状态设为作废（status=0）
+- **文件**：
+  - `backend/src/main/resources/db/add_token_fail_count.sql` - 数据库字段更新脚本
+  - `backend/src/main/java/com/base/stock/entity/ApiToken.java` - 新增 failCount 字段
+  - `backend/src/main/java/com/base/stock/service/TokenManagerService.java` - 新增接口方法
+  - `backend/src/main/java/com/base/stock/service/impl/TokenManagerServiceImpl.java` - 实现失败记录逻辑
+  - `backend/src/main/java/com/base/stock/client/impl/ITickApiClientImpl.java` - 集成失败处理
+
+#### 3. 修复个人中心页面报错
+- **问题**：点击个人中心报错 `Unknown column 'create_by' in 'field list'`
+- **原因**：`UserRole` 实体类继承了 `BaseEntity`，但 `sys_user_role` 表只有 `id`、`user_id`、`role_id`、`create_time` 四个字段，没有 `create_by`、`update_by`、`update_time`、`deleted` 字段
+- **修复**：将 `UserRole` 实体类改为独立实体，不继承 `BaseEntity`，只定义表中实际存在的字段
+- **文件**：`backend/src/main/java/com/base/system/entity/UserRole.java`
+
+#### 2. 修复主页右上角不显示昵称问题
+- **问题**：主页右上角只显示用户名（admin），不显示昵称（超级管理员）
+- **原因**：`/system/profile` API 返回的 `UserProfileResponse` 使用 `name` 字段，而 `/auth/info` API 返回的 `UserInfoResponse` 使用 `nickname` 字段。当访问个人中心页面时，`profile/Index.vue` 用 `getProfile()` 返回的数据覆盖了 store 中的 userInfo，导致 `nickname` 字段丢失
+- **修复**：统一使用 `nickname` 字段
+  - `UserProfileResponse.java` - 将 `name` 改为 `nickname`
+  - `UpdateProfileRequest.java` - 将 `name` 改为 `nickname`
+  - `UserProfileServiceImpl.java` - 将 `request.getName()` 改为 `request.getNickname()`
+  - `frontend/src/layout/Index.vue` - 显示 `nickname` 而非 `username`
+  - `frontend/src/router/index.js` - 避免重复加载 userInfo
+- **文件**：
+  - `backend/src/main/java/com/base/system/dto/user/UserProfileResponse.java`
+  - `backend/src/main/java/com/base/system/dto/user/UpdateProfileRequest.java`
+  - `backend/src/main/java/com/base/system/service/impl/UserProfileServiceImpl.java`
+  - `frontend/src/layout/Index.vue`
+  - `frontend/src/router/index.js`
+
+#### 3. 修复 iTick API K线数据 kType 参数错误
+- **问题**：拉取一个月的K线数据只保存了3条记录
+- **原因**：kType 参数值映射错误，使用了错误的枚举值
+- **修复**：根据 iTick API 文档修正 kType 参数映射
+  - 日K：`kType=2` → `kType=8`（一天）
+  - 周K：`kType=3` → `kType=9`（一周）
+  - 月K：`kType=4` → `kType=10`（一月）
+- **文件**：`backend/src/main/java/com/base/stock/client/impl/ITickApiClientImpl.java`
+
+#### 2. 股票查询支持简繁体互查
+- **需求**：输入简体字可以查询到繁体字的股票名称（港股股票名称多为繁体）
+- **实现**：
+  - 添加 OpenCC4j 依赖（简繁体转换库）
+  - 创建 `ChineseConvertUtil` 工具类
+  - 修改 `StockServiceImpl.pageStocks()` 方法，查询时同时匹配简体和繁体关键字
+- **文件**：
+  - `backend/pom.xml` - 添加 opencc4j 依赖
+  - `backend/src/main/java/com/base/common/util/ChineseConvertUtil.java` - 简繁体转换工具类
+  - `backend/src/main/java/com/base/stock/service/impl/StockServiceImpl.java` - 修改查询逻辑
+
+---
+
+### 2026-01-30
+
+#### 1. 添加手动同步股票数据入口
+- **功能**：在股票列表页面添加"同步股票"按钮，支持手动拉取股票数据
+- **实现**：
+  - 搜索栏新增"同步股票"按钮（橙色警告样式）
+  - 点击弹出对话框，可选择市场（港股/沪市/深市）
+  - 调用 `/stock/sync/stock-list` 接口同步数据
+  - 同步完成后自动刷新列表
+- **文件**：`frontend/src/views/stock/index.vue`
+
+---
+
 ### 2026-01-29
 
 #### 1. 修复刷新页面后权限数据丢失问题

@@ -16,10 +16,10 @@ import javax.validation.constraints.Pattern;
 public class UpdateProfileRequest {
 
     /**
-     * 姓名
+     * 昵称
      */
-    @NotBlank(message = "姓名不能为空")
-    private String name;
+    @NotBlank(message = "昵称不能为空")
+    private String nickname;
 
     /**
      * 邮箱

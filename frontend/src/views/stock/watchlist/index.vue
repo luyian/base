@@ -35,10 +35,9 @@
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="150" align="center" />
         <el-table-column prop="createTime" label="添加时间" width="180" align="center" />
-        <el-table-column label="操作" width="280" align="center" fixed="right">
+        <el-table-column label="操作" width="180" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="View" @click="handleViewDayKline(row)">日K线</el-button>
-            <el-button type="success" link :icon="TrendCharts" @click="handleViewMinuteKline(row)">分钟K线</el-button>
+            <el-button type="primary" link :icon="TrendCharts" @click="handleViewTrend(row)">趋势</el-button>
             <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
@@ -73,44 +72,63 @@
       </template>
     </el-dialog>
 
-    <!-- 分钟K线弹窗 -->
+    <!-- 趋势弹窗（日K线 + 分钟K线） -->
     <el-dialog
-      v-model="klineDialogVisible"
-      :title="`${currentStock.stockName || currentStock.stockCode} - 分钟K线`"
+      v-model="trendDialogVisible"
+      :title="`${currentStock.stockName || currentStock.stockCode} - 趋势`"
       width="90%"
       top="5vh"
       destroy-on-close
     >
-      <div class="kline-toolbar">
-        <el-radio-group v-model="klineType" @change="handleKlineTypeChange">
-          <el-radio-button :label="1">1分钟</el-radio-button>
-          <el-radio-button :label="5">5分钟</el-radio-button>
-        </el-radio-group>
-        <el-button :icon="Refresh" @click="refreshKline" :loading="klineLoading" style="margin-left: 16px">
-          刷新
-        </el-button>
-      </div>
-      <MinuteKlineChart
-        v-loading="klineLoading"
-        :data="klineData"
-        :stock-name="currentStock.stockName"
-        :k-type="klineType"
-        :has-more="hasMoreKline"
-        @load-more="loadMoreKline"
-      />
+      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
+        <el-tab-pane label="日K线" name="day">
+          <div class="kline-toolbar">
+            <el-radio-group v-model="dayKlineDateRange" @change="handleDayKlineDateChange">
+              <el-radio-button label="week">近1周</el-radio-button>
+              <el-radio-button label="month">近1月</el-radio-button>
+              <el-radio-button label="quarter">近3月</el-radio-button>
+            </el-radio-group>
+            <el-button :icon="Refresh" @click="refreshDayKline" :loading="dayKlineLoading" style="margin-left: 16px">
+              刷新
+            </el-button>
+          </div>
+          <KlineChart
+            v-loading="dayKlineLoading"
+            :data="dayKlineData"
+            :stock-name="currentStock.stockName"
+          />
+        </el-tab-pane>
+        <el-tab-pane label="分钟K线" name="minute">
+          <div class="kline-toolbar">
+            <el-radio-group v-model="klineType" @change="handleKlineTypeChange">
+              <el-radio-button :label="1">1分钟</el-radio-button>
+              <el-radio-button :label="5">5分钟</el-radio-button>
+            </el-radio-group>
+            <el-button :icon="Refresh" @click="refreshKline" :loading="klineLoading" style="margin-left: 16px">
+              刷新
+            </el-button>
+          </div>
+          <MinuteKlineChart
+            v-loading="klineLoading"
+            :data="klineData"
+            :stock-name="currentStock.stockName"
+            :k-type="klineType"
+            :has-more="hasMoreKline"
+            @load-more="loadMoreKline"
+          />
+        </el-tab-pane>
+      </el-tabs>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Refresh, Delete, View, Download, TrendCharts } from '@element-plus/icons-vue'
+import { ref, onMounted, watch } from 'vue'
+import { Refresh, Delete, Download, TrendCharts } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listWatchlist, deleteWatchlist, batchDeleteWatchlist, batchSyncKline, getMinuteKline } from '@/api/stock'
-import { useRouter } from 'vue-router'
+import { listWatchlist, deleteWatchlist, batchDeleteWatchlist, batchSyncKline, getMinuteKline, getKlineData } from '@/api/stock'
 import MinuteKlineChart from '../components/MinuteKlineChart.vue'
-
-const router = useRouter()
+import KlineChart from '../components/KlineChart.vue'
 
 const loading = ref(false)
 const syncing = ref(false)
@@ -123,14 +141,22 @@ const syncForm = ref({
   endDate: ''
 })
 
+// 趋势弹窗相关状态
+const trendDialogVisible = ref(false)
+const activeTab = ref('day')
+const currentStock = ref({})
+
+// 日K线相关状态
+const dayKlineLoading = ref(false)
+const dayKlineData = ref([])
+const dayKlineDateRange = ref('month')
+
 // 分钟K线相关状态
-const klineDialogVisible = ref(false)
 const klineLoading = ref(false)
 const klineType = ref(1)
 const klineData = ref([])
 const hasMoreKline = ref(false)
 const earliestTimestamp = ref(null)
-const currentStock = ref({})
 const loadingMore = ref(false)
 
 // 获取自选列表
@@ -151,20 +177,73 @@ const handleSelectionChange = (selection) => {
   selectedIds.value = selection.map(item => item.id)
 }
 
-// 查看日K线（跳转详情页）
-const handleViewDayKline = (row) => {
-  router.push(`/stock/detail/${row.stockCode}`)
+// 日期格式化
+const formatDate = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
-// 查看分钟K线（打开弹窗）
-const handleViewMinuteKline = (row) => {
+// 获取日K线日期范围
+const getDayKlineDateRange = () => {
+  const endDate = new Date()
+  const startDate = new Date()
+  if (dayKlineDateRange.value === 'week') {
+    startDate.setDate(startDate.getDate() - 7)
+  } else if (dayKlineDateRange.value === 'month') {
+    startDate.setMonth(startDate.getMonth() - 1)
+  } else {
+    startDate.setMonth(startDate.getMonth() - 3)
+  }
+  return { startDate: formatDate(startDate), endDate: formatDate(endDate) }
+}
+
+// 获取日K线数据
+const fetchDayKlineData = async () => {
+  dayKlineLoading.value = true
+  try {
+    const { startDate, endDate } = getDayKlineDateRange()
+    const res = await getKlineData(currentStock.value.stockCode, startDate, endDate)
+    dayKlineData.value = res.data || []
+  } catch (error) {
+    ElMessage.error(error.message || '获取日K线数据失败')
+  } finally {
+    dayKlineLoading.value = false
+  }
+}
+
+// 日K线日期范围切换
+const handleDayKlineDateChange = () => {
+  fetchDayKlineData()
+}
+
+// 刷新日K线
+const refreshDayKline = () => {
+  fetchDayKlineData()
+}
+
+// 查看趋势（打开弹窗）
+const handleViewTrend = (row) => {
   currentStock.value = row
-  klineType.value = 1
+  activeTab.value = 'day'
+  // 重置数据
+  dayKlineData.value = []
   klineData.value = []
   hasMoreKline.value = false
   earliestTimestamp.value = null
-  klineDialogVisible.value = true
-  fetchKlineData()
+  trendDialogVisible.value = true
+  // 加载日K线数据
+  fetchDayKlineData()
+}
+
+// Tab 切换处理
+const handleTabChange = (tabName) => {
+  if (tabName === 'day' && dayKlineData.value.length === 0) {
+    fetchDayKlineData()
+  } else if (tabName === 'minute' && klineData.value.length === 0) {
+    fetchKlineData()
+  }
 }
 
 // 获取分钟K线数据
@@ -253,13 +332,6 @@ const handleBatchSync = () => {
   const endDate = new Date()
   const startDate = new Date()
   startDate.setMonth(startDate.getMonth() - 1)
-
-  const formatDate = (date) => {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
 
   syncForm.value = {
     startDate: formatDate(startDate),

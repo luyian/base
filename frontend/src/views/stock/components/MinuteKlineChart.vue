@@ -316,6 +316,14 @@ const renderChart = () => {
 // 监听数据变化
 watch(() => props.data, () => {
   renderChart()
+  // 数据变化后延迟调用 resize，确保图表正确显示
+  nextTick(() => {
+    setTimeout(() => {
+      if (chartInstance) {
+        chartInstance.resize()
+      }
+    }, 100)
+  })
 }, { deep: true })
 
 // 监听 kType 变化

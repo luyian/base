@@ -3,7 +3,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import * as echarts from 'echarts'
 
 const props = defineProps({
@@ -227,6 +227,14 @@ const renderChart = () => {
 // 监听数据变化
 watch(() => props.data, () => {
   renderChart()
+  // 数据变化后延迟调用 resize，确保图表正确显示
+  nextTick(() => {
+    setTimeout(() => {
+      if (chartInstance) {
+        chartInstance.resize()
+      }
+    }, 100)
+  })
 }, { deep: true })
 
 // 监听窗口大小变化
@@ -239,6 +247,14 @@ const handleResize = () => {
 onMounted(() => {
   initChart()
   window.addEventListener('resize', handleResize)
+  // 延迟调用 resize，确保弹窗容器尺寸已确定
+  nextTick(() => {
+    setTimeout(() => {
+      if (chartInstance) {
+        chartInstance.resize()
+      }
+    }, 100)
+  })
 })
 
 onUnmounted(() => {

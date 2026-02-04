@@ -51,6 +51,26 @@ const calculateMA = (data, dayCount) => {
   return result
 }
 
+// 格式化成交量显示
+const formatVolume = (volume) => {
+  if (volume >= 100000000) {
+    return (volume / 100000000).toFixed(2) + '亿'
+  } else if (volume >= 10000) {
+    return (volume / 10000).toFixed(2) + '万'
+  }
+  return volume.toString()
+}
+
+// 计算并格式化涨跌幅
+const calcChangeRate = (openPrice, closePrice) => {
+  if (!openPrice || openPrice === 0) {
+    return { value: 0, text: '-' }
+  }
+  const rate = ((closePrice - openPrice) / openPrice * 100)
+  const prefix = rate > 0 ? '+' : ''
+  return { value: rate, text: prefix + rate.toFixed(2) + '%' }
+}
+
 // 初始化图表
 const initChart = () => {
   if (!chartRef.value) {
@@ -107,12 +127,14 @@ const renderChart = () => {
   const categoryData = []
   const values = []
   const volumes = []
+  const rawData = [] // 保存原始数据用于 tooltip
 
   props.data.forEach(item => {
     categoryData.push(item.tradeTime)
     // K线数据格式：[开盘价, 收盘价, 最低价, 最高价]
     values.push([item.openPrice, item.closePrice, item.lowPrice, item.highPrice])
     volumes.push([categoryData.length - 1, item.volume, item.openPrice > item.closePrice ? 1 : -1])
+    rawData.push(item)
   })
 
   const kTypeText = props.kType === 1 ? '1分钟' : '5分钟'
@@ -134,12 +156,17 @@ const renderChart = () => {
           return ''
         }
         const data = kline.data
+        const item = rawData[kline.dataIndex]
+        const changeRate = item ? calcChangeRate(item.openPrice, item.closePrice) : { value: 0, text: '-' }
+        const changeColor = changeRate.value > 0 ? '#ef5350' : (changeRate.value < 0 ? '#26a69a' : '#666')
         return `
           <div style="font-weight: bold">${kline.axisValue}</div>
           <div>开盘: ${data[1]}</div>
           <div>收盘: ${data[2]}</div>
           <div>最低: ${data[3]}</div>
           <div>最高: ${data[4]}</div>
+          <div>成交量: ${item ? formatVolume(item.volume) : '-'}</div>
+          <div>涨跌幅: <span style="color: ${changeColor}">${changeRate.text}</span></div>
         `
       }
     },

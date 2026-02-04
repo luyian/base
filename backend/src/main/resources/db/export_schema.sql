@@ -1,0 +1,91 @@
+-- 通用导出功能数据库表结构
+-- 创建时间: 2026-02-04
+
+-- 导出配置主表
+CREATE TABLE IF NOT EXISTS `sys_export_config` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `config_code` varchar(50) NOT NULL COMMENT '配置编码（唯一标识）',
+    `config_name` varchar(100) NOT NULL COMMENT '配置名称',
+    `description` varchar(500) DEFAULT NULL COMMENT '配置描述',
+    `data_source_type` varchar(20) NOT NULL DEFAULT 'SERVICE' COMMENT '数据源类型（SERVICE-服务方法, SQL-自定义SQL）',
+    `data_source_bean` varchar(100) DEFAULT NULL COMMENT '数据源Bean名称',
+    `data_source_method` varchar(100) DEFAULT NULL COMMENT '数据源方法名',
+    `data_source_sql` text DEFAULT NULL COMMENT '自定义SQL',
+    `query_param_class` varchar(200) DEFAULT NULL COMMENT '查询参数类全路径',
+    `batch_size` int DEFAULT 5000 COMMENT '分批查询大小',
+    `max_export_count` int DEFAULT 1000000 COMMENT '最大导出数量',
+    `file_name_pattern` varchar(100) DEFAULT NULL COMMENT '文件名模式',
+    `enable_multi_sheet` tinyint(1) DEFAULT 0 COMMENT '是否启用多Sheet',
+    `sheet_max_rows` int DEFAULT 100000 COMMENT '单Sheet最大行数',
+    `permission_code` varchar(100) DEFAULT NULL COMMENT '权限编码',
+    `status` tinyint(1) DEFAULT 1 COMMENT '状态（0-禁用，1-启用）',
+    `sort` int DEFAULT 0 COMMENT '排序',
+    `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `create_by` varchar(50) DEFAULT NULL COMMENT '创建人',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `update_by` varchar(50) DEFAULT NULL COMMENT '更新人',
+    `deleted` tinyint(1) DEFAULT 0 COMMENT '删除标志（0-未删除，1-已删除）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_config_code` (`config_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='导出配置主表';
+
+-- 导出字段配置表
+CREATE TABLE IF NOT EXISTS `sys_export_field` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `config_id` bigint NOT NULL COMMENT '导出配置ID',
+    `field_name` varchar(100) NOT NULL COMMENT '字段名',
+    `field_label` varchar(100) NOT NULL COMMENT '字段标签（Excel列标题）',
+    `field_type` varchar(20) DEFAULT 'STRING' COMMENT '字段类型（STRING/NUMBER/DATE/DATETIME/BOOLEAN）',
+    `field_width` int DEFAULT 20 COMMENT '列宽度',
+    `field_format` varchar(50) DEFAULT NULL COMMENT '格式化模式（如日期格式：yyyy-MM-dd）',
+    `dict_type` varchar(50) DEFAULT NULL COMMENT '字典类型（关联sys_enum表的enum_type）',
+    `mask_type` varchar(20) DEFAULT NULL COMMENT '脱敏类型（PHONE/ID_CARD/EMAIL/BANK_CARD/NAME/CUSTOM）',
+    `mask_pattern` varchar(100) DEFAULT NULL COMMENT '自定义脱敏正则',
+    `mask_replacement` varchar(50) DEFAULT NULL COMMENT '自定义脱敏替换字符',
+    `converter_bean` varchar(100) DEFAULT NULL COMMENT '自定义转换器Bean名称',
+    `default_value` varchar(100) DEFAULT NULL COMMENT '默认值（字段值为空时使用）',
+    `sort` int DEFAULT 0 COMMENT '排序',
+    `status` tinyint(1) DEFAULT 1 COMMENT '状态（0-禁用，1-启用）',
+    `remark` varchar(500) DEFAULT NULL COMMENT '备注',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `create_by` varchar(50) DEFAULT NULL COMMENT '创建人',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `update_by` varchar(50) DEFAULT NULL COMMENT '更新人',
+    `deleted` tinyint(1) DEFAULT 0 COMMENT '删除标志（0-未删除，1-已删除）',
+    PRIMARY KEY (`id`),
+    KEY `idx_config_id` (`config_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='导出字段配置表';
+
+-- 导出任务表
+CREATE TABLE IF NOT EXISTS `sys_export_task` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `task_no` varchar(50) NOT NULL COMMENT '任务编号',
+    `config_id` bigint NOT NULL COMMENT '导出配置ID',
+    `config_code` varchar(50) NOT NULL COMMENT '导出配置编码',
+    `config_name` varchar(100) DEFAULT NULL COMMENT '导出配置名称',
+    `query_params` text DEFAULT NULL COMMENT '查询参数（JSON格式）',
+    `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态（0-待处理，1-处理中，2-已完成，3-失败，4-已取消）',
+    `total_count` int DEFAULT 0 COMMENT '总记录数',
+    `processed_count` int DEFAULT 0 COMMENT '已处理记录数',
+    `progress` int DEFAULT 0 COMMENT '进度百分比（0-100）',
+    `file_name` varchar(200) DEFAULT NULL COMMENT '文件名',
+    `file_path` varchar(500) DEFAULT NULL COMMENT '文件路径',
+    `file_size` bigint DEFAULT 0 COMMENT '文件大小（字节）',
+    `file_url` varchar(500) DEFAULT NULL COMMENT '文件下载URL',
+    `error_message` text DEFAULT NULL COMMENT '错误信息',
+    `start_time` datetime DEFAULT NULL COMMENT '开始时间',
+    `end_time` datetime DEFAULT NULL COMMENT '结束时间',
+    `expire_time` datetime DEFAULT NULL COMMENT '文件过期时间',
+    `download_count` int DEFAULT 0 COMMENT '下载次数',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `create_by` varchar(50) DEFAULT NULL COMMENT '创建人',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `update_by` varchar(50) DEFAULT NULL COMMENT '更新人',
+    `deleted` tinyint(1) DEFAULT 0 COMMENT '删除标志（0-未删除，1-已删除）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_task_no` (`task_no`),
+    KEY `idx_config_id` (`config_id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_create_by` (`create_by`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='导出任务表';

@@ -37,6 +37,160 @@
 
 ## 变更历史
 
+### 2026-02-04
+
+#### 1. 枚举管理页面重构
+
+- **需求**：将枚举管理页面从"逐条显示"改为"按类型分组显示"
+- **改动内容**：
+  - 主列表按枚举类型分组，同类型只显示一条
+  - 去掉备注、枚举标签列，改为显示：枚举类型、枚举项数量、创建时间
+  - 点击编辑进入详情弹窗，可编辑该类型下所有枚举项
+  - 支持批量保存枚举项（新增、修改、删除）
+- **后端新增**：
+  - `EnumTypeResponse.java` - 枚举类型响应 DTO
+  - `EnumItemSaveRequest.java` - 枚举项保存请求 DTO
+  - `EnumTypeBatchSaveRequest.java` - 批量保存请求 DTO
+  - `EnumService` 新增方法：`listEnumTypes()`、`batchSaveByType()`、`deleteByType()`
+  - `EnumController` 新增接口：
+    - `GET /system/enum/types` - 查询枚举类型列表
+    - `POST /system/enum/type/{enumType}/batch` - 批量保存枚举项
+    - `DELETE /system/enum/type/{enumType}` - 按类型删除
+- **前端改动**：
+  - `enum.js` 新增 API：`listEnumTypes()`、`batchSaveByType()`、`deleteByType()`
+  - `Enum.vue` 重构：主列表改为类型列表，编辑弹窗改为表格形式编辑枚举项
+- **文件清单**：
+  - `backend/src/main/java/com/base/system/dto/enums/EnumTypeResponse.java`
+  - `backend/src/main/java/com/base/system/dto/enums/EnumItemSaveRequest.java`
+  - `backend/src/main/java/com/base/system/dto/enums/EnumTypeBatchSaveRequest.java`
+  - `backend/src/main/java/com/base/system/service/EnumService.java`
+  - `backend/src/main/java/com/base/system/service/impl/EnumServiceImpl.java`
+  - `backend/src/main/java/com/base/system/controller/EnumController.java`
+  - `frontend/src/api/enum.js`
+  - `frontend/src/views/system/Enum.vue`
+
+#### 2. 通用导出功能模块
+
+- **需求**：实现按配置导出、百万数据导出、异步导出 + 分批查询 + 流式写入
+- **技术栈**：EasyExcel 3.3.2、线程池异步执行、Redis 进度缓存
+- **功能特性**：
+  - 可视化配置导出字段和数据源
+  - 支持服务方法和自定义 SQL 两种数据源
+  - 数据脱敏（手机号、身份证、邮箱、银行卡、姓名）
+  - 字典转换（关联 sys_enum 表）
+  - 自定义转换器扩展
+  - 多 Sheet 导出支持
+  - 异步任务进度实时更新
+  - 文件自动过期清理
+
+**数据库表**：
+- `sys_export_config` - 导出配置主表
+- `sys_export_field` - 导出字段配置表
+- `sys_export_task` - 导出任务表
+
+**后端文件**：
+- `backend/src/main/resources/db/export_schema.sql` - 数据库表结构
+- `backend/src/main/java/com/base/common/export/` - 导出公共模块
+  - `constant/` - 枚举类（ExportStatusEnum、DataSourceTypeEnum、MaskTypeEnum、FieldTypeEnum）
+  - `config/` - 配置类（ExportThreadPoolConfig、ExportFileConfig）
+  - `converter/` - 转换器（DataConverter、DictConverter）
+  - `mask/` - 脱敏器（DataMasker、PhoneMasker、IdCardMasker、EmailMasker、BankCardMasker、NameMasker）
+  - `provider/` - 数据提供者（ExportDataProvider、ServiceDataProvider、SqlDataProvider）
+  - `registry/` - 注册表（DataSourceRegistry、ConverterRegistry、MaskerRegistry）
+  - `engine/` - 导出引擎（ExportEngine、ExportContext、ExportExecutor）
+- `backend/src/main/java/com/base/system/export/` - 导出业务模块
+  - `entity/` - 实体类（ExportConfig、ExportField、ExportTask）
+  - `mapper/` - Mapper 接口
+  - `dto/` - DTO 类（config/、field/、task/）
+  - `service/` - 服务接口和实现
+  - `controller/` - 控制器（ExportConfigController、ExportTaskController）
+
+**前端文件**：
+- `frontend/src/api/exportConfig.js` - 导出配置 API
+- `frontend/src/api/exportTask.js` - 导出任务 API
+- `frontend/src/views/system/ExportConfig.vue` - 导出配置管理页面
+- `frontend/src/views/system/ExportTask.vue` - 导出任务管理页面
+- `frontend/src/components/ExportButton.vue` - 通用导出按钮组件
+
+**配置文件**：
+- `backend/src/main/resources/application-dev.yml` - 新增导出配置项
+- `backend/pom.xml` - 新增 EasyExcel 依赖
+
+**API 接口**：
+- 配置管理：`/system/export/config/*`
+- 任务管理：`/system/export/task/*`
+
+**扩展方式**：
+- 新增数据源：实现 `ExportDataProvider` 接口
+- 新增转换器：实现 `DataConverter` 接口
+- 新增脱敏规则：实现 `DataMasker` 接口
+
+#### 2. 登录日志导出功能
+
+- **需求**：为登录日志添加导出功能
+- **实现**：
+  - 后端：
+    - `LoginLogService` 新增 `exportCount` 和 `exportPage` 方法
+    - `LoginLogServiceImpl` 实现导出查询方法，抽取公共查询条件构建方法
+  - 数据库：
+    - 创建登录日志导出配置初始化脚本 `init_login_log_export.sql`
+    - 配置编码：`login_log_export`
+    - 导出字段：日志ID、用户名、登录IP、登录地点、浏览器、操作系统、登录状态、提示信息、登录时间
+    - 登录状态使用字典转换（login_status）
+  - 前端：
+    - 登录日志页面添加"导出"按钮
+    - 添加导出进度弹窗，显示导出进度和下载按钮
+- **文件**：
+  - `backend/src/main/java/com/base/system/service/LoginLogService.java`
+  - `backend/src/main/java/com/base/system/service/impl/LoginLogServiceImpl.java`
+  - `backend/src/main/resources/db/init_login_log_export.sql`
+  - `frontend/src/views/system/LoginLog.vue`
+
+#### 3. 导出模块菜单和权限初始化
+
+- **需求**：为导出模块添加菜单和权限初始化 SQL
+- **实现**：
+  - 创建 `export_permission.sql` 初始化脚本
+  - 添加导出配置、导出任务两个二级菜单（放在系统管理下）
+  - 添加配置和任务的按钮权限（查询、新增、编辑、删除）
+  - 为超级管理员分配所有导出模块权限
+- **文件**：`backend/src/main/resources/db/export_permission.sql`
+
+#### 4. 修复导出模块启动错误
+
+- **问题**：
+  1. `ExportExecutor` 在 common 包中直接依赖 system 包的 `ExportTaskMapper`，违反分层架构
+  2. `MybatisPlusConfig` 的 `@MapperScan` 未包含 `com.base.system.export.mapper` 包
+- **修复**：
+  - `ExportExecutor.java`：移除对 `ExportTaskMapper` 的直接依赖，改为通过回调函数 `Consumer<ExportTask>` 更新任务状态
+  - `ExportTaskServiceImpl.java`：在调用 `exportExecutor.submit()` 时传入任务更新回调
+  - `MybatisPlusConfig.java`：在 `@MapperScan` 中添加 `com.base.system.export.mapper` 包
+- **文件**：
+  - `backend/src/main/java/com/base/common/export/engine/ExportExecutor.java`
+  - `backend/src/main/java/com/base/system/export/service/impl/ExportTaskServiceImpl.java`
+  - `backend/src/main/java/com/base/config/MybatisPlusConfig.java`
+
+---
+
+### 2026-02-03
+
+#### 1. K线图添加成交量和涨跌幅显示
+- **需求**：在K线图 tooltip 中显示成交量和涨跌幅
+- **实现**：
+  - 日K线（KlineChart.vue）：
+    - 添加 `formatVolume` 函数格式化成交量（支持万/亿单位）
+    - 添加 `formatChangeRate` 函数格式化涨跌幅（带正负号和颜色）
+    - tooltip 中新增成交量和涨跌幅显示，涨跌幅使用红涨绿跌颜色
+  - 分钟K线（MinuteKlineChart.vue）：
+    - 添加 `formatVolume` 函数格式化成交量
+    - 添加 `calcChangeRate` 函数计算涨跌幅（收盘价相对开盘价）
+    - tooltip 中新增成交量和涨跌幅显示
+- **文件**：
+  - `frontend/src/views/stock/components/KlineChart.vue`
+  - `frontend/src/views/stock/components/MinuteKlineChart.vue`
+
+---
+
 ### 2026-02-02
 
 #### 1. K线趋势弹窗合并
@@ -275,6 +429,7 @@
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2026-02-04 | 通用导出功能模块开发 |
 | 2026-02-02 | K线趋势弹窗合并、分钟K线功能完善 |
 | 2026-01-30 | 添加手动同步股票数据入口 |
 | 2026-01-29 | 股票数据分析功能开发完成 |

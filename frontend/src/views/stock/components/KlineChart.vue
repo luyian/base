@@ -291,6 +291,13 @@ onUnmounted(() => {
     chartInstance = null
   }
 })
+
+// 暴露给父组件：导出图表为图片 Base64（用于 PDF 导出）
+defineExpose({
+  getDataURL(options = { type: 'png', pixelRatio: 2 }) {
+    return chartInstance ? chartInstance.getDataURL(options) : ''
+  }
+})
 </script>
 
 <style scoped>

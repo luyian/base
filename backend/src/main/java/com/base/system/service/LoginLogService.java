@@ -41,4 +41,14 @@ public interface LoginLogService {
      * 保存登录日志
      */
     void saveLoginLog(LoginLog loginLog);
+
+    /**
+     * 导出查询 - 获取总数
+     */
+    long exportCount(LoginLogQueryRequest request);
+
+    /**
+     * 导出查询 - 分页获取数据
+     */
+    Page<LoginLogResponse> exportPage(LoginLogQueryRequest request);
 }

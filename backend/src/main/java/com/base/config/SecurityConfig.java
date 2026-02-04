@@ -99,7 +99,8 @@ public class SecurityConfig {
                         "/webjars/**",
                         "/doc.html",
                         "/favicon.ico",
-                        "/error"
+                        "/error",
+                        "/system/export/task/*/download"
                 ).permitAll()
                 // 其他所有请求都需要认证
                 .anyRequest().authenticated();

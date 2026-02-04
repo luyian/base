@@ -76,3 +76,15 @@ file:
     prefix: /upload
     max-size: 10485760
     allowed-types: jpg,jpeg,png,gif,bmp,pdf,doc,docx,xls,xlsx,ppt,pptx,txt,zip,rar
+
+# 导出配置
+export:
+  file:
+    path: D:/upload/export/
+    expire-days: 7
+    url-prefix: /api/system/export/task/
+  thread-pool:
+    core-size: 2
+    max-size: 5
+    queue-capacity: 100
+    thread-name-prefix: export-

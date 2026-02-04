@@ -83,3 +83,34 @@ export function refreshCache() {
     method: 'post'
   })
 }
+
+/**
+ * 查询所有枚举类型列表（按类型分组）
+ */
+export function listEnumTypes() {
+  return request({
+    url: '/system/enum/types',
+    method: 'get'
+  })
+}
+
+/**
+ * 批量保存某类型下的枚举项
+ */
+export function batchSaveByType(enumType, items) {
+  return request({
+    url: `/system/enum/type/${enumType}/batch`,
+    method: 'post',
+    data: items
+  })
+}
+
+/**
+ * 按类型删除所有枚举项
+ */
+export function deleteByType(enumType) {
+  return request({
+    url: `/system/enum/type/${enumType}`,
+    method: 'delete'
+  })
+}

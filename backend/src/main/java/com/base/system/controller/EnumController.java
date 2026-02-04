@@ -2,9 +2,12 @@ package com.base.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.system.common.Result;
+import com.base.system.dto.enums.EnumItemSaveRequest;
 import com.base.system.dto.enums.EnumQueryRequest;
 import com.base.system.dto.enums.EnumResponse;
 import com.base.system.dto.enums.EnumSaveRequest;
+import com.base.system.dto.enums.EnumTypeBatchSaveRequest;
+import com.base.system.dto.enums.EnumTypeResponse;
 import com.base.system.service.EnumService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -110,6 +113,40 @@ public class EnumController {
     @PreAuthorize("hasAuthority('system:enum:edit')")
     public Result<Void> refreshCache() {
         enumService.refreshCache();
+        return Result.success();
+    }
+
+    /**
+     * 查询所有枚举类型列表（按类型分组）
+     */
+    @ApiOperation("查询所有枚举类型列表")
+    @GetMapping("/types")
+    @PreAuthorize("hasAuthority('system:enum:list')")
+    public Result<List<EnumTypeResponse>> listEnumTypes() {
+        List<EnumTypeResponse> list = enumService.listEnumTypes();
+        return Result.success(list);
+    }
+
+    /**
+     * 批量保存某类型下的枚举项
+     */
+    @ApiOperation("批量保存某类型下的枚举项")
+    @PostMapping("/type/{enumType}/batch")
+    @PreAuthorize("hasAuthority('system:enum:edit')")
+    public Result<Void> batchSaveByType(@PathVariable String enumType,
+                                        @Validated @RequestBody List<EnumItemSaveRequest> items) {
+        enumService.batchSaveByType(enumType, items);
+        return Result.success();
+    }
+
+    /**
+     * 按类型删除所有枚举项
+     */
+    @ApiOperation("按类型删除所有枚举项")
+    @DeleteMapping("/type/{enumType}")
+    @PreAuthorize("hasAuthority('system:enum:delete')")
+    public Result<Void> deleteByType(@PathVariable String enumType) {
+        enumService.deleteByType(enumType);
         return Result.success();
     }
 }

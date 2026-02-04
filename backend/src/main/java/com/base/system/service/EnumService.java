@@ -1,9 +1,11 @@
 package com.base.system.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.base.system.dto.enums.EnumItemSaveRequest;
 import com.base.system.dto.enums.EnumQueryRequest;
 import com.base.system.dto.enums.EnumResponse;
 import com.base.system.dto.enums.EnumSaveRequest;
+import com.base.system.dto.enums.EnumTypeResponse;
 
 import java.util.List;
 
@@ -51,4 +53,19 @@ public interface EnumService {
      * 刷新枚举缓存
      */
     void refreshCache();
+
+    /**
+     * 查询所有枚举类型列表（按类型分组）
+     */
+    List<EnumTypeResponse> listEnumTypes();
+
+    /**
+     * 批量保存某类型下的枚举项
+     */
+    void batchSaveByType(String enumType, List<EnumItemSaveRequest> items);
+
+    /**
+     * 按类型删除所有枚举项
+     */
+    void deleteByType(String enumType);
 }

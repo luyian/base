@@ -32,23 +32,7 @@ public class LoginLogServiceImpl implements LoginLogService {
     @Override
     public Page<LoginLogResponse> pageLoginLogs(LoginLogQueryRequest request) {
         // 构建查询条件
-        LambdaQueryWrapper<LoginLog> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(StringUtils.hasText(request.getUsername()), LoginLog::getUsername, request.getUsername())
-                .like(StringUtils.hasText(request.getLoginIp()), LoginLog::getLoginIp, request.getLoginIp())
-                .eq(request.getStatus() != null, LoginLog::getStatus, request.getStatus());
-
-        // 时间范围查询
-        if (StringUtils.hasText(request.getStartTime())) {
-            LocalDateTime startTime = LocalDateTime.parse(request.getStartTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            wrapper.ge(LoginLog::getCreateTime, startTime);
-        }
-        if (StringUtils.hasText(request.getEndTime())) {
-            LocalDateTime endTime = LocalDateTime.parse(request.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            wrapper.le(LoginLog::getCreateTime, endTime);
-        }
-
-        // 按创建时间降序排序
-        wrapper.orderByDesc(LoginLog::getCreateTime);
+        LambdaQueryWrapper<LoginLog> wrapper = buildQueryWrapper(request);
 
         // 分页查询
         Page<LoginLog> page = new Page<>(request.getCurrent(), request.getSize());
@@ -107,5 +91,38 @@ public class LoginLogServiceImpl implements LoginLogService {
     @Transactional(rollbackFor = Exception.class)
     public void saveLoginLog(LoginLog loginLog) {
         loginLogMapper.insert(loginLog);
+    }
+
+    @Override
+    public long exportCount(LoginLogQueryRequest request) {
+        LambdaQueryWrapper<LoginLog> wrapper = buildQueryWrapper(request);
+        return loginLogMapper.selectCount(wrapper);
+    }
+
+    @Override
+    public Page<LoginLogResponse> exportPage(LoginLogQueryRequest request) {
+        return pageLoginLogs(request);
+    }
+
+    /**
+     * 构建查询条件
+     */
+    private LambdaQueryWrapper<LoginLog> buildQueryWrapper(LoginLogQueryRequest request) {
+        LambdaQueryWrapper<LoginLog> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(StringUtils.hasText(request.getUsername()), LoginLog::getUsername, request.getUsername())
+                .like(StringUtils.hasText(request.getLoginIp()), LoginLog::getLoginIp, request.getLoginIp())
+                .eq(request.getStatus() != null, LoginLog::getStatus, request.getStatus());
+
+        if (StringUtils.hasText(request.getStartTime())) {
+            LocalDateTime startTime = LocalDateTime.parse(request.getStartTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            wrapper.ge(LoginLog::getCreateTime, startTime);
+        }
+        if (StringUtils.hasText(request.getEndTime())) {
+            LocalDateTime endTime = LocalDateTime.parse(request.getEndTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            wrapper.le(LoginLog::getCreateTime, endTime);
+        }
+
+        wrapper.orderByDesc(LoginLog::getCreateTime);
+        return wrapper;
     }
 }

@@ -20,6 +20,11 @@ public class EnumTypeBatchSaveRequest {
     private String enumType;
 
     /**
+     * 枚举类型中文描述
+     */
+    private String typeDesc;
+
+    /**
      * 枚举项列表
      */
     @NotEmpty(message = "枚举项列表不能为空")

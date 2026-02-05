@@ -216,6 +216,12 @@ public class EnumServiceImpl implements EnumService {
                     EnumTypeResponse response = new EnumTypeResponse();
                     response.setEnumType(entry.getKey());
                     response.setItemCount(entry.getValue().size());
+                    // 取该类型下第一条记录的类型描述
+                    response.setTypeDesc(entry.getValue().stream()
+                            .map(Enum::getTypeDesc)
+                            .filter(desc -> desc != null && !desc.isEmpty())
+                            .findFirst()
+                            .orElse(null));
                     // 取该类型下最早的创建时间
                     response.setCreateTime(entry.getValue().stream()
                             .map(Enum::getCreateTime)
@@ -238,7 +244,7 @@ public class EnumServiceImpl implements EnumService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void batchSaveByType(String enumType, List<EnumItemSaveRequest> items) {
+    public void batchSaveByType(String enumType, String typeDesc, List<EnumItemSaveRequest> items) {
         // 查询该类型下现有的枚举项
         LambdaQueryWrapper<Enum> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Enum::getEnumType, enumType);
@@ -271,6 +277,7 @@ public class EnumServiceImpl implements EnumService {
         for (EnumItemSaveRequest item : items) {
             Enum enumEntity = new Enum();
             enumEntity.setEnumType(enumType);
+            enumEntity.setTypeDesc(typeDesc);
             enumEntity.setEnumCode(item.getEnumCode());
             enumEntity.setEnumValue(item.getEnumValue());
             enumEntity.setSort(item.getSort());
@@ -283,7 +290,7 @@ public class EnumServiceImpl implements EnumService {
             } else {
                 // 新增
                 enumMapper.insert(enumEntity);
-            }
+          }
         }
 
         // 删除缓存

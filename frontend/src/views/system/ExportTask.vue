@@ -10,7 +10,7 @@
           <el-input v-model="queryForm.configName" placeholder="请输入配置名称" clearable />
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="queryForm.status" placeholder="请选择" clearable>
+          <el-select v-model="queryForm.status" placeholder="请选择状态" clearable style="width: 120px">
             <el-option label="待处理" :value="0" />
             <el-option label="处理中" :value="1" />
             <el-option label="已完成" :value="2" />

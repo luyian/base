@@ -20,7 +20,7 @@
           />
         </el-form-item>
         <el-form-item label="层级">
-          <el-select v-model="queryForm.level" placeholder="请选择层级" clearable>
+          <el-select v-model="queryForm.level" placeholder="请选择层级" clearable style="width: 120px">
             <el-option label="省" :value="1" />
             <el-option label="市" :value="2" />
             <el-option label="区" :value="3" />
@@ -28,7 +28,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="queryForm.status" placeholder="请选择状态" clearable>
+          <el-select v-model="queryForm.status" placeholder="请选择状态" clearable style="width: 120px">
             <el-option label="正常" :value="1" />
             <el-option label="禁用" :value="0" />
           </el-select>

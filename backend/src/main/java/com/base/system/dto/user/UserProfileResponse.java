@@ -3,6 +3,7 @@ package com.base.system.dto.user;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户个人信息响应
@@ -61,7 +62,7 @@ public class UserProfileResponse {
     /**
      * 角色列表
      */
-    private String roles;
+    private List<RoleInfo> roles;
 
     /**
      * 创建时间
@@ -72,4 +73,20 @@ public class UserProfileResponse {
      * 最后登录时间
      */
     private LocalDateTime lastLoginTime;
+
+    /**
+     * 角色信息
+     */
+    @Data
+    public static class RoleInfo {
+        /**
+         * 角色ID
+         */
+        private Long id;
+
+        /**
+         * 角色名称
+         */
+        private String roleName;
+    }
 }

@@ -17,6 +17,11 @@ public class EnumTypeResponse {
     private String enumType;
 
     /**
+     * 枚举类型中文描述
+     */
+    private String typeDesc;
+
+    /**
      * 枚举项数量
      */
     private Integer itemCount;

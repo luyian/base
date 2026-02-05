@@ -1,18 +1,17 @@
 package com.base.system.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.base.common.exception.BusinessException;
 import com.base.common.util.SecurityUtils;
 import com.base.system.dto.user.UpdatePasswordRequest;
 import com.base.system.dto.user.UpdateProfileRequest;
 import com.base.system.dto.user.UserProfileResponse;
 import com.base.system.entity.Department;
+import com.base.system.entity.Role;
 import com.base.system.entity.User;
-import com.base.system.entity.UserRole;
 import com.base.system.mapper.DepartmentMapper;
+import com.base.system.mapper.RoleMapper;
 import com.base.system.mapper.UserMapper;
-import com.base.system.mapper.UserRoleMapper;
 import com.base.system.service.UserProfileService;
 import com.base.system.util.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
@@ -36,7 +35,7 @@ public class UserProfileServiceImpl implements UserProfileService {
 
     private final UserMapper userMapper;
     private final DepartmentMapper departmentMapper;
-    private final UserRoleMapper userRoleMapper;
+    private final RoleMapper roleMapper;
     private final PasswordEncoder passwordEncoder;
     private final FileUploadUtil fileUploadUtil;
 
@@ -63,15 +62,17 @@ public class UserProfileServiceImpl implements UserProfileService {
         }
 
         // 查询角色列表
-        List<UserRole> userRoles = userRoleMapper.selectList(
-                new LambdaQueryWrapper<UserRole>()
-                        .eq(UserRole::getUserId, userId)
-        );
-        if (!userRoles.isEmpty()) {
-            String roles = userRoles.stream()
-                    .map(ur -> ur.getRoleId().toString())
-                    .collect(Collectors.joining(","));
-            response.setRoles(roles);
+        List<Role> roles = roleMapper.selectRolesByUserId(userId);
+        if (roles != null && !roles.isEmpty()) {
+            List<UserProfileResponse.RoleInfo> roleInfos = roles.stream()
+                    .map(role -> {
+                        UserProfileResponse.RoleInfo roleInfo = new UserProfileResponse.RoleInfo();
+                        roleInfo.setId(role.getId());
+                        roleInfo.setRoleName(role.getRoleName());
+                        return roleInfo;
+                    })
+                    .collect(Collectors.toList());
+            response.setRoles(roleInfos);
         }
 
         return response;

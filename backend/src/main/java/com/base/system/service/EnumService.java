@@ -61,8 +61,12 @@ public interface EnumService {
 
     /**
      * 批量保存某类型下的枚举项
+     *
+     * @param enumType 枚举类型
+     * @param typeDesc 枚举类型中文描述
+     * @param items    枚举项列表
      */
-    void batchSaveByType(String enumType, List<EnumItemSaveRequest> items);
+    void batchSaveByType(String enumType, String typeDesc, List<EnumItemSaveRequest> items);
 
     /**
      * 按类型删除所有枚举项

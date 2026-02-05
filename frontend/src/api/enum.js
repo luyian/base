@@ -97,11 +97,15 @@ export function listEnumTypes() {
 /**
  * 批量保存某类型下的枚举项
  */
-export function batchSaveByType(enumType, items) {
+export function batchSaveByType(enumType, typeDesc, items) {
   return request({
-    url: `/system/enum/type/${enumType}/batch`,
+    url: '/system/enum/type/batch',
     method: 'post',
-    data: items
+    data: {
+      enumType,
+      typeDesc,
+      items
+    }
   })
 }
 

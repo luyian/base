@@ -26,10 +26,11 @@
         style="width: 100%; margin-top: 20px"
         v-loading="loading"
       >
-        <el-table-column prop="enumType" label="枚举类型" min-width="200" />
-        <el-table-column prop="itemCount" label="枚举项数量" width="120" align="center" />
-        <el-table-column prop="createTime" label="创建时间" width="180" />
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column prop="enumType" label="枚举类型" min-width="100" />
+        <el-table-column prop="typeDesc" label="描述" min-width="100" />
+        <el-table-column prop="itemCount" label="枚举项数量" min-width="100" align="center" />
+        <el-table-column prop="createTime" label="创建时间" min-width="180" />
+        <el-table-column label="操作" min-width="180" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
             <el-button link type="danger" :icon="Delete" @click="handleDelete(row)">删除</el-button>
@@ -56,6 +57,13 @@
             v-model="form.enumType"
             placeholder="请输入枚举类型"
             :disabled="isEdit"
+            style="width: 300px"
+          />
+        </el-form-item>
+        <el-form-item label="中文描述" prop="typeDesc">
+          <el-input
+            v-model="form.typeDesc"
+            placeholder="请输入中文描述"
             style="width: 300px"
           />
         </el-form-item>
@@ -143,6 +151,7 @@ const isEdit = ref(false)
 const formRef = ref(null)
 const form = reactive({
   enumType: '',
+  typeDesc: '',
   items: []
 })
 
@@ -178,6 +187,7 @@ const handleAdd = () => {
   isEdit.value = false
   dialogTitle.value = '新增枚举类型'
   form.enumType = ''
+  form.typeDesc = ''
   form.items = [{ enumCode: '', enumValue: '', sort: 0, status: 1 }]
   dialogVisible.value = true
 }
@@ -187,6 +197,7 @@ const handleEdit = async (row) => {
   isEdit.value = true
   dialogTitle.value = '编辑枚举类型'
   form.enumType = row.enumType
+  form.typeDesc = row.typeDesc || ''
 
   try {
     const { data } = await listByType(row.enumType)
@@ -282,7 +293,7 @@ const handleSubmit = async () => {
     }
 
     submitLoading.value = true
-    await batchSaveByType(form.enumType, form.items)
+    await batchSaveByType(form.enumType, form.typeDesc, form.items)
     ElMessage.success(isEdit.value ? '编辑成功' : '新增成功')
     dialogVisible.value = false
     handleQuery()
@@ -299,6 +310,7 @@ const handleSubmit = async () => {
 const handleDialogClose = () => {
   formRef.value?.resetFields()
   form.enumType = ''
+  form.typeDesc = ''
   form.items = []
 }
 

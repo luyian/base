@@ -37,6 +37,47 @@
 
 ## 变更历史
 
+### 2026-02-05
+
+#### 1. 修复 el-select 选择器 placeholder 显示不全问题
+
+- **问题**：多个页面的下拉选择器 placeholder 显示不全，宽度太窄导致文字被截断
+- **修复**：给所有搜索栏中的 el-select 添加固定宽度 `style="width: 120px"`
+- **修复文件**：
+  - `frontend/src/views/system/ExportTask.vue` - 状态选择器
+  - `frontend/src/views/system/Role.vue` - 状态选择器
+  - `frontend/src/views/system/Permission.vue` - 权限类型、状态选择器
+  - `frontend/src/views/system/Region.vue` - 层级、状态选择器
+  - `frontend/src/views/system/ExportConfig.vue` - 数据源类型、状态选择器
+  - `frontend/src/views/system/Department.vue` - 状态选择器
+
+#### 2. 枚举管理添加中文描述字段
+
+- **需求**：在枚举管理列表中添加"中文描述"列，用于显示枚举类型的中文说明
+- **数据库**：
+  - `sys_enum` 表新增 `type_desc` 字段（VARCHAR(100)）
+  - 迁移脚本：`backend/src/main/resources/db/add_enum_type_desc.sql`
+- **后端修改**：
+  - `Enum.java` - 实体类新增 `typeDesc` 字段
+  - `EnumTypeResponse.java` - DTO 新增 `typeDesc` 字段
+  - `EnumTypeBatchSaveRequest.java` - 请求类新增 `typeDesc` 字段
+  - `EnumService.java` - `batchSaveByType` 方法签名增加 `typeDesc` 参数
+  - `EnumServiceImpl.java` - 实现类更新，支持保存和查询 `typeDesc`
+  - `EnumController.java` - 接口路径改为 `/type/batch`，使用 `EnumTypeBatchSaveRequest`
+- **前端修改**：
+  - `frontend/src/api/enum.js` - `batchSaveByType` 方法增加 `typeDesc` 参数
+  - `frontend/src/views/system/Enum.vue` - 列表添加中文描述列，表单添加中文描述输入框
+
+#### 3. 修复个人中心角色不显示问题
+
+- **问题**：个人中心页面角色显示为空
+- **原因**：后端返回的 `roles` 是角色ID的字符串（如 "1,2"），但前端期望的是角色对象数组（包含 `id` 和 `roleName`）
+- **修复**：
+  - `UserProfileResponse.java` - 将 `roles` 字段类型从 `String` 改为 `List<RoleInfo>`，新增 `RoleInfo` 内部类
+  - `UserProfileServiceImpl.java` - 使用 `RoleMapper.selectRolesByUserId` 查询角色信息，返回角色对象列表
+
+---
+
 ### 2026-02-04
 
 #### 1. 枚举管理页面重构

@@ -10,13 +10,13 @@
           <el-input v-model="queryForm.configName" placeholder="请输入配置名称" clearable />
         </el-form-item>
         <el-form-item label="数据源类型">
-          <el-select v-model="queryForm.dataSourceType" placeholder="请选择" clearable>
+          <el-select v-model="queryForm.dataSourceType" placeholder="请选择" clearable style="width: 120px">
             <el-option label="服务方法" value="SERVICE" />
             <el-option label="自定义SQL" value="SQL" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="queryForm.status" placeholder="请选择" clearable>
+          <el-select v-model="queryForm.status" placeholder="请选择" clearable style="width: 120px">
             <el-option label="启用" :value="1" />
             <el-option label="禁用" :value="0" />
           </el-select>

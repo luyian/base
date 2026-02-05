@@ -131,11 +131,10 @@ public class EnumController {
      * 批量保存某类型下的枚举项
      */
     @ApiOperation("批量保存某类型下的枚举项")
-    @PostMapping("/type/{enumType}/batch")
+    @PostMapping("/type/batch")
     @PreAuthorize("hasAuthority('system:enum:edit')")
-    public Result<Void> batchSaveByType(@PathVariable String enumType,
-                                        @Validated @RequestBody List<EnumItemSaveRequest> items) {
-        enumService.batchSaveByType(enumType, items);
+    public Result<Void> batchSaveByType(@Validated @RequestBody EnumTypeBatchSaveRequest request) {
+        enumService.batchSaveByType(request.getEnumType(), request.getTypeDesc(), request.getItems());
         return Result.success();
     }
 

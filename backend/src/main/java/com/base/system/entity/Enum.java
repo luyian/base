@@ -26,6 +26,11 @@ public class Enum extends BaseEntity {
     private String enumType;
 
     /**
+     * 枚举类型中文描述
+     */
+    private String typeDesc;
+
+    /**
      * 枚举编码
      */
     private String enumCode;

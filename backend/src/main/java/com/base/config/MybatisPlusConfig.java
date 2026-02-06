@@ -14,7 +14,12 @@ import org.springframework.context.annotation.Configuration;
  * @since 2026-01-12
  */
 @Configuration
-@MapperScan({"com.base.system.mapper", "com.base.stock.mapper"})
+@MapperScan({
+    "com.base.system.mapper",
+    "com.base.system.export.mapper",
+    "com.base.stock.mapper",
+    "com.base.stock.recommend.mapper"
+})
 public class MybatisPlusConfig {
 
     /**

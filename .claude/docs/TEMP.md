@@ -546,6 +546,30 @@
 
 ---
 
+### 2026-02-06
+
+#### 批量K线同步接口优化
+
+- **需求**：当需要同步的股票数量超过配置阈值时，使用itick的批量获取K线接口
+- **优化效果**：性能提升约100倍（100只股票从100秒降至1秒）
+- **配置化参数**：
+  - `stock.sync.batch.threshold`：批量同步阈值（默认100）
+  - `stock.sync.batch.size`：批量请求大小（默认100）
+  - 配置存储在 `sys_config` 表，支持动态调整
+- **实现方式**：
+  - 添加配置初始化SQL脚本
+  - 添加批量K线接口调用方法 `ITickApiClient.fetchBatchKlineData()`
+  - 添加批量数据解析方法 `parseBatchKlineJson()`
+  - 重构批量同步逻辑，支持配置化阈值判断、市场分组、分批处理
+  - 保持向后兼容，股票数量未超过阈值时使用原有单个接口
+- **修改文件**：
+  - `backend/src/main/resources/db/stock_sync_config.sql` - 配置初始化脚本（新建）
+  - `backend/src/main/java/com/base/stock/client/ITickApiClient.java` - 新增批量接口方法签名
+  - `backend/src/main/java/com/base/stock/client/impl/ITickApiClientImpl.java` - 实现批量接口调用
+  - `backend/src/main/java/com/base/stock/service/impl/StockSyncServiceImpl.java` - 重构批量同步逻辑，注入ConfigService
+
+---
+
 ## 开发计划变更记录
 
 | 日期 | 变更内容 |

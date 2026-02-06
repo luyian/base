@@ -1,6 +1,7 @@
 package com.base.stock.client;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * iTick API 客户端接口
@@ -27,6 +28,19 @@ public interface ITickApiClient {
      * @return JSON 字符串
      */
     String fetchKlineData(String stockCode, String period, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 批量获取K线数据
+     *
+     * @param region    市场代码（HK/SH/SZ，单个市场）
+     * @param codes     股票代码列表（纯代码，不带市场后缀）
+     * @param period    周期（day-日K, week-周K, month-月K）
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return JSON字符串
+     */
+    String fetchBatchKlineData(String region, List<String> codes, String period,
+                              LocalDate startDate, LocalDate endDate);
 
     /**
      * 获取分钟K线数据（实时查询，不存库）

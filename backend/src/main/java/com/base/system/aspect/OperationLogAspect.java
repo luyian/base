@@ -91,7 +91,6 @@ public class OperationLogAspect {
             if (authentication != null && authentication.isAuthenticated()) {
                 String username = authentication.getName();
                 operationLog.setOperatorName(username);
-                operationLog.setCreateBy(username);
             }
         } catch (Exception e) {
             log.warn("获取当前用户失败", e);

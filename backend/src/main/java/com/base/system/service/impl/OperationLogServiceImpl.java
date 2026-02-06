@@ -77,7 +77,20 @@ public class OperationLogServiceImpl implements OperationLogService {
         List<OperationLogResponse> responseList = operationLogPage.getRecords().stream().map(operationLog -> {
             OperationLogResponse response = new OperationLogResponse();
             BeanUtils.copyProperties(operationLog, response);
-            response.setOperationTypeName(OPERATION_TYPE_MAP.get(operationLog.getOperationType()));
+
+            // 手动映射字段名不一致的属性
+            response.setRequestParam(operationLog.getParams());
+            response.setResponseResult(operationLog.getResult());
+            response.setOperationIp(operationLog.getIp());
+            response.setOperationLocation(operationLog.getLocation());
+            response.setOperationTime(operationLog.getExecuteTime() != null ? operationLog.getExecuteTime().longValue() : null);
+
+            // 设置操作类型名称
+            if (operationLog.getOperationType() != null) {
+                response.setOperationType(operationLog.getOperationType().getValue());
+                response.setOperationTypeName(operationLog.getOperationType().getDescription());
+            }
+
             return response;
         }).collect(Collectors.toList());
         responsePage.setRecords(responseList);
@@ -94,7 +107,20 @@ public class OperationLogServiceImpl implements OperationLogService {
 
         OperationLogResponse response = new OperationLogResponse();
         BeanUtils.copyProperties(operationLog, response);
-        response.setOperationTypeName(OPERATION_TYPE_MAP.get(operationLog.getOperationType()));
+
+        // 手动映射字段名不一致的属性
+        response.setRequestParam(operationLog.getParams());
+        response.setResponseResult(operationLog.getResult());
+        response.setOperationIp(operationLog.getIp());
+        response.setOperationLocation(operationLog.getLocation());
+        response.setOperationTime(operationLog.getExecuteTime() != null ? operationLog.getExecuteTime().longValue() : null);
+
+        // 设置操作类型名称
+        if (operationLog.getOperationType() != null) {
+            response.setOperationType(operationLog.getOperationType().getValue());
+            response.setOperationTypeName(operationLog.getOperationType().getDescription());
+        }
+
         return response;
     }
 

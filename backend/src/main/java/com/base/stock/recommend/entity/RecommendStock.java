@@ -72,6 +72,7 @@ public class RecommendStock implements Serializable {
     /**
      * 排名
      */
+    @TableField("`rank`")
     @ApiModelProperty("排名")
     private Integer rank;
 

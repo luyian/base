@@ -17,6 +17,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -159,6 +160,60 @@ public class ITickApiClientImpl implements ITickApiClient {
         headers.put("Content-Type", "application/json");
         headers.put("token", tokenValue);
         return headers;
+    }
+
+    @Override
+    public String fetchBatchKlineData(String region, List<String> codes, String period,
+                                     LocalDate startDate, LocalDate endDate) {
+        // 参数校验
+        if (codes == null || codes.isEmpty()) {
+            throw new IllegalArgumentException("股票代码列表不能为空");
+        }
+        if (codes.size() > 100) {
+            throw new IllegalArgumentException("单次批量查询股票数量不能超过100");
+        }
+
+        // 转换周期参数
+        int kType = 8; // 日K
+        if ("week".equalsIgnoreCase(period)) {
+            kType = 9;
+        } else if ("month".equalsIgnoreCase(period)) {
+            kType = 10;
+        }
+
+        // 计算 limit（与单个接口逻辑一致）
+        int limit = 100;
+        if (startDate != null && endDate != null) {
+            long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+            limit = (int) Math.min(days, 100);
+        }
+
+        // 计算 et（结束时间戳）
+        Long et = null;
+        if (endDate != null) {
+            et = endDate.atTime(23, 59, 59)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli();
+        }
+
+        // 构建URL
+        StringBuilder urlBuilder = new StringBuilder(iTickConfig.getBaseUrl());
+        urlBuilder.append("/stock/klines"); // 注意：批量接口是 klines（复数）
+        urlBuilder.append("?region=").append(region.toUpperCase());
+        urlBuilder.append("&codes=").append(String.join(",", codes)); // 逗号分隔
+        urlBuilder.append("&kType=").append(kType);
+        urlBuilder.append("&limit=").append(limit);
+        if (et != null) {
+            urlBuilder.append("&et=").append(et);
+        }
+
+        String url = urlBuilder.toString();
+
+        log.info("批量拉取K线数据，region: {}, codes数量: {}, url: {}", region, codes.size(), url);
+
+        // 复用现有失败处理机制
+        return executeWithTokenFailureHandling(url);
     }
 
     @Override

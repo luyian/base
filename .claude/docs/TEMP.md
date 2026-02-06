@@ -466,10 +466,91 @@
 
 ---
 
+---
+
+### 2026-02-06
+
+#### 股票推荐打分系统（后端完成）
+
+**需求背景**：
+- 基于股票日K线数据的智能推荐系统
+- 通过多维度技术分析规则对股票进行打分
+- 支持规则配置、权重调整、定时打分
+- 架构高度解耦，支持动态扩展打分规则
+
+**技术架构**：
+- **设计模式**：策略模式 + Spring Bean自动发现
+- **定时任务**：Spring @Scheduled（每天16:30执行）
+- **数据存储**：MySQL（3张新表）
+
+**数据库表**：
+1. `stk_score_rule` - 打分规则配置表（规则元数据、分数、权重、参数）
+2. `stk_score_record` - 打分记录表（每只股票每条规则的详细得分）
+3. `stk_recommend` - 推荐股票表（每日汇总结果和排名）
+
+**核心模块**：
+- **策略框架**：`ScoreStrategy` 接口、`ScoreContext` 上下文、`ScoreResult` 结果
+- **打分引擎**：`ScoreEngine` - 自动注入所有策略Bean，按顺序执行打分
+- **打分服务**：`ScoreService` - 单只/批量/全量打分、排名计算
+- **规则管理**：`ScoreRuleService` - 规则CRUD、启用/禁用
+- **推荐查询**：`RecommendService` - 分页查询推荐列表、打分明细
+
+**5条经典打分规则**：
+1. **均线多头排列** (MA_ALIGNMENT) - MA5 > MA10 > MA20 > MA60，固定20分，权重1.5
+2. **成交量突破** (VOLUME_BREAK) - 成交量突破近期平均水平，动态10-20分，权重1.2
+3. **连续上涨** (CONTINUOUS_RISE) - 连续3-5天收盘价上涨，动态10-15分，权重1.0
+4. **MACD金叉** (MACD_GOLDEN_CROSS) - DIF上穿DEA形成金叉，固定15分，权重1.3
+5. **突破前高** (BREAK_HIGH) - 突破近20日最高价，动态10-20分，权重1.1
+
+**后端文件清单**：
+- 数据库：`backend/src/main/resources/db/recommend_schema.sql`
+- 实体类：`backend/src/main/java/com/base/stock/recommend/entity/` (3个)
+- Mapper：`backend/src/main/java/com/base/stock/recommend/mapper/` (3个)
+- Service：`backend/src/main/java/com/base/stock/recommend/service/` (3个接口 + 3个实现)
+- Controller：`backend/src/main/java/com/base/stock/recommend/controller/` (2个)
+- 策略框架：`backend/src/main/java/com/base/stock/recommend/strategy/` (接口、上下文、结果)
+- 策略实现：`backend/src/main/java/com/base/stock/recommend/strategy/impl/` (5个)
+- 打分引擎：`backend/src/main/java/com/base/stock/recommend/engine/ScoreEngine.java`
+- 定时任务：`backend/src/main/java/com/base/stock/recommend/task/DailyScoreTask.java`
+- 启动类修改：`backend/src/main/java/com/base/system/BaseSystemApplication.java` (添加@EnableScheduling)
+
+**API接口**：
+- `GET /stock/recommend/list` - 分页查询推荐列表
+- `GET /stock/recommend/detail` - 查询打分明细
+- `POST /stock/recommend/execute` - 手动触发打分
+- `GET /stock/recommend/latest-date` - 查询最新推荐日期
+- `GET /stock/recommend/rule/list` - 查询规则列表
+- `PUT /stock/recommend/rule/{id}` - 更新规则配置
+- `POST /stock/recommend/rule/{id}/enable` - 启用规则
+- `POST /stock/recommend/rule/{id}/disable` - 禁用规则
+
+**扩展性设计**：
+- 新增规则只需：1) 数据库插入规则配置 2) 创建策略实现类（实现ScoreStrategy接口）3) 标注@Component注解
+- 无需修改：打分引擎、打分服务、前端页面
+- 预留实时打分接口（supportRealtime方法）
+
+**前端文件清单**：
+- API封装：`frontend/src/api/recommend.js`
+- 推荐列表页面：`frontend/src/views/stock/recommend/index.vue`
+- 规则配置页面：`frontend/src/views/stock/recommend/rule.vue`
+
+**前端功能**：
+- 推荐列表：日期选择、分页展示、排名标识、打分明细查看、K线图跳转
+- 规则配置：规则列表、编辑规则（分数、权重、参数）、启用/禁用规则
+- 手动打分：支持手动触发打分任务
+
+**待完成**：
+- 数据库表初始化（执行 recommend_schema.sql）
+- 添加菜单和权限配置
+- 功能测试和验证
+
+---
+
 ## 开发计划变更记录
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2026-02-06 | 股票推荐打分系统后端开发完成 |
 | 2026-02-04 | 通用导出功能模块开发 |
 | 2026-02-02 | K线趋势弹窗合并、分钟K线功能完善 |
 | 2026-01-30 | 添加手动同步股票数据入口 |

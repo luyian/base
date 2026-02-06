@@ -404,18 +404,41 @@ const handleExportPdf = async () => {
     const contentW = pageW - margin * 2
     let y = margin
 
-    // 标题
-    doc.setFontSize(14)
-    doc.text(title, margin, y)
-    y += 10
+    // 使用 canvas 渲染中文文字为图片
+    const renderTextToImage = (text, fontSize, color = '#000000') => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      ctx.font = `${fontSize}px Microsoft YaHei, SimHei, sans-serif`
+      const metrics = ctx.measureText(text)
+      const textWidth = metrics.width
+      const textHeight = fontSize * 1.2
+      canvas.width = textWidth + 4
+      canvas.height = textHeight + 4
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.font = `${fontSize}px Microsoft YaHei, SimHei, sans-serif`
+      ctx.fillStyle = color
+      ctx.textBaseline = 'middle'
+      ctx.fillText(text, 2, canvas.height / 2)
+      return { dataUrl: canvas.toDataURL('image/png'), width: canvas.width, height: canvas.height }
+    }
+
+    // 添加标题
+    const titleImg = renderTextToImage(title, 28)
+    const titleH = 8
+    const titleW = (titleImg.width / titleImg.height) * titleH
+    doc.addImage(titleImg.dataUrl, 'PNG', margin, y, titleW, titleH)
+    y += titleH + 6
 
     const addImageToPdf = async (imgData, label, yStart) => {
       if (!imgData) return yStart
       let yy = yStart
-      doc.setFontSize(11)
-      doc.setTextColor(80, 80, 80)
-      doc.text(label, margin, yy)
-      yy += 6
+      // 使用 canvas 渲染标签
+      const labelImg = renderTextToImage(label, 22, '#505050')
+      const labelH = 5
+      const labelW = (labelImg.width / labelImg.height) * labelH
+      doc.addImage(labelImg.dataUrl, 'PNG', margin, yy, labelW, labelH)
+      yy += labelH + 3
       const img = new Image()
       img.src = imgData
       await new Promise((resolve, reject) => {

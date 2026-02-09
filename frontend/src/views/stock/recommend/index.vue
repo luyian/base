@@ -32,13 +32,7 @@
         stripe
         style="width: 100%"
       >
-        <el-table-column prop="rank" label="排名" width="80" align="center">
-          <template #default="{ row }">
-            <el-tag v-if="row.rank <= 3" type="danger" effect="dark">{{ row.rank }}</el-tag>
-            <el-tag v-else-if="row.rank <= 10" type="warning">{{ row.rank }}</el-tag>
-            <span v-else>{{ row.rank }}</span>
-          </template>
-        </el-table-column>
+        <el-table-column type="index" label="序号" width="80" align="center" :index="getTableIndex" />
         <el-table-column prop="stockCode" label="股票代码" width="120" align="center" />
         <el-table-column prop="stockName" label="股票名称" width="150" align="center" />
         <el-table-column prop="market" label="市场" width="80" align="center">
@@ -307,6 +301,13 @@ const formatDetail = (detailJson) => {
   } catch (error) {
     return detailJson
   }
+}
+
+/**
+ * 计算表格序号（考虑分页）
+ */
+const getTableIndex = (index) => {
+  return (queryParams.page - 1) * queryParams.size + index + 1
 }
 
 onMounted(async () => {

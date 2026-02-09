@@ -31,11 +31,4 @@ public interface ScoreService {
      * @param scoreDate 打分日期
      */
     void executeAllStockScore(LocalDate scoreDate);
-
-    /**
-     * 计算排名
-     *
-     * @param scoreDate 打分日期
-     */
-    void calculateRank(LocalDate scoreDate);
 }

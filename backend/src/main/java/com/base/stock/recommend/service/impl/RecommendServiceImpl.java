@@ -28,7 +28,7 @@ public class RecommendServiceImpl extends ServiceImpl<RecommendStockMapper, Reco
         Page<RecommendStock> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<RecommendStock> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(RecommendStock::getRecommendDate, recommendDate)
-                .orderByAsc(RecommendStock::getRank);
+                .orderByDesc(RecommendStock::getTotalScore);
         return this.page(pageParam, wrapper);
     }
 
@@ -36,7 +36,7 @@ public class RecommendServiceImpl extends ServiceImpl<RecommendStockMapper, Reco
     public List<RecommendStock> listRecommend(LocalDate recommendDate, Integer limit) {
         LambdaQueryWrapper<RecommendStock> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(RecommendStock::getRecommendDate, recommendDate)
-                .orderByAsc(RecommendStock::getRank);
+                .orderByDesc(RecommendStock::getTotalScore);
         if (limit != null && limit > 0) {
             wrapper.last("LIMIT " + limit);
         }

@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * K线数据 Mapper 接口
@@ -24,4 +25,13 @@ public interface StockKlineMapper extends BaseMapper<StockKline> {
      */
     @Select("SELECT MAX(trade_date) FROM stk_kline_daily WHERE stock_code = #{stockCode}")
     LocalDate selectLatestTradeDate(@Param("stockCode") String stockCode);
+
+    /**
+     * 批量插入或更新K线数据
+     * 使用 INSERT ... ON DUPLICATE KEY UPDATE 实现 upsert
+     *
+     * @param list K线数据列表
+     * @return 影响行数
+     */
+    int batchUpsert(@Param("list") List<StockKline> list);
 }

@@ -190,4 +190,29 @@ public class TokenManagerServiceImpl implements TokenManagerService {
         int count = apiTokenMapper.resetDailyUsed(provider);
         log.info("重置每日计数完成，provider: {}, 影响行数: {}", provider, count);
     }
+
+    @Override
+    public List<ApiToken> getAvailableTokens(String provider) {
+        // 查询可用的 Token 列表
+        LambdaQueryWrapper<ApiToken> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ApiToken::getProvider, provider)
+                .eq(ApiToken::getStatus, 1)
+                .eq(ApiToken::getDeleted, 0)
+                // 未过期或无过期时间
+                .and(w -> w.isNull(ApiToken::getExpireTime)
+                        .or()
+                        .gt(ApiToken::getExpireTime, LocalDateTime.now()));
+
+        List<ApiToken> tokens = apiTokenMapper.selectList(wrapper);
+
+        // 过滤掉已达每日限额的 Token
+        List<ApiToken> availableTokens = tokens.stream()
+                .filter(token -> token.getDailyLimit() == 0 || token.getDailyUsed() < token.getDailyLimit())
+                .collect(java.util.stream.Collectors.toList());
+
+        log.info("获取可用 Token 列表，provider: {}, 总数: {}, 可用: {}",
+                provider, tokens.size(), availableTokens.size());
+
+        return availableTokens;
+    }
 }

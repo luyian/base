@@ -2,6 +2,7 @@ package com.base.stock.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.base.entity.BaseEntity;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -50,6 +51,7 @@ public class ApiToken extends BaseEntity {
      * 最后使用时间
      */
     @ApiModelProperty("最后使用时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime lastUsedTime;
 
     /**
@@ -80,5 +82,6 @@ public class ApiToken extends BaseEntity {
      * 过期时间（null表示永不过期）
      */
     @ApiModelProperty("过期时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime expireTime;
 }

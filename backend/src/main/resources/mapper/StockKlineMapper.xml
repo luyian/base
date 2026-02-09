@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.stock.mapper.StockKlineMapper">
+
+    <!-- 批量插入或更新K线数据 -->
+    <insert id="batchUpsert" parameterType="java.util.List">
+        INSERT INTO stk_kline_daily (
+            stock_code, trade_date, open_price, high_price, low_price,
+            close_price, volume, amount, change_rate, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.stockCode},
+                #{item.tradeDate},
+                #{item.openPrice},
+                #{item.highPrice},
+                #{item.lowPrice},
+                #{item.closePrice},
+                #{item.volume},
+                #{item.amount},
+                #{item.changeRate},
+                NOW(),
+                NOW()
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            open_price = VALUES(open_price),
+            high_price = VALUES(high_price),
+            low_price = VALUES(low_price),
+            close_price = VALUES(close_price),
+            volume = VALUES(volume),
+            amount = VALUES(amount),
+            change_rate = VALUES(change_rate),
+            update_time = NOW()
+    </insert>
+
+</mapper>

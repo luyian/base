@@ -310,3 +310,38 @@ export function getMinuteKline(stockCode, kType = 1, et = null, limit = 100) {
     params: { stockCode, kType, et, limit }
   })
 }
+
+/**
+ * 并发批量同步所有股票的 K 线数据
+ */
+export function batchSyncAllKlineConcurrent(market, startDate, endDate) {
+  return request({
+    url: '/stock/sync/kline/all/concurrent',
+    method: 'post',
+    params: { market, startDate, endDate },
+    timeout: 600000
+  })
+}
+
+/**
+ * 查询同步失败记录列表
+ */
+export function listSyncFailures(params) {
+  return request({
+    url: '/stock/sync/failure/list',
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 补拉失败数据
+ */
+export function retryFailedSync(stockCode, maxRetryCount = 3) {
+  return request({
+    url: '/stock/sync/retry-failed',
+    method: 'post',
+    params: { stockCode, maxRetryCount },
+    timeout: 600000
+  })
+}

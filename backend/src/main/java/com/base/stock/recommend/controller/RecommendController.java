@@ -73,7 +73,6 @@ public class RecommendController {
             map.put("hitRuleCount", recommend.getHitRuleCount());
             map.put("totalRuleCount", recommend.getTotalRuleCount());
             map.put("hitRate", recommend.getHitRate());
-            map.put("rank", recommend.getRank());
 
             // 查询股票信息
             StockInfo stockInfo = stockInfoMapper.selectOne(

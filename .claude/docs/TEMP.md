@@ -548,6 +548,32 @@
 
 ### 2026-02-06
 
+#### 优化推荐股票排名逻辑
+
+- **需求**：去掉排名字段，改为根据分数降序查询后直接使用序号
+- **优化内容**：
+  - 后端：删除 `RecommendStock` 实体的 `rank` 字段
+  - 后端：删除 `RecommendStockMapper.updateRank()` 方法
+  - 后端：删除 `ScoreService.calculateRank()` 方法及其实现
+  - 后端：删除打分完成后调用 `calculateRank` 的代码
+  - 前端：将"排名"列改为"序号"列，使用 `type="index"` 自动生成序号
+  - 前端：添加 `getTableIndex` 函数计算考虑分页的序号
+- **优势**：简化逻辑，无需维护排名字段，排序完全依赖查询结果
+- **修改文件**：
+  - `backend/src/main/java/com/base/stock/recommend/entity/RecommendStock.java`
+  - `backend/src/main/java/com/base/stock/recommend/mapper/RecommendStockMapper.java`
+  - `backend/src/main/java/com/base/stock/recommend/service/ScoreService.java`
+  - `backend/src/main/java/com/base/stock/recommend/service/impl/ScoreServiceImpl.java`
+  - `frontend/src/views/stock/recommend/index.vue`
+
+#### 修复推荐股票排序问题
+
+- **问题**：推荐股票列表没有按分数排序
+- **原因**：后端查询时按 `rank` 字段排序，但只有全量打分时才会更新排名，手动打分单只或部分股票时排名不会更新
+- **修复**：将排序逻辑从按 `rank` 升序改为按 `totalScore` 降序，确保始终按分数从高到低排序
+- **修改文件**：
+  - `backend/src/main/java/com/base/stock/recommend/service/impl/RecommendServiceImpl.java` - 修改 `pageRecommend` 和 `listRecommend` 方法的排序逻辑
+
 #### 批量K线同步接口优化
 
 - **需求**：当需要同步的股票数量超过配置阈值时，使用itick的批量获取K线接口
@@ -570,10 +596,249 @@
 
 ---
 
+### 2026-02-09
+
+#### 基金估值功能优化
+
+**需求变更**：
+- 进入基金列表时不再查询实时估值，只显示基金基本信息
+- 点击查看详情时才实时获取估值数据
+- 详情弹窗提供刷新估值功能
+- 详情弹窗添加编辑基金入口
+- 实时估值结果缓存到 Redis，过期时间 1 小时
+- 列表页显示 Redis 缓存的估值数据
+
+**修改内容**：
+
+1. **后端 Redis 缓存**
+   - `FundValuationResponse` 新增 `cacheTime` 字段，记录缓存时间
+   - `FundService` 新增接口：
+     - `getCachedValuation(Long fundId)` - 获取缓存的估值
+     - `listFundsWithCachedValuation()` - 查询基金列表（带缓存估值）
+   - `FundServiceImpl` 实现：
+     - `getValuation` 方法获取实时估值后缓存到 Redis（key: `fund:valuation:{fundId}`，过期时间 1 小时）
+     - `getCachedValuation` 从 Redis 获取缓存估值
+     - `listFundsWithCachedValuation` 返回基金列表，优先使用缓存估值
+   - `FundController` 的 `/list` 接口改为调用 `listFundsWithCachedValuation()`
+
+2. **前端列表页优化**
+   - 列表卡片显示缓存的估值数据（涨跌幅、持仓数量）
+   - 显示缓存时间（如"5分钟前"、"1小时前"）
+   - 无缓存时显示"暂无估值，点击查看获取"
+
+3. **缓存策略**
+   - 缓存 Key：`fund:valuation:{fundId}`
+   - 过期时间：3600 秒（1 小时）
+   - 触发缓存：用户点击查看详情时
+
+**修改文件**：
+- `backend/src/main/java/com/base/stock/fund/dto/FundValuationResponse.java` - 新增 cacheTime 字段
+- `backend/src/main/java/com/base/stock/fund/service/FundService.java` - 新增接口方法
+- `backend/src/main/java/com/base/stock/fund/service/impl/FundServiceImpl.java` - 实现 Redis 缓存逻辑
+- `backend/src/main/java/com/base/stock/fund/controller/FundController.java` - 修改 list 接口
+- `frontend/src/views/stock/fund/index.vue` - 显示缓存估值和时间
+
+---
+
+#### 基金估值功能
+
+**需求背景**：
+- 用户需要一个基金估值功能，允许自行配置基金中的股票和占比
+- 实时计算基金涨跌幅，使用 iTick 批量实时报价接口获取数据
+- 本地不存储实时数据，直接调用 API 返回前端显示
+
+**核心约束**：
+- iTick 实时报价接口 `codes` 参数最多只能传 3 个股票代码
+- 需要多线程分批请求后汇总
+
+**数据库表**：
+- `stk_fund_config` - 基金配置主表（用户ID、基金名称、代码、描述、状态）
+- `stk_fund_holding` - 基金持仓明细表（基金ID、股票代码、权重占比）
+
+**后端文件**：
+- `backend/src/main/resources/db/fund_schema.sql` - 数据库表结构
+- `backend/src/main/java/com/base/stock/fund/entity/FundConfig.java` - 基金配置实体
+- `backend/src/main/java/com/base/stock/fund/entity/FundHolding.java` - 基金持仓实体
+- `backend/src/main/java/com/base/stock/fund/dto/FundConfigRequest.java` - 配置请求DTO
+- `backend/src/main/java/com/base/stock/fund/dto/FundValuationResponse.java` - 估值响应DTO
+- `backend/src/main/java/com/base/stock/fund/dto/StockQuote.java` - 股票报价DTO
+- `backend/src/main/java/com/base/stock/fund/mapper/FundConfigMapper.java` - 基金配置Mapper
+- `backend/src/main/java/com/base/stock/fund/mapper/FundHoldingMapper.java` - 基金持仓Mapper
+- `backend/src/main/java/com/base/stock/fund/service/FundService.java` - 服务接口
+- `backend/src/main/java/com/base/stock/fund/service/impl/FundServiceImpl.java` - 服务实现（含多线程报价请求）
+- `backend/src/main/java/com/base/stock/fund/controller/FundController.java` - 控制器
+
+**前端文件**：
+- `frontend/src/api/fund.js` - API 封装
+- `frontend/src/views/stock/fund/index.vue` - 基金列表页（含实时估值、持仓明细弹窗、新建/编辑弹窗）
+
+**修改文件**：
+- `backend/src/main/java/com/base/config/MybatisPlusConfig.java` - 添加 fund.mapper 包扫描
+
+**API接口**：
+- `GET /stock/fund/list` - 查询基金列表
+- `GET /stock/fund/{id}` - 查询基金详情
+- `POST /stock/fund` - 创建基金
+- `PUT /stock/fund/{id}` - 更新基金
+- `DELETE /stock/fund/{id}` - 删除基金
+- `GET /stock/fund/{id}/valuation` - 获取单个基金实时估值
+- `POST /stock/fund/valuation/batch` - 批量获取基金实时估值
+- `GET /stock/fund/valuation/all` - 获取所有基金实时估值
+
+**多线程请求核心逻辑**：
+1. 查询基金持仓列表
+2. 按市场(HK/SH/SZ)分组股票
+3. 每组按3个一批分割
+4. 使用 CompletableFuture 并发请求所有批次
+5. 汇总报价数据到 ConcurrentHashMap
+6. 计算加权涨跌幅：Σ(股票涨跌幅 × 权重) / 100
+
+**待完成**：
+- 执行 `fund_schema.sql` 创建数据库表
+- 添加菜单和权限配置
+- 功能测试和验证
+
+---
+
+#### 批量拉取数据库操作优化
+
+**优化背景**：
+- 原有批量同步逻辑中，数据库操作采用逐条处理方式（先查询是否存在，再插入或更新）
+- 每条记录需要2次数据库交互（1次查询 + 1次插入/更新），效率低下
+- 同步1000只股票的K线数据，可能产生数万次数据库操作
+
+**优化方案**：
+- 使用 MySQL 的 `INSERT ... ON DUPLICATE KEY UPDATE` 语法实现批量 upsert
+- 将逐条操作改为批量操作，每批500条
+- 并发同步时先收集所有数据，最后一次性批量保存
+
+**优化内容**：
+
+1. **StockKlineMapper 批量操作**
+   - 新增 `batchUpsert` 方法
+   - 使用唯一索引 `(stock_code, trade_date)` 实现冲突更新
+
+2. **StockInfoMapper 批量操作**
+   - 新增 `batchUpsert` 方法
+   - 使用唯一索引 `(stock_code)` 实现冲突更新
+
+3. **SyncFailureService 批量操作**
+   - 新增 `batchMarkSuccess` - 批量标记成功
+   - 新增 `batchMarkAbandoned` - 批量标记放弃
+   - 新增 `batchUpdateRetryCount` - 批量更新重试次数
+
+4. **StockSyncServiceImpl 优化**
+   - `syncStockList` - 改为批量 upsert
+   - `syncKlineData` - 改为批量 upsert
+   - `batchSyncAllKlineDataConcurrent` - 先收集所有K线数据，最后批量保存
+   - `saveKlineData` / `batchSaveKlineData` - 使用批量 upsert
+
+**新增文件**：
+- `backend/src/main/resources/mapper/StockKlineMapper.xml` - K线批量操作SQL
+- `backend/src/main/resources/mapper/StockInfoMapper.xml` - 股票信息批量操作SQL
+
+**修改文件**：
+- `backend/src/main/java/com/base/stock/mapper/StockKlineMapper.java` - 新增 batchUpsert 方法
+- `backend/src/main/java/com/base/stock/mapper/StockInfoMapper.java` - 新增 batchUpsert 方法
+- `backend/src/main/java/com/base/stock/service/SyncFailureService.java` - 新增批量操作方法
+- `backend/src/main/java/com/base/stock/service/impl/SyncFailureServiceImpl.java` - 实现批量操作
+- `backend/src/main/java/com/base/stock/service/impl/StockSyncServiceImpl.java` - 优化为批量操作
+
+**性能提升**：
+- 原：每条记录2次DB操作 → 现：每批1次DB操作
+- 同步1000只股票（每只100条K线）：原约20万次DB操作 → 现约200次DB操作
+
+**Bug修复 - trade_date 为空导致批量插入失败**：
+- **问题**：批量插入K线数据时报错 `Column 'trade_date' cannot be null`
+- **原因**：API 返回的数据中某些记录的时间戳字段 `t` 为 null，转换后 `tradeDate` 也为 null
+- **修复**：在 `batchSaveKlineData` 方法中添加过滤逻辑，过滤掉 `tradeDate` 为 null 的无效记录
+- **修改文件**：`backend/src/main/java/com/base/stock/service/impl/StockSyncServiceImpl.java`
+
+---
+
+#### 批量拉取数据多线程优化
+
+**需求背景**：
+- 当前批量同步采用单线程顺序执行，无法充分利用多个Token的并发能力
+- 缺少失败追溯机制，同步失败时仅记录日志
+- 无补拉机制，失败数据需要重新执行整个批量同步
+
+**技术方案**：
+- 在HTTP请求层封装多线程能力，而非业务层使用多线程
+- 共享Token池，线程从池中获取Token，用完归还
+- 逐个提交请求，内部自动并发执行
+
+**核心组件**：
+
+1. **并发HTTP执行器** (`ConcurrentHttpExecutor`)
+   - 管理Token池（`BlockingQueue<ApiToken>`）
+   - 管理线程池（`ThreadPoolExecutor`）
+   - 线程数计算：`Token数 / 6`（最小1，最大10）
+   - 支持同步/异步执行、批量执行
+
+2. **执行器工厂** (`ConcurrentHttpExecutorFactory`)
+   - 按服务商管理执行器实例
+   - 支持Token池刷新
+
+3. **失败记录机制**
+   - 记录失败的股票代码、日期范围、失败原因
+   - 支持重试次数跟踪和状态管理
+
+4. **补拉功能**
+   - 查询待重试的失败记录
+   - 使用并发执行器批量补拉
+   - 自动更新失败记录状态
+
+**数据库表**：
+- `stk_sync_failure` - 股票同步失败记录表
+
+**配置参数**（`application-dev.yml`）：
+```yaml
+stock:
+  sync:
+    tokens-per-thread: 6      # 每个线程需要的Token数量
+    max-threads: 10           # 最大线程数
+    token-acquire-timeout: 30000  # 获取Token超时时间（毫秒）
+    max-retry-count: 3        # 失败最大重试次数
+```
+
+**新增文件**：
+- `backend/src/main/resources/db/sync_failure_schema.sql` - 失败记录表结构
+- `backend/src/main/java/com/base/stock/entity/SyncFailure.java` - 失败记录实体
+- `backend/src/main/java/com/base/stock/mapper/SyncFailureMapper.java` - Mapper接口
+- `backend/src/main/java/com/base/stock/service/SyncFailureService.java` - 服务接口
+- `backend/src/main/java/com/base/stock/service/impl/SyncFailureServiceImpl.java` - 服务实现
+- `backend/src/main/java/com/base/stock/http/ConcurrentHttpRequest.java` - 请求封装类
+- `backend/src/main/java/com/base/stock/http/ConcurrentHttpResponse.java` - 响应封装类
+- `backend/src/main/java/com/base/stock/http/ConcurrentHttpExecutor.java` - 并发执行器
+- `backend/src/main/java/com/base/stock/http/ConcurrentHttpExecutorFactory.java` - 执行器工厂
+- `backend/src/main/java/com/base/stock/config/StockSyncConfig.java` - 同步配置类
+
+**修改文件**：
+- `backend/src/main/java/com/base/stock/service/TokenManagerService.java` - 新增 `getAvailableTokens` 方法
+- `backend/src/main/java/com/base/stock/service/impl/TokenManagerServiceImpl.java` - 实现获取所有可用Token
+- `backend/src/main/java/com/base/stock/client/impl/ITickApiClientImpl.java` - 添加并发执行方法
+- `backend/src/main/java/com/base/stock/service/impl/StockSyncServiceImpl.java` - 添加并发同步和补拉方法
+- `backend/src/main/java/com/base/stock/controller/StockSyncController.java` - 添加新接口
+- `backend/src/main/resources/application-dev.yml` - 添加同步配置
+
+**API接口**：
+- `POST /stock/sync/kline/all/concurrent` - 并发批量同步K线数据
+- `POST /stock/sync/retry-failed` - 补拉失败数据
+- `GET /stock/sync/failure/list` - 查询失败记录列表
+
+**待完成**：
+- 执行 `sync_failure_schema.sql` 创建失败记录表
+- 功能测试和验证
+
+---
+
 ## 开发计划变更记录
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2026-02-09 | 基金估值功能 |
+| 2026-02-09 | 批量拉取数据多线程优化 |
 | 2026-02-06 | 股票推荐打分系统后端开发完成 |
 | 2026-02-04 | 通用导出功能模块开发 |
 | 2026-02-02 | K线趋势弹窗合并、分钟K线功能完善 |

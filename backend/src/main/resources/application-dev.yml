@@ -88,3 +88,19 @@ export:
     max-size: 5
     queue-capacity: 100
     thread-name-prefix: export-
+
+# 股票同步配置
+stock:
+  sync:
+    # 每个线程需要的Token数量
+    tokens-per-thread: 6
+    # 最大线程数
+    max-threads: 10
+    # 获取Token的超时时间（毫秒）
+    token-acquire-timeout: 30000
+    # 失败最大重试次数
+    max-retry-count: 3
+    # 批量同步阈值（超过此数量使用批量接口）
+    batch-threshold: 100
+    # 批量请求大小
+    batch-size: 100

@@ -108,4 +108,13 @@ public interface TokenManagerService {
      * @param provider 服务商
      */
     void resetDailyCount(String provider);
+
+    /**
+     * 获取所有可用的 Token 列表
+     * 用于并发HTTP执行器初始化Token池
+     *
+     * @param provider 服务商
+     * @return 可用的 Token 列表
+     */
+    List<ApiToken> getAvailableTokens(String provider);
 }

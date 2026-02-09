@@ -70,13 +70,6 @@ public class RecommendStock implements Serializable {
     private BigDecimal hitRate;
 
     /**
-     * 排名
-     */
-    @TableField("`rank`")
-    @ApiModelProperty("排名")
-    private Integer rank;
-
-    /**
      * 得分明细（JSON格式）
      */
     @ApiModelProperty("得分明细")

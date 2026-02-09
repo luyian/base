@@ -5,12 +5,18 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.base.stock.client.ITickApiClient;
+import com.base.stock.client.impl.ITickApiClientImpl;
+import com.base.stock.config.StockSyncConfig;
 import com.base.stock.entity.StockInfo;
 import com.base.stock.entity.StockKline;
 import com.base.stock.factory.DataFactory;
+import com.base.stock.http.ConcurrentHttpExecutor;
+import com.base.stock.http.ConcurrentHttpRequest;
+import com.base.stock.http.ConcurrentHttpResponse;
 import com.base.stock.mapper.StockInfoMapper;
 import com.base.stock.mapper.StockKlineMapper;
 import com.base.stock.service.StockSyncService;
+import com.base.stock.service.SyncFailureService;
 import com.base.stock.service.WatchlistService;
 import com.base.system.service.ConfigService;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +25,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +51,8 @@ public class StockSyncServiceImpl implements StockSyncService {
     private final StockKlineMapper stockKlineMapper;
     private final WatchlistService watchlistService;
     private final ConfigService configService;
+    private final SyncFailureService syncFailureService;
+    private final StockSyncConfig stockSyncConfig;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -64,25 +76,19 @@ public class StockSyncServiceImpl implements StockSyncService {
             return 0;
         }
 
-        int count = 0;
+        // 设置市场和状态
         for (StockInfo stock : stockList) {
             stock.setMarket(market);
             stock.setStatus(1);
+        }
 
-            // 检查是否已存在
-            LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(StockInfo::getStockCode, stock.getStockCode());
-            StockInfo existing = stockInfoMapper.selectOne(wrapper);
-
-            if (existing != null) {
-                // 更新
-                stock.setId(existing.getId());
-                stockInfoMapper.updateById(stock);
-            } else {
-                // 新增
-                stockInfoMapper.insert(stock);
-            }
-            count++;
+        // 批量插入或更新（使用 upsert）
+        int batchSize = 500;
+        int count = 0;
+        List<List<StockInfo>> batches = partitionList(stockList, batchSize);
+        for (List<StockInfo> batch : batches) {
+            stockInfoMapper.batchUpsert(batch);
+            count += batch.size();
         }
 
         log.info("同步股票列表完成，market: {}, count: {}", market, count);
@@ -126,29 +132,13 @@ public class StockSyncServiceImpl implements StockSyncService {
             return 0;
         }
 
-        int count = 0;
+        // 设置股票代码
         for (StockKline kline : klineList) {
             kline.setStockCode(stockCode);
-
-            // 检查是否已存在
-            LambdaQueryWrapper<StockKline> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(StockKline::getStockCode, kline.getStockCode())
-                    .eq(StockKline::getTradeDate, kline.getTradeDate());
-            StockKline existing = stockKlineMapper.selectOne(wrapper);
-
-            if (existing != null) {
-                // 更新
-                kline.setId(existing.getId());
-                stockKlineMapper.updateById(kline);
-            } else {
-                // 新增
-                stockKlineMapper.insert(kline);
-            }
-            count++;
         }
 
-        log.info("同步K线数据完成，stockCode: {}, count: {}", stockCode, count);
-        return count;
+        // 批量插入或更新
+        return batchSaveKlineData(klineList);
     }
 
     @Override
@@ -382,27 +372,55 @@ public class StockSyncServiceImpl implements StockSyncService {
     }
 
     /**
-     * 保存K线数据到数据库
+     * 保存K线数据到数据库（批量操作）
      */
     private int saveKlineData(String stockCode, List<StockKline> klineList) {
-        int count = 0;
-        for (StockKline kline : klineList) {
-            // 检查是否已存在
-            LambdaQueryWrapper<StockKline> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(StockKline::getStockCode, kline.getStockCode())
-                    .eq(StockKline::getTradeDate, kline.getTradeDate());
-            StockKline existing = stockKlineMapper.selectOne(wrapper);
-
-            if (existing != null) {
-                // 更新
-                kline.setId(existing.getId());
-                stockKlineMapper.updateById(kline);
-            } else {
-                // 新增
-                stockKlineMapper.insert(kline);
-            }
-            count++;
+        if (klineList == null || klineList.isEmpty()) {
+            return 0;
         }
+        // 设置股票代码
+        for (StockKline kline : klineList) {
+            kline.setStockCode(stockCode);
+        }
+        return batchSaveKlineData(klineList);
+    }
+
+    /**
+     * 批量保存K线数据（使用 upsert）
+     *
+     * @param klineList K线数据列表
+     * @return 保存记录数
+     */
+    private int batchSaveKlineData(List<StockKline> klineList) {
+        if (klineList == null || klineList.isEmpty()) {
+            return 0;
+        }
+
+        // 过滤掉 tradeDate 为 null 的无效数据
+        List<StockKline> validList = klineList.stream()
+                .filter(kline -> kline.getTradeDate() != null)
+                .collect(Collectors.toList());
+
+        if (validList.isEmpty()) {
+            log.warn("过滤后无有效K线数据，原始数量: {}", klineList.size());
+            return 0;
+        }
+
+        int filteredCount = klineList.size() - validList.size();
+        if (filteredCount > 0) {
+            log.warn("过滤掉 {} 条 tradeDate 为空的无效数据", filteredCount);
+        }
+
+        // 分批处理，每批500条
+        int batchSize = 500;
+        int count = 0;
+        List<List<StockKline>> batches = partitionList(validList, batchSize);
+        for (List<StockKline> batch : batches) {
+            stockKlineMapper.batchUpsert(batch);
+            count += batch.size();
+        }
+
+        log.debug("批量保存K线数据完成，count: {}", count);
         return count;
     }
 
@@ -442,5 +460,288 @@ public class StockSyncServiceImpl implements StockSyncService {
             log.warn("获取批量请求大小配置失败，使用默认值100", e);
             return 100;
         }
+    }
+
+    // ==================== 并发执行器相关方法 ====================
+
+    /**
+     * 使用并发执行器批量同步K线数据
+     * 通过多线程并发发送HTTP请求，提升同步效率
+     *
+     * @param market    市场（可选）
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 同步记录数
+     */
+    public int batchSyncAllKlineDataConcurrent(String market, LocalDate startDate, LocalDate endDate) {
+        log.info("开始并发批量同步K线数据，market: {}, startDate: {}, endDate: {}",
+                market, startDate, endDate);
+
+        // 1. 查询股票列表
+        LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StockInfo::getStatus, 1)
+                .eq(StockInfo::getDeleted, 0);
+        if (market != null && !market.isEmpty()) {
+            wrapper.eq(StockInfo::getMarket, market);
+        }
+
+        List<StockInfo> stockList = stockInfoMapper.selectList(wrapper);
+
+        if (stockList.isEmpty()) {
+            log.warn("没有找到股票数据，market: {}", market);
+            return 0;
+        }
+
+        log.info("共找到 {} 只股票需要同步", stockList.size());
+
+        // 2. 获取并发执行器
+        ITickApiClientImpl apiClient = (ITickApiClientImpl) iTickApiClient;
+        ConcurrentHttpExecutor executor = apiClient.getConcurrentExecutor();
+
+        log.info("并发执行器Token池大小: {}", executor.getTokenPoolSize());
+
+        // 3. 构建请求列表
+        List<ConcurrentHttpRequest> requests = new ArrayList<>();
+        for (StockInfo stock : stockList) {
+            String url = buildKlineUrl(stock.getStockCode(), stock.getMarket(), "day", startDate, endDate);
+            ConcurrentHttpRequest request = ConcurrentHttpRequest.get(url, stock.getStockCode());
+            requests.add(request);
+        }
+
+        // 4. 提交所有请求（异步执行）
+        List<Future<ConcurrentHttpResponse>> futures = executor.executeBatch(requests);
+
+        // 5. 逐个处理响应，边获取边保存
+        int successCount = 0;
+        int failCount = 0;
+        int totalCount = 0;
+        int totalStocks = futures.size();
+
+        log.info("========== 开始处理响应，共 {} 只股票 ==========", totalStocks);
+
+        for (int i = 0; i < futures.size(); i++) {
+            Future<ConcurrentHttpResponse> future = futures.get(i);
+            StockInfo stock = stockList.get(i);
+            int currentIndex = i + 1;
+            int progress = (currentIndex * 100) / totalStocks;
+
+            try {
+                // 等待结果，设置超时时间
+                ConcurrentHttpResponse response = future.get(120, TimeUnit.SECONDS);
+
+                if (response.isSuccess()) {
+                    // 解析数据
+                    List<StockKline> klineList = dataFactory.transform(
+                            response.getBody(), "itick_kline_daily", StockKline.class);
+
+                    for (StockKline kline : klineList) {
+                        kline.setStockCode(stock.getStockCode());
+                    }
+
+                    // 立即保存当前股票的K线数据
+                    int savedCount = batchSaveKlineData(klineList);
+                    totalCount += savedCount;
+                    successCount++;
+
+                    // 每只股票都输出进度
+                    log.info("[{}/{}] {}% | {} | 成功 | K线: {}条 | 累计: {}条",
+                            currentIndex, totalStocks, progress, stock.getStockCode(), savedCount, totalCount);
+                } else {
+                    failCount++;
+                    log.info("[{}/{}] {}% | {} | 失败 | {}",
+                            currentIndex, totalStocks, progress, stock.getStockCode(), response.getErrorMessage());
+
+                    // 记录失败
+                    syncFailureService.recordFailure(
+                            stock.getStockCode(), startDate, endDate, response.getErrorMessage());
+                }
+
+            } catch (Exception e) {
+                failCount++;
+                log.info("[{}/{}] {}% | {} | 异常 | {}",
+                        currentIndex, totalStocks, progress, stock.getStockCode(), e.getMessage());
+
+                // 记录失败
+                syncFailureService.recordFailure(
+                        stock.getStockCode(), startDate, endDate, e.getMessage());
+            }
+        }
+
+        log.info("========== 同步完成 ==========");
+        log.info("并发批量同步完成，成功股票: {}, 失败股票: {}, 总K线记录数: {}",
+                successCount, failCount, totalCount);
+        return totalCount;
+    }
+
+    /**
+     * 构建K线请求URL
+     *
+     * @param stockCode 股票代码
+     * @param region    市场
+     * @param period    周期
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return URL
+     */
+    private String buildKlineUrl(String stockCode, String region, String period,
+                                  LocalDate startDate, LocalDate endDate) {
+        int kType = 8;
+        if ("week".equalsIgnoreCase(period)) {
+            kType = 9;
+        } else if ("month".equalsIgnoreCase(period)) {
+            kType = 10;
+        }
+
+        int limit = 100;
+        if (startDate != null && endDate != null) {
+            long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+            limit = (int) Math.min(days, 100);
+        }
+
+        Long et = null;
+        if (endDate != null) {
+            et = endDate.atTime(23, 59, 59)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli();
+        }
+
+        // 从配置获取baseUrl，这里硬编码为itick的地址
+        String baseUrl = "https://api.itick.org";
+
+        StringBuilder urlBuilder = new StringBuilder(baseUrl);
+        urlBuilder.append("/stock/kline");
+        urlBuilder.append("?region=").append(region);
+        urlBuilder.append("&code=").append(stockCode);
+        urlBuilder.append("&kType=").append(kType);
+        urlBuilder.append("&limit=").append(limit);
+        if (et != null) {
+            urlBuilder.append("&et=").append(et);
+        }
+
+        return urlBuilder.toString();
+    }
+
+    /**
+     * 补拉失败的同步记录
+     *
+     * @param stockCode     股票代码（可选，为空则补拉所有）
+     * @param maxRetryCount 最大重试次数
+     * @return 成功补拉的记录数
+     */
+    public int retryFailedSync(String stockCode, int maxRetryCount) {
+        log.info("开始补拉失败数据，stockCode: {}, maxRetryCount: {}", stockCode, maxRetryCount);
+
+        // 1. 查询待重试的失败记录
+        List<com.base.stock.entity.SyncFailure> failures =
+                syncFailureService.listPendingRetry(stockCode, maxRetryCount);
+
+        if (failures.isEmpty()) {
+            log.info("没有需要补拉的失败记录");
+            return 0;
+        }
+
+        log.info("找到 {} 条待补拉记录", failures.size());
+
+        // 2. 获取并发执行器
+        ITickApiClientImpl apiClient = (ITickApiClientImpl) iTickApiClient;
+        ConcurrentHttpExecutor executor = apiClient.getConcurrentExecutor();
+
+        // 3. 构建请求
+        List<ConcurrentHttpRequest> requests = new ArrayList<>();
+        for (com.base.stock.entity.SyncFailure failure : failures) {
+            // 查询股票信息获取市场
+            LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(StockInfo::getStockCode, failure.getStockCode());
+            StockInfo stockInfo = stockInfoMapper.selectOne(wrapper);
+
+            if (stockInfo == null) {
+                log.warn("股票不存在，跳过补拉，stockCode: {}", failure.getStockCode());
+                continue;
+            }
+
+            String url = buildKlineUrl(failure.getStockCode(), stockInfo.getMarket(),
+                    "day", failure.getStartDate(), failure.getEndDate());
+            ConcurrentHttpRequest request = ConcurrentHttpRequest.get(url, failure.getStockCode());
+            requests.add(request);
+        }
+
+        // 4. 执行请求
+        List<Future<ConcurrentHttpResponse>> futures = executor.executeBatch(requests);
+
+        // 5. 处理结果
+        int successCount = 0;
+        int failCount = 0;
+        int totalRecords = futures.size();
+
+        log.info("========== 开始补拉处理，共 {} 条记录 ==========", totalRecords);
+
+        for (int i = 0; i < futures.size(); i++) {
+            Future<ConcurrentHttpResponse> future = futures.get(i);
+            com.base.stock.entity.SyncFailure failure = failures.get(i);
+            int currentIndex = i + 1;
+
+            try {
+                ConcurrentHttpResponse response = future.get(120, TimeUnit.SECONDS);
+
+                if (response.isSuccess()) {
+                    // 解析并保存数据
+                    List<StockKline> klineList = dataFactory.transform(
+                            response.getBody(), "itick_kline_daily", StockKline.class);
+
+                    for (StockKline kline : klineList) {
+                        kline.setStockCode(failure.getStockCode());
+                    }
+
+                    saveKlineData(failure.getStockCode(), klineList);
+                    successCount++;
+
+                    // 标记为成功
+                    syncFailureService.markSuccess(failure.getId());
+
+                    // 进度提示
+                    int progress = (currentIndex * 100) / totalRecords;
+                    log.info("[补拉进度 {}/{}] {}% | 成功: {} | 失败: {} | 当前: {} - {}条K线",
+                            currentIndex, totalRecords, progress, successCount, failCount,
+                            failure.getStockCode(), klineList.size());
+
+                } else {
+                    failCount++;
+                    int newRetryCount = failure.getRetryCount() + 1;
+
+                    // 进度提示
+                    int progress = (currentIndex * 100) / totalRecords;
+                    log.warn("[补拉进度 {}/{}] {}% | 失败 | stockCode: {} | error: {}",
+                            currentIndex, totalRecords, progress, failure.getStockCode(), response.getErrorMessage());
+
+                    if (newRetryCount >= maxRetryCount) {
+                        // 达到最大重试次数，放弃
+                        syncFailureService.markAbandoned(failure.getId());
+                    } else {
+                // 更新重试次数
+                        syncFailureService.updateStatus(failure.getId(), 0, newRetryCount);
+                    }
+                }
+
+            } catch (Exception e) {
+                failCount++;
+
+                // 进度提示
+                int progress = (currentIndex * 100) / totalRecords;
+                log.error("[补拉进度 {}/{}] {}% | 异常 | stockCode: {} | error: {}",
+                        currentIndex, totalRecords, progress, failure.getStockCode(), e.getMessage());
+
+                int newRetryCount = failure.getRetryCount() + 1;
+                if (newRetryCount >= maxRetryCount) {
+                    syncFailureService.markAbandoned(failure.getId());
+                } else {
+                    syncFailureService.updateStatus(failure.getId(), 0, newRetryCount);
+                }
+            }
+        }
+
+        log.info("========== 补拉处理完成 ==========");
+        log.info("补拉完成，成功: {}, 失败: {}", successCount, failCount);
+        return successCount;
     }
 }

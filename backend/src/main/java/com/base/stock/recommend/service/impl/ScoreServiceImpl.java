@@ -135,16 +135,6 @@ public class ScoreServiceImpl implements ScoreService {
         }
 
         log.info("所有股票打分完成，成功：{}，失败：{}", successCount, failCount);
-
-        // 计算排名
-        calculateRank(scoreDate);
-    }
-
-    @Override
-    public void calculateRank(LocalDate scoreDate) {
-        log.info("开始计算排名，日期：{}", scoreDate);
-        recommendStockMapper.updateRank(scoreDate);
-        log.info("排名计算完成");
     }
 
     /**

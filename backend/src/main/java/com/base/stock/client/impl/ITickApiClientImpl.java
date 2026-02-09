@@ -6,6 +6,10 @@ import com.base.stock.client.ITickApiClient;
 import com.base.stock.config.ITickConfig;
 import com.base.stock.entity.ApiToken;
 import com.base.stock.entity.StockInfo;
+import com.base.stock.http.ConcurrentHttpExecutor;
+import com.base.stock.http.ConcurrentHttpExecutorFactory;
+import com.base.stock.http.ConcurrentHttpRequest;
+import com.base.stock.http.ConcurrentHttpResponse;
 import com.base.stock.mapper.StockInfoMapper;
 import com.base.stock.service.TokenManagerService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
  * iTick API 客户端实现类
@@ -36,6 +41,7 @@ public class ITickApiClientImpl implements ITickApiClient {
     private final ITickConfig iTickConfig;
     private final TokenManagerService tokenManagerService;
     private final StockInfoMapper stockInfoMapper;
+    private final ConcurrentHttpExecutorFactory executorFactory;
 
     @Override
     public String fetchStockList(String market) {
@@ -276,5 +282,112 @@ public class ITickApiClientImpl implements ITickApiClient {
         }
         // 默认港股
         return "HK";
+    }
+
+    // ==================== 并发执行器相关方法 ====================
+
+    /**
+     * 使用并发执行器异步拉取K线数据
+     *
+     * @param stockCode 股票代码
+     * @param period    周期（day/week/month）
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return Future对象
+     */
+    public Future<ConcurrentHttpResponse> fetchKlineDataAsync(String stockCode, String period,
+                                                               LocalDate startDate, LocalDate endDate) {
+        String url = buildKlineUrl(stockCode, period, startDate, endDate);
+        ConcurrentHttpRequest request = ConcurrentHttpRequest.get(url, stockCode);
+        ConcurrentHttpExecutor executor = executorFactory.getExecutor(PROVIDER);
+        return executor.executeAsync(request);
+    }
+
+    /**
+     * 使用并发执行器同步拉取K线数据（自动并发）
+     *
+     * @param stockCode 股票代码
+     * @param period    周期（day/week/month）
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return 响应对象
+     */
+    public ConcurrentHttpResponse fetchKlineDataConcurrent(String stockCode, String period,
+                                                            LocalDate startDate, LocalDate endDate) {
+        String url = buildKlineUrl(stockCode, period, startDate, endDate);
+        ConcurrentHttpRequest request = ConcurrentHttpRequest.get(url, stockCode);
+        ConcurrentHttpExecutor executor = executorFactory.getExecutor(PROVIDER);
+        return executor.execute(request);
+    }
+
+    /**
+     * 构建K线请求URL
+     *
+     * @param stockCode 股票代码
+     * @param period    周期
+     * @param startDate 开始日期
+     * @param endDate   结束日期
+     * @return URL
+     */
+    private String buildKlineUrl(String stockCode, String period, LocalDate startDate, LocalDate endDate) {
+        String code = stockCode;
+        String region;
+
+        if (stockCode.contains(".")) {
+            String[] parts = stockCode.split("\\.");
+            code = parts[0];
+            region = parts.length > 1 ? parts[1] : guessRegionByCode(code);
+        } else {
+            region = guessRegionByCode(code);
+        }
+
+        int kType = 8;
+        if ("week".equalsIgnoreCase(period)) {
+            kType = 9;
+        } else if ("month".equalsIgnoreCase(period)) {
+            kType = 10;
+        }
+
+        int limit = 100;
+        if (startDate != null && endDate != null) {
+            long days = ChronoUnit.DAYS.between(startDate, endDate) + 1;
+            limit = (int) Math.min(days, 100);
+        }
+
+        Long et = null;
+        if (endDate != null) {
+            et = endDate.atTime(23, 59, 59)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli();
+        }
+
+        StringBuilder urlBuilder = new StringBuilder(iTickConfig.getBaseUrl());
+        urlBuilder.append("/stock/kline");
+        urlBuilder.append("?region=").append(region);
+        urlBuilder.append("&code=").append(code);
+        urlBuilder.append("&kType=").append(kType);
+        urlBuilder.append("&limit=").append(limit);
+        if (et != null) {
+            urlBuilder.append("&et=").append(et);
+        }
+
+        return urlBuilder.toString();
+    }
+
+    /**
+     * 获取并发执行器
+     *
+     * @return 并发执行器
+     */
+    public ConcurrentHttpExecutor getConcurrentExecutor() {
+        return executorFactory.getExecutor(PROVIDER);
+    }
+
+    /**
+     * 刷新Token池
+     */
+    public void refreshTokenPool() {
+        executorFactory.refreshTokenPool(PROVIDER);
     }
 }

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.stock.mapper.StockInfoMapper">
+
+    <!-- 批量插入或更新股票信息 -->
+    <insert id="batchUpsert" parameterType="java.util.List">
+        INSERT INTO stk_stock_info (
+            stock_code, stock_name, market, exchange, currency, status, create_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.stockCode},
+                #{item.stockName},
+                #{item.market},
+                #{item.exchange},
+                #{item.currency},
+                #{item.status},
+                NOW()
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            stock_name = VALUES(stock_name),
+            market = VALUES(market),
+            exchange = VALUES(exchange),
+            currency = VALUES(currency),
+            status = VALUES(status)
+    </insert>
+
+</mapper>

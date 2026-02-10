@@ -15,7 +15,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :icon="Search" @click="fetchRecommendList">查询</el-button>
-          <el-button type="success" :icon="Refresh" @click="handleExecuteScore" :loading="executing">
+          <el-button v-permission="'stock:recommend:execute'" type="success" :icon="Refresh" @click="handleExecuteScore" :loading="executing">
             手动打分
           </el-button>
           <el-button :icon="Refresh" @click="handleRefresh">刷新</el-button>
@@ -50,21 +50,31 @@
         </el-table-column>
         <el-table-column prop="hitRuleCount" label="命中规则" width="100" align="center">
           <template #default="{ row }">
-            {{ row.hitRuleCount }} / {{ row.totalRuleCount }}
+            <span>{{ row.hitRuleCount }} / {{ row.totalRuleCount }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="hitRate" label="命中率" width="100" align="center" sortable>
           <template #default="{ row }">
-            {{ row.hitRate }}%
+            <span>{{ row.hitRate }}%</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" align="center" fixed="right">
+        <el-table-column label="操作" width="220" align="center" fixed="right">
           <template #default="{ row }">
+            <el-button
+              v-permission="'stock:recommend:score'"
+              type="warning"
+              link
+              :icon="Refresh"
+              @click="handleSingleScore(row)"
+              :loading="row.scoring"
+            >
+              重新打分
+            </el-button>
             <el-button type="primary" link :icon="View" @click="handleViewDetail(row)">
-              打分明细
+              明细
             </el-button>
             <el-button type="success" link :icon="TrendCharts" @click="handleViewKline(row)">
-              K线图
+              K线
             </el-button>
           </template>
         </el-table-column>
@@ -116,6 +126,13 @@
         </el-table-column>
       </el-table>
     </el-dialog>
+
+    <!-- 趋势弹窗（复用公共组件） -->
+    <TrendDialog
+      v-model="trendDialogVisible"
+      :stock-code="currentStock.stockCode"
+      :stock-name="currentStock.stockName"
+    />
   </div>
 </template>
 
@@ -123,16 +140,14 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, View, TrendCharts } from '@element-plus/icons-vue'
-import { listRecommend, getScoreDetail, executeScore, getLatestRecommendDate, listRules } from '@/api/recommend'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
+import { listRecommend, getScoreDetail, executeScore, executeSingleScore, listRules } from '@/api/recommend'
+import TrendDialog from '../components/TrendDialog.vue'
 
 // 查询参数
 const queryParams = reactive({
   recommendDate: '',
   page: 1,
-  size: 20
+  size: 10
 })
 
 // 表格数据
@@ -145,6 +160,9 @@ const executing = ref(false)
 const detailDialogVisible = ref(false)
 const scoreDetails = ref([])
 const currentStock = ref({})
+
+// 趋势弹窗
+const trendDialogVisible = ref(false)
 
 // 规则列表（用于显示规则名称）
 const rules = ref([])
@@ -172,21 +190,10 @@ const getRuleName = (ruleCode) => {
 }
 
 /**
- * 获取最新推荐日期
+ * 初始化日期为当天
  */
-const fetchLatestDate = async () => {
-  try {
-    const res = await getLatestRecommendDate()
-    if (res.code === 200 && res.data) {
-      queryParams.recommendDate = res.data
-    } else {
-      // 如果没有推荐数据，使用今天
-      queryParams.recommendDate = new Date().toISOString().split('T')[0]
-    }
-  } catch (error) {
-    console.error('获取最新推荐日期失败', error)
-    queryParams.recommendDate = new Date().toISOString().split('T')[0]
-  }
+const initDate = () => {
+  queryParams.recommendDate = new Date().toISOString().split('T')[0]
 }
 
 /**
@@ -226,7 +233,7 @@ const handleRefresh = () => {
 }
 
 /**
- * 手动触发打分
+ * 手动触发打分（全部）
  */
 const handleExecuteScore = async () => {
   try {
@@ -241,10 +248,9 @@ const handleExecuteScore = async () => {
     )
 
     executing.value = true
-    const res = await executeScore(null, queryParams.recommendDate)
+    const res = await executeScore(queryParams.recommendDate)
     if (res.code === 200) {
       ElMessage.success('打分任务已提交，请稍后刷新查看结果')
-      // 延迟刷新列表
       setTimeout(() => {
         fetchRecommendList()
       }, 3000)
@@ -258,6 +264,27 @@ const handleExecuteScore = async () => {
     }
   } finally {
     executing.value = false
+  }
+}
+
+/**
+ * 单条重新打分
+ */
+const handleSingleScore = async (row) => {
+  try {
+    row.scoring = true
+    const res = await executeSingleScore(row.stockCode, queryParams.recommendDate)
+    if (res.code === 200) {
+      ElMessage.success(`${row.stockName || row.stockCode} 打分成功`)
+      fetchRecommendList()
+    } else {
+      ElMessage.error(res.message || '打分失败')
+    }
+  } catch (error) {
+    console.error('单条打分失败', error)
+    ElMessage.error('打分失败')
+  } finally {
+    row.scoring = false
   }
 }
 
@@ -284,10 +311,8 @@ const handleViewDetail = async (row) => {
  * 查看K线图
  */
 const handleViewKline = (row) => {
-  router.push({
-    path: '/stock/detail',
-    query: { code: row.stockCode }
-  })
+  currentStock.value = row
+  trendDialogVisible.value = true
 }
 
 /**
@@ -312,7 +337,7 @@ const getTableIndex = (index) => {
 
 onMounted(async () => {
   await fetchRules()
-  await fetchLatestDate()
+  initDate()
   await fetchRecommendList()
 })
 </script>

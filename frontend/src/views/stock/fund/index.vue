@@ -302,18 +302,24 @@ const fetchFundList = async () => {
   }
 }
 
-// 查看详情（实时获取估值）
+// 查看详情（显示缓存数据，无缓存时自动刷新）
 const handleViewDetail = async (fund) => {
   currentFund.value = {
     fundId: fund.fundId,
     fundName: fund.fundName,
     fundCode: fund.fundCode,
-    description: fund.description
+    description: fund.description,
+    estimatedChangePercent: fund.estimatedChangePercent,
+    holdingCount: fund.holdingCount,
+    quotes: fund.quotes || [],
+    cacheTime: fund.cacheTime
   }
   detailDialogVisible.value = true
 
-  // 获取实时估值
-  await fetchValuation(fund.fundId)
+  // 只有无缓存时才自动获取实时估值
+  if (!fund.cacheTime) {
+    await fetchValuation(fund.fundId)
+  }
 }
 
 // 获取实时估值

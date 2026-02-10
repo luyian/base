@@ -5,7 +5,9 @@
     <!-- 批量插入或更新股票信息 -->
     <insert id="batchUpsert" parameterType="java.util.List">
         INSERT INTO stk_stock_info (
-            stock_code, stock_name, market, exchange, currency, status, create_time
+            stock_code, stock_name, market, exchange, currency, status,
+            stock_type, sector, industry, business_desc, website_url,
+            market_cap, total_shares, pe_ratio, high_52_week, low_52_week, create_time
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
@@ -15,6 +17,16 @@
                 #{item.exchange},
                 #{item.currency},
                 #{item.status},
+                #{item.stockType},
+                #{item.sector},
+                #{item.industry},
+                #{item.businessDesc},
+                #{item.websiteUrl},
+                #{item.marketCap},
+                #{item.totalShares},
+                #{item.peRatio},
+                #{item.high52Week},
+                #{item.low52Week},
                 NOW()
             )
         </foreach>
@@ -23,7 +35,17 @@
             market = VALUES(market),
             exchange = VALUES(exchange),
             currency = VALUES(currency),
-            status = VALUES(status)
+            status = VALUES(status),
+            stock_type = COALESCE(VALUES(stock_type), stock_type),
+            sector = COALESCE(VALUES(sector), sector),
+            industry = COALESCE(VALUES(industry), industry),
+            business_desc = COALESCE(VALUES(business_desc), business_desc),
+            website_url = COALESCE(VALUES(website_url), website_url),
+            market_cap = COALESCE(VALUES(market_cap), market_cap),
+            total_shares = COALESCE(VALUES(total_shares), total_shares),
+            pe_ratio = COALESCE(VALUES(pe_ratio), pe_ratio),
+            high_52_week = COALESCE(VALUES(high_52_week), high_52_week),
+            low_52_week = COALESCE(VALUES(low_52_week), low_52_week)
     </insert>
 
 </mapper>

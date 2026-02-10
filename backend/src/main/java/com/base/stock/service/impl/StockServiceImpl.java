@@ -8,8 +8,10 @@ import com.base.stock.entity.StockKline;
 import com.base.stock.mapper.StockInfoMapper;
 import com.base.stock.mapper.StockKlineMapper;
 import com.base.stock.service.StockService;
+import com.base.stock.service.StockSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,6 +29,7 @@ public class StockServiceImpl implements StockService {
 
     private final StockInfoMapper stockInfoMapper;
     private final StockKlineMapper stockKlineMapper;
+    private final StockSyncService stockSyncService;
 
     @Override
     public Page<StockInfo> pageStocks(int page, int size, String market, String keyword) {
@@ -71,11 +74,29 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public List<StockKline> listKlineData(String stockCode, LocalDate startDate, LocalDate endDate) {
+        // 异步更新股票详情信息
+        asyncUpdateStockInfo(stockCode);
+
         LambdaQueryWrapper<StockKline> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(StockKline::getStockCode, stockCode)
                 .ge(startDate != null, StockKline::getTradeDate, startDate)
                 .le(endDate != null, StockKline::getTradeDate, endDate)
                 .orderByAsc(StockKline::getTradeDate);
         return stockKlineMapper.selectList(wrapper);
+    }
+
+    /**
+     * 异步更新股票详情信息
+     *
+     * @param stockCode 股票代码
+     */
+    @Async
+    public void asyncUpdateStockInfo(String stockCode) {
+        try {
+            log.debug("异步更新股票详情，stockCode: {}", stockCode);
+            stockSyncService.syncStockInfo(stockCode);
+        } catch (Exception e) {
+            log.warn("异步更新股票详情失败，stockCode: {}, error: {}", stockCode, e.getMessage());
+        }
     }
 }

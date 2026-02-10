@@ -3,15 +3,18 @@ package com.base.stock.controller;
 import com.base.common.result.Result;
 import com.base.stock.dto.MinuteKlineResponse;
 import com.base.stock.entity.Watchlist;
+import com.base.stock.recommend.service.ScoreService;
 import com.base.stock.service.WatchlistService;
 import com.base.system.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -26,6 +29,7 @@ import java.util.List;
 public class WatchlistController {
 
     private final WatchlistService watchlistService;
+    private final ScoreService scoreService;
 
     /**
      * 查询自选股票列表
@@ -109,5 +113,21 @@ public class WatchlistController {
             @ApiParam("返回条数") @RequestParam(defaultValue = "100") int limit) {
         MinuteKlineResponse response = watchlistService.getMinuteKline(stockCode, kType, et, limit);
         return Result.success(response);
+    }
+
+    /**
+     * 对自选股票执行打分
+     */
+    @ApiOperation("对自选股票执行打分")
+    @PostMapping("/score")
+    @PreAuthorize("hasAuthority('stock:watchlist:score')")
+    public Result<Void> scoreStock(
+            @ApiParam("股票代码") @RequestParam String stockCode,
+            @ApiParam("打分日期") @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate scoreDate) {
+        if (scoreDate == null) {
+            scoreDate = LocalDate.now();
+        }
+        scoreService.executeStockScore(stockCode, scoreDate);
+        return Result.success();
     }
 }

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.system.mapper.ExportFieldMapper">
+
+    <!-- 批量插入导出字段配置 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO sys_export_field (config_id, field_name, field_label, field_type, field_width, field_format,
+            dict_type, mask_type, mask_pattern, mask_replacement, converter_bean, default_value, sort, status, remark, create_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.configId}, #{item.fieldName}, #{item.fieldLabel}, #{item.fieldType}, #{item.fieldWidth}, #{item.fieldFormat},
+             #{item.dictType}, #{item.maskType}, #{item.maskPattern}, #{item.maskReplacement}, #{item.converterBean},
+             #{item.defaultValue}, #{item.sort}, #{item.status}, #{item.remark}, NOW())
+        </foreach>
+    </insert>
+
+</mapper>

@@ -152,4 +152,28 @@ public class StockSyncController {
 
         return Result.success(result);
     }
+
+    /**
+     * 同步单只股票详情
+     */
+    @ApiOperation("同步单只股票详情")
+    @PostMapping("/info/{stockCode}")
+    @PreAuthorize("hasAuthority('stock:sync:execute')")
+    public Result<Boolean> syncStockInfo(@PathVariable String stockCode) {
+        boolean success = stockSyncService.syncStockInfo(stockCode);
+        return Result.success(success);
+    }
+
+    /**
+     * 批量同步股票详情
+     */
+    @ApiOperation("批量同步股票详情")
+    @PostMapping("/info/batch")
+    @PreAuthorize("hasAuthority('stock:sync:execute')")
+    public Result<Integer> batchSyncStockInfo(
+            @ApiParam("市场代码（HK/SH/SZ），为空则同步所有市场")
+            @RequestParam(required = false) String market) {
+        int count = stockSyncService.batchSyncStockInfo(market);
+        return Result.success(count);
+    }
 }

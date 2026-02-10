@@ -46,4 +46,20 @@ public interface StockSyncService {
      * @return 同步数量
      */
     int batchSyncAllKlineData(String market, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 同步单只股票的详情信息
+     *
+     * @param stockCode 股票代码
+     * @return 是否成功
+     */
+    boolean syncStockInfo(String stockCode);
+
+    /**
+     * 批量同步股票详情信息（按市场）
+     *
+     * @param market 市场代码（HK/SH/SZ），为空则同步所有市场
+     * @return 同步数量
+     */
+    int batchSyncStockInfo(String market);
 }

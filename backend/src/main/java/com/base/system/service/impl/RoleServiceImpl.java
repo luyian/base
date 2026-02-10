@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -173,12 +174,16 @@ public class RoleServiceImpl implements RoleService {
         wrapper.eq(RolePermission::getRoleId, request.getRoleId());
         rolePermissionMapper.delete(wrapper);
 
-        // 添加新的角色权限关联
-        for (Long permissionId : request.getPermissionIds()) {
-            RolePermission rolePermission = new RolePermission();
-            rolePermission.setRoleId(request.getRoleId());
-            rolePermission.setPermissionId(permissionId);
-            rolePermissionMapper.insert(rolePermission);
+        // 批量添加新的角色权限关联
+        if (request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()) {
+            List<RolePermission> rolePermissions = new ArrayList<>();
+            for (Long permissionId : request.getPermissionIds()) {
+                RolePermission rolePermission = new RolePermission();
+                rolePermission.setRoleId(request.getRoleId());
+                rolePermission.setPermissionId(permissionId);
+                rolePermissions.add(rolePermission);
+            }
+            rolePermissionMapper.batchInsert(rolePermissions);
         }
     }
 

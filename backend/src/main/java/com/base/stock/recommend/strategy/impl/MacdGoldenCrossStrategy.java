@@ -55,21 +55,34 @@ public class MacdGoldenCrossStrategy implements ScoreStrategy {
             List<BigDecimal> ema12List = calculateEMA(klineData, fastPeriod);
             List<BigDecimal> ema26List = calculateEMA(klineData, slowPeriod);
 
-            // 计算DIF = EMA12 - EMA26
+            // EMA12从第12个数据开始，EMA26从第26个数据开始
+            // 需要对齐：DIF从第26个数据开始计算
+            int offset = slowPeriod - fastPeriod;
+
+            // 计算DIF = EMA12 - EMA26（对齐后）
             List<BigDecimal> difList = new ArrayList<>();
-            for (int i = 0; i < ema12List.size(); i++) {
-                difList.add(ema12List.get(i).subtract(ema26List.get(i)));
+            for (int i = 0; i < ema26List.size(); i++) {
+                // ema12List需要偏移offset个位置才能与ema26List对齐
+                difList.add(ema12List.get(i + offset).subtract(ema26List.get(i)));
             }
 
             // 计算DEA = DIF的9日EMA
             List<BigDecimal> deaList = calculateEMAFromValues(difList, signalPeriod);
 
-            // 判断是否金叉：前一天DIF < DEA，今天DIF > DEA
-            int lastIndex = difList.size() - 1;
-            BigDecimal currentDif = difList.get(lastIndex);
-            BigDecimal currentDea = deaList.get(lastIndex);
-            BigDecimal prevDif = difList.get(lastIndex - 1);
-            BigDecimal prevDea = deaList.get(lastIndex - 1);
+            // 确保有足够数据
+            if (deaList.size() < 2) {
+                return ScoreResult.miss("计算MACD数据不足");
+            }
+
+            // DEA列表比DIF列表短(signalPeriod-1)个元素
+            // 需要对齐：使用DEA的索引
+            int lastDeaIndex = deaList.size() - 1;
+            int difOffset = signalPeriod - 1;
+
+            BigDecimal currentDif = difList.get(lastDeaIndex + difOffset);
+            BigDecimal currentDea = deaList.get(lastDeaIndex);
+            BigDecimal prevDif = difList.get(lastDeaIndex + difOffset - 1);
+            BigDecimal prevDea = deaList.get(lastDeaIndex - 1);
 
             boolean isGoldenCross = prevDif.compareTo(prevDea) < 0 && currentDif.compareTo(currentDea) > 0;
 
@@ -84,14 +97,22 @@ public class MacdGoldenCrossStrategy implements ScoreStrategy {
                 return ScoreResult.hit(context.getRule().getBaseScore(), detail);
             } else {
                 // 检查是否在近3天内发生过金叉
-                for (int i = lastIndex - 1; i >= Math.max(0, lastIndex - 3); i--) {
-                    BigDecimal dif = difList.get(i);
-                    BigDecimal dea = deaList.get(i);
-                    BigDecimal prevDif2 = difList.get(i - 1);
-                    BigDecimal prevDea2 = deaList.get(i - 1);
+                int checkDays = Math.min(3, lastDeaIndex - 1);
+                for (int i = 1; i <= checkDays; i++) {
+                    int deaIdx = lastDeaIndex - i;
+                    int difIdx = deaIdx + difOffset;
+
+                    if (deaIdx < 1) {
+                        break;
+                    }
+
+                    BigDecimal dif = difList.get(difIdx);
+                    BigDecimal dea = deaList.get(deaIdx);
+                    BigDecimal prevDif2 = difList.get(difIdx - 1);
+                    BigDecimal prevDea2 = deaList.get(deaIdx - 1);
 
                     if (prevDif2.compareTo(prevDea2) < 0 && dif.compareTo(dea) > 0) {
-                        detail.put("goldenCrossDaysAgo", lastIndex - i);
+                        detail.put("goldenCrossDaysAgo", i);
                         return ScoreResult.hit(context.getRule().getBaseScore(), detail);
                     }
                 }

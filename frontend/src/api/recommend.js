@@ -28,13 +28,25 @@ export function getScoreDetail(stockCode, scoreDate) {
 }
 
 /**
- * 手动触发打分
- * @param {String} stockCode 股票代码（可选，不传则对所有股票打分）
+ * 手动触发打分（全量）
  * @param {String} scoreDate 打分日期 (YYYY-MM-DD)
  */
-export function executeScore(stockCode, scoreDate) {
+export function executeScore(scoreDate) {
   return request({
     url: '/stock/recommend/execute',
+    method: 'post',
+    params: { scoreDate }
+  })
+}
+
+/**
+ * 单条股票打分
+ * @param {String} stockCode 股票代码
+ * @param {String} scoreDate 打分日期 (YYYY-MM-DD)
+ */
+export function executeSingleScore(stockCode, scoreDate) {
+  return request({
+    url: '/stock/recommend/score',
     method: 'post',
     params: { stockCode, scoreDate }
   })

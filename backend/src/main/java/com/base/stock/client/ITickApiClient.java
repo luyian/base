@@ -52,4 +52,12 @@ public interface ITickApiClient {
      * @return JSON 字符串
      */
     String fetchMinuteKlineData(String stockCode, int kType, Long et, int limit);
+
+    /**
+     * 获取股票详情信息
+     *
+     * @param stockCode 股票代码（纯代码或带后缀格式）
+     * @return JSON 字符串
+     */
+    String fetchStockInfo(String stockCode);
 }

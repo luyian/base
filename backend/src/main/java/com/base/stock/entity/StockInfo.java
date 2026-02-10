@@ -1,11 +1,14 @@
 package com.base.stock.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.base.entity.BaseEntity;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.math.BigDecimal;
 
 /**
  * 股票基础信息实体类
@@ -55,4 +58,66 @@ public class StockInfo extends BaseEntity {
      */
     @ApiModelProperty("状态（0-退市, 1-正常）")
     private Integer status;
+
+    /**
+     * 股票类型（stock-股票）
+     */
+    @ApiModelProperty("股票类型")
+    private String stockType;
+
+    /**
+     * 所属板块
+     */
+    @ApiModelProperty("所属板块")
+    private String sector;
+
+    /**
+     * 所属行业
+     */
+    @ApiModelProperty("所属行业")
+    private String industry;
+
+    /**
+     * 公司简介
+     */
+    @ApiModelProperty("公司简介")
+    private String businessDesc;
+
+    /**
+     * 公司网站URL
+     */
+    @ApiModelProperty("公司网站URL")
+    private String websiteUrl;
+
+    /**
+     * 总市值
+     */
+    @ApiModelProperty("总市值")
+    private BigDecimal marketCap;
+
+    /**
+     * 总股本
+     */
+    @ApiModelProperty("总股本")
+    private BigDecimal totalShares;
+
+    /**
+     * 市盈率
+     */
+    @ApiModelProperty("市盈率")
+    private BigDecimal peRatio;
+
+    /**
+     * 52周最高价
+     */
+    @ApiModelProperty("52周最高价")
+    @TableField("high_52_week")
+    private BigDecimal high52Week;
+
+    /**
+     * 52周最低价
+     */
+    @ApiModelProperty("52周最低价")
+    @TableField("low_52_week")
+    private BigDecimal low52Week;
 }

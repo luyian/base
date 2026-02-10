@@ -390,4 +390,30 @@ public class ITickApiClientImpl implements ITickApiClient {
     public void refreshTokenPool() {
         executorFactory.refreshTokenPool(PROVIDER);
     }
+
+    @Override
+    public String fetchStockInfo(String stockCode) {
+        String code = stockCode;
+        String region;
+
+        if (stockCode.contains(".")) {
+            String[] parts = stockCode.split("\\.");
+            code = parts[0];
+            region = parts.length > 1 ? parts[1] : guessRegionByCode(code);
+        } else {
+            region = guessRegionByCode(code);
+        }
+
+        StringBuilder urlBuilder = new StringBuilder(iTickConfig.getBaseUrl());
+        urlBuilder.append("/stock/info");
+        urlBuilder.append("?type=stock");
+        urlBuilder.append("&region=").append(region);
+        urlBuilder.append("&code=").append(code);
+
+        String url = urlBuilder.toString();
+
+        log.info("拉取股票详情，stockCode: {}, url: {}", stockCode, url);
+
+        return executeWithTokenFailureHandling(url);
+    }
 }

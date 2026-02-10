@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.stock.recommend.mapper.RecommendStockMapper">
+
+    <!-- 批量插入推荐记录 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO stk_recommend (stock_code, recommend_date, total_score, hit_rule_count, total_rule_count, hit_rate, score_detail, create_time, update_time)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.stockCode}, #{item.recommendDate}, #{item.totalScore}, #{item.hitRuleCount}, #{item.totalRuleCount}, #{item.hitRate}, #{item.scoreDetail}, NOW(), NOW())
+        </foreach>
+    </insert>
+
+</mapper>

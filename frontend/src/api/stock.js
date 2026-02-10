@@ -76,6 +76,17 @@ export function deleteToken(id) {
 }
 
 /**
+ * 批量删除 Token
+ */
+export function batchDeleteTokens(ids) {
+  return request({
+    url: '/stock/token/batch',
+    method: 'delete',
+    data: ids
+  })
+}
+
+/**
  * 重置每日计数
  */
 export function resetTokenDaily(provider = 'itick') {
@@ -342,6 +353,41 @@ export function retryFailedSync(stockCode, maxRetryCount = 3) {
     url: '/stock/sync/retry-failed',
     method: 'post',
     params: { stockCode, maxRetryCount },
+    timeout: 600000
+  })
+}
+
+/**
+ * 对自选股票执行打分
+ * @param {string} stockCode 股票代码
+ * @param {string} scoreDate 打分日期 (YYYY-MM-DD)
+ */
+export function scoreWatchlistStock(stockCode, scoreDate) {
+  return request({
+    url: '/stock/watchlist/score',
+    method: 'post',
+    params: { stockCode, scoreDate }
+  })
+}
+
+/**
+ * 同步单只股票详情
+ */
+export function syncStockInfo(stockCode) {
+  return request({
+    url: `/stock/sync/info/${stockCode}`,
+    method: 'post'
+  })
+}
+
+/**
+ * 批量同步股票详情
+ */
+export function batchSyncStockInfo(market) {
+  return request({
+    url: '/stock/sync/info/batch',
+    method: 'post',
+    params: { market },
     timeout: 600000
   })
 }

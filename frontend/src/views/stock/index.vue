@@ -18,6 +18,7 @@
           <el-button :icon="Refresh" @click="handleReset">重置</el-button>
           <el-button type="warning" :icon="Download" @click="handleOpenSyncDialog">同步股票</el-button>
           <el-button type="success" :icon="Download" @click="handleOpenSyncAllDialog">拉取K线</el-button>
+          <el-button type="info" :icon="InfoFilled" @click="handleOpenSyncInfoDialog">同步详情</el-button>
           <el-button type="danger" :icon="Warning" @click="handleOpenFailureDialog">失败记录</el-button>
         </el-form-item>
       </el-form>
@@ -26,9 +27,9 @@
     <!-- 表格 -->
     <el-card class="table-card" shadow="never">
       <el-table v-loading="loading" :data="tableData" border stripe>
-        <el-table-column prop="stockCode" label="股票代码" width="120" align="center" />
-        <el-table-column prop="stockName" label="股票名称" width="150" align="center" />
-        <el-table-column prop="market" label="市场" width="80" align="center">
+        <el-table-column prop="stockCode" label="股票代码" width="100" align="center" />
+        <el-table-column prop="stockName" label="股票名称" width="120" align="center" />
+        <el-table-column prop="market" label="市场" width="70" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.market === 'HK'" type="danger" size="small">港股</el-tag>
             <el-tag v-else-if="row.market === 'SH'" type="primary" size="small">沪市</el-tag>
@@ -36,24 +37,39 @@
             <el-tag v-else type="info" size="small">{{ row.market }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="exchange" label="交易所" width="120" align="center" />
-        <el-table-column prop="currency" label="货币" width="80" align="center" />
-        <el-table-column prop="status" label="状态" width="80" align="center">
+        <el-table-column prop="industry" label="所属行业" min-width="120" align="center" show-overflow-tooltip />
+        <el-table-column prop="marketCap" label="总市值" width="120" align="right">
+          <template #default="{ row }">
+            {{ formatMarketCap(row.marketCap) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="totalShares" label="总股本" width="120" align="right">
+          <template #default="{ row }">
+            {{ formatShares(row.totalShares) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="peRatio" label="市盈率" width="90" align="right">
+          <template #default="{ row }">
+            <span :class="getPeClass(row.peRatio)">{{ formatPe(row.peRatio) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="currency" label="货币" width="60" align="center" />
+        <el-table-column prop="status" label="状态" width="70" align="center">
           <template #default="{ row }">
             <el-tag v-if="row.status === 1" type="success" size="small">正常</el-tag>
             <el-tag v-else type="danger" size="small">退市</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" align="center" fixed="right">
+        <el-table-column label="操作" width="180" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="View" @click="handleView(row)">查看K线</el-button>
+            <el-button type="primary" link :icon="View" @click="handleView(row)">K线</el-button>
             <el-button
               :type="isInWatchlist(row.stockCode) ? 'warning' : 'success'"
               link
               :icon="isInWatchlist(row.stockCode) ? StarFilled : Star"
               @click="handleToggleWatchlist(row)"
             >
-              {{ isInWatchlist(row.stockCode) ? '取消自选' : '加自选' }}
+              {{ isInWatchlist(row.stockCode) ? '取消' : '自选' }}
             </el-button>
           </template>
         </el-table-column>
@@ -178,14 +194,40 @@
         style="margin-top: 15px; justify-content: flex-end"
       />
     </el-dialog>
+
+    <!-- 同步股票详情对话框 -->
+    <el-dialog v-model="syncInfoDialogVisible" title="同步股票详情" width="400px">
+      <el-form :model="syncInfoForm" label-width="80px">
+        <el-form-item label="市场">
+          <el-select v-model="syncInfoForm.market" placeholder="全部市场" clearable style="width: 100%">
+            <el-option label="全部市场" value="" />
+            <el-option label="港股" value="HK" />
+            <el-option label="沪市" value="SH" />
+            <el-option label="深市" value="SZ" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-alert
+            title="同步股票详情信息（板块、行业、市值、市盈率等），每只股票需单独请求API，耗时较长"
+            type="info"
+            :closable="false"
+            show-icon
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="syncInfoDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="syncInfoLoading" @click="handleSyncStockInfo">开始同步</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Search, Refresh, View, Star, StarFilled, Download, Warning } from '@element-plus/icons-vue'
+import { Search, Refresh, View, Star, StarFilled, Download, Warning, InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { listStocks, addWatchlist, deleteWatchlist, listWatchlist, syncStockList, batchSyncAllKline, batchSyncAllKlineConcurrent, listSyncFailures, retryFailedSync } from '@/api/stock'
+import { listStocks, addWatchlist, deleteWatchlist, listWatchlist, syncStockList, batchSyncAllKline, batchSyncAllKlineConcurrent, listSyncFailures, retryFailedSync, batchSyncStockInfo } from '@/api/stock'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -233,6 +275,13 @@ const failureQuery = ref({
   size: 20
 })
 
+// 同步股票详情相关
+const syncInfoDialogVisible = ref(false)
+const syncInfoLoading = ref(false)
+const syncInfoForm = ref({
+  market: ''
+})
+
 const handleOpenSyncDialog = () => {
   syncDialogVisible.value = true
 }
@@ -255,6 +304,26 @@ const handleOpenFailureDialog = () => {
   }
   failureDialogVisible.value = true
   loadFailures()
+}
+
+const handleOpenSyncInfoDialog = () => {
+  syncInfoForm.value = {
+    market: ''
+  }
+  syncInfoDialogVisible.value = true
+}
+
+const handleSyncStockInfo = async () => {
+  syncInfoLoading.value = true
+  try {
+    const res = await batchSyncStockInfo(syncInfoForm.value.market)
+    ElMessage.success(`同步成功，共同步 ${res.data} 只股票详情`)
+    syncInfoDialogVisible.value = false
+  } catch (error) {
+    ElMessage.error(error.message || '同步失败')
+  } finally {
+    syncInfoLoading.value = false
+  }
 }
 
 const loadFailures = async () => {
@@ -388,6 +457,54 @@ const handleToggleWatchlist = async (row) => {
   }
 }
 
+/**
+ * 格式化市值（亿为单位）
+ */
+const formatMarketCap = (value) => {
+  if (!value) return '-'
+  const num = Number(value)
+  if (num >= 100000000) {
+    return (num / 100000000).toFixed(2) + '亿'
+  } else if (num >= 10000) {
+    return (num / 10000).toFixed(2) + '万'
+  }
+  return num.toFixed(2)
+}
+
+/**
+ * 格式化股本（亿股为单位）
+ */
+const formatShares = (value) => {
+  if (!value) return '-'
+  const num = Number(value)
+  if (num >= 100000000) {
+    return (num / 100000000).toFixed(2) + '亿'
+  } else if (num >= 10000) {
+    return (num / 10000).toFixed(2) + '万'
+  }
+  return num.toFixed(2)
+}
+
+/**
+ * 格式化市盈率
+ */
+const formatPe = (value) => {
+  if (!value && value !== 0) return '-'
+  return Number(value).toFixed(2)
+}
+
+/**
+ * 获取市盈率样式类
+ */
+const getPeClass = (value) => {
+  if (!value && value !== 0) return ''
+  const num = Number(value)
+  if (num < 0) return 'pe-negative'
+  if (num < 20) return 'pe-low'
+  if (num > 50) return 'pe-high'
+  return ''
+}
+
 onMounted(() => {
   handleQuery()
   loadWatchlist()
@@ -406,5 +523,17 @@ onMounted(() => {
 }
 .failure-toolbar {
   margin-bottom: 15px;
+}
+
+.pe-negative {
+  color: #67c23a;
+}
+
+.pe-low {
+  color: #409eff;
+}
+
+.pe-high {
+  color: #f56c6c;
 }
 </style>

@@ -86,6 +86,13 @@ public interface TokenManagerService {
     void deleteToken(Long tokenId);
 
     /**
+     * 批量删除 Token
+     *
+     * @param tokenIds Token ID 列表
+     */
+    void batchDeleteTokens(List<Long> tokenIds);
+
+    /**
      * 根据 ID 获取 Token
      *
      * @param tokenId Token ID

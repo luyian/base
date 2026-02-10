@@ -154,8 +154,12 @@ public class TokenManagerServiceImpl implements TokenManagerService {
         if (apiToken.getFailCount() == null) {
             apiToken.setFailCount(0);
         }
+        // 默认过期时间为一周后
+        if (apiToken.getExpireTime() == null) {
+            apiToken.setExpireTime(LocalDateTime.now().plusWeeks(1));
+        }
         apiTokenMapper.insert(apiToken);
-        log.info("Token 添加成功，tokenId: {}", apiToken.getId());
+        log.info("Token 添加成功，tokenId: {}, expireTime: {}", apiToken.getId(), apiToken.getExpireTime());
         return apiToken.getId();
     }
 
@@ -169,6 +173,16 @@ public class TokenManagerServiceImpl implements TokenManagerService {
     public void deleteToken(Long tokenId) {
         apiTokenMapper.deleteById(tokenId);
         log.info("Token 删除成功，tokenId: {}", tokenId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void batchDeleteTokens(List<Long> tokenIds) {
+        if (tokenIds == null || tokenIds.isEmpty()) {
+            return;
+        }
+        apiTokenMapper.deleteBatchIds(tokenIds);
+        log.info("Token 批量删除成功，数量: {}", tokenIds.size());
     }
 
     @Override

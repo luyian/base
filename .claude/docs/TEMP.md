@@ -833,10 +833,78 @@ stock:
 
 ---
 
+#### 股票详情信息扩展
+
+**需求**：
+- 扩展 `stk_stock_info` 表，添加股票详情字段
+- 详情需要单独调用 iTick `/stock/info` 接口，一次只能传一个股票代码
+- 添加批量和单独更新股票详情的方法
+
+**新增字段**：
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| stock_type | VARCHAR(20) | 股票类型（stock-股票） |
+| sector | VARCHAR(100) | 所属板块 |
+| industry | VARCHAR(100) | 所属行业 |
+| business_desc | TEXT | 公司简介 |
+| website_url | VARCHAR(255) | 公司网站URL |
+| market_cap | DECIMAL(20,2) | 总市值 |
+| total_shares | DECIMAL(20,2) | 总股本 |
+| pe_ratio | DECIMAL(10,4) | 市盈率 |
+| high_52_week | DECIMAL(10,4) | 52周最高价 |
+| low_52_week | DECIMAL(10,4) | 52周最低价 |
+
+**修改文件**：
+- `backend/src/main/java/com/base/stock/entity/StockInfo.java` - 实体类新增字段
+- `backend/src/main/java/com/base/stock/client/ITickApiClient.java` - 新增 `fetchStockInfo` 方法
+- `backend/src/main/java/com/base/stock/client/impl/ITickApiClientImpl.java` - 实现获取股票详情
+- `backend/src/main/java/com/base/stock/service/StockSyncService.java` - 新增接口方法
+- `backend/src/main/java/com/base/stock/service/impl/StockSyncServiceImpl.java` - 实现同步逻辑
+- `backend/src/main/java/com/base/stock/controller/StockSyncController.java` - 新增接口
+- `backend/src/main/resources/mapper/StockInfoMapper.xml` - 更新批量 upsert SQL
+
+**新增文件**：
+- `backend/src/main/resources/db/stock_info_detail.sql` - 数据库迁移脚本
+
+**API接口**：
+- `POST /stock/sync/info/{stockCode}` - 同步单只股票详情
+- `POST /stock/sync/info/batch` - 批量同步股票详情（按市场）
+
+**待完成**：
+- 执行 `stock_info_detail.sql` 添加数据库字段
+
+---
+
+#### 修复股票推荐K线按钮报错
+
+**问题**：点击股票推荐页面的"K线"按钮报错 `Maximum call stack size exceeded`
+
+**原因**：
+- 原代码使用 `router.push({ path: '/stock/detail', query: { code: row.stockCode } })` 跳转
+- 但路由配置是 `stock/detail/:code`（路径参数），不是 query 参数
+- 路由匹配失败导致无限重定向
+
+**修复方案**：
+- 抽取公共组件 `TrendDialog.vue`，封装趋势弹窗功能
+- 推荐页面和自选股页面都复用该组件
+- 组件支持 v-model 控制显示、stock-code/stock-name 属性、header slot 自定义头部
+- 组件暴露 `getBothChartImages` 方法供 PDF 导出使用
+
+**新增文件**：
+- `frontend/src/views/stock/components/TrendDialog.vue` - 趋势弹窗公共组件
+
+**修改文件**：
+- `frontend/src/views/stock/recommend/index.vue` - 使用 TrendDialog 组件
+- `frontend/src/views/stock/watchlist/index.vue` - 使用 TrendDialog 组件，代码精简约 200 行
+
+---
+
 ## 开发计划变更记录
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2026-02-09 | 修复股票推荐K线按钮报错 |
+| 2026-02-09 | 股票推荐单条打分权限控制 |
 | 2026-02-09 | 基金估值功能 |
 | 2026-02-09 | 批量拉取数据多线程优化 |
 | 2026-02-06 | 股票推荐打分系统后端开发完成 |

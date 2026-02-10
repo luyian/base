@@ -105,6 +105,17 @@ public class TokenController {
     }
 
     /**
+     * 批量删除 Token
+     */
+    @ApiOperation("批量删除Token")
+    @DeleteMapping("/batch")
+    @PreAuthorize("hasAuthority('stock:token:delete')")
+    public Result<Void> batchDelete(@RequestBody List<Long> ids) {
+        tokenManagerService.batchDeleteTokens(ids);
+        return Result.success();
+    }
+
+    /**
      * 重置每日计数
      */
     @ApiOperation("重置每日计数")

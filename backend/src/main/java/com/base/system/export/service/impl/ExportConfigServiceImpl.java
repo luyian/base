@@ -168,8 +168,9 @@ public class ExportConfigServiceImpl implements ExportConfigService {
         wrapper.eq(ExportField::getConfigId, configId);
         exportFieldMapper.delete(wrapper);
 
-        // 新增字段配置
+        // 批量新增字段配置
         if (fields != null && !fields.isEmpty()) {
+            List<ExportField> fieldList = new ArrayList<>();
             int sort = 0;
             for (ExportFieldSaveRequest fieldRequest : fields) {
                 ExportField field = new ExportField();
@@ -177,8 +178,9 @@ public class ExportConfigServiceImpl implements ExportConfigService {
                 field.setId(null);
                 field.setConfigId(configId);
                 field.setSort(sort++);
-                exportFieldMapper.insert(field);
+                fieldList.add(field);
             }
+            exportFieldMapper.batchInsert(fieldList);
         }
     }
 

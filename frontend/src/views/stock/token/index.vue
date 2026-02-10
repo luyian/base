@@ -3,12 +3,16 @@
     <!-- 操作栏 -->
     <el-card class="action-card" shadow="never">
       <el-button type="primary" :icon="Plus" @click="handleAdd">添加Token</el-button>
+      <el-button type="danger" :icon="Delete" @click="handleBatchDelete" :disabled="selectedIds.length === 0">
+        批量删除
+      </el-button>
       <el-button type="warning" :icon="Refresh" @click="handleResetDaily">重置每日计数</el-button>
     </el-card>
 
     <!-- 表格 -->
     <el-card class="table-card" shadow="never">
-      <el-table v-loading="loading" :data="tableData" border stripe>
+      <el-table v-loading="loading" :data="tableData" border stripe @selection-change="handleSelectionChange">
+        <el-table-column type="selection" width="50" align="center" />
         <el-table-column prop="tokenName" label="Token名称" width="150" align="center" />
         <el-table-column prop="tokenValue" label="Token值" min-width="200" align="center">
           <template #default="{ row }">
@@ -96,11 +100,12 @@
 import { ref, onMounted, computed } from 'vue'
 import { Plus, Edit, Delete, Refresh } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listTokens, addToken, updateToken, deleteToken, disableToken, enableToken, resetTokenDaily } from '@/api/stock'
+import { listTokens, addToken, updateToken, deleteToken, batchDeleteTokens, disableToken, enableToken, resetTokenDaily } from '@/api/stock'
 
 const loading = ref(false)
 const submitting = ref(false)
 const tableData = ref([])
+const selectedIds = ref([])
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -154,12 +159,23 @@ const copyToken = async (token) => {
   }
 }
 
+/**
+ * 获取当前日期字符串（YYYYMMDD格式）
+ */
+const getDefaultTokenName = () => {
+  const now = new Date()
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  return `${year}${month}${day}`
+}
+
 // 添加
 const handleAdd = () => {
   isEdit.value = false
   form.value = {
     id: null,
-    tokenName: '',
+    tokenName: getDefaultTokenName(),
     tokenValue: '',
     provider: 'itick',
     dailyLimit: 0,
@@ -241,6 +257,32 @@ const handleDelete = async (row) => {
       ElMessage.error(error.message || '删除失败')
     }
   }
+}
+
+// 批量删除
+const handleBatchDelete = async () => {
+  if (selectedIds.value.length === 0) {
+    ElMessage.warning('请选择要删除的Token')
+    return
+  }
+  try {
+    await ElMessageBox.confirm(`确定要删除选中的 ${selectedIds.value.length} 个Token吗？`, '提示', {
+      type: 'warning'
+    })
+    await batchDeleteTokens(selectedIds.value)
+    ElMessage.success('批量删除成功')
+    selectedIds.value = []
+    fetchTokens()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '批量删除失败')
+    }
+  }
+}
+
+// 选择变化
+const handleSelectionChange = (selection) => {
+  selectedIds.value = selection.map(item => item.id)
 }
 
 // 重置每日计数

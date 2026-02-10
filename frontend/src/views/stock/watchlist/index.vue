@@ -35,8 +35,9 @@
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="150" align="center" />
         <el-table-column prop="createTime" label="添加时间" width="180" align="center" />
-        <el-table-column label="操作" width="180" align="center" fixed="right">
+        <el-table-column label="操作" width="250" align="center" fixed="right">
           <template #default="{ row }">
+            <el-button v-permission="'stock:watchlist:score'" type="warning" link :icon="Star" @click="handleScore(row)" :loading="row.scoring">打分</el-button>
             <el-button type="primary" link :icon="TrendCharts" @click="handleViewTrend(row)">趋势</el-button>
             <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -72,13 +73,12 @@
       </template>
     </el-dialog>
 
-    <!-- 趋势弹窗（日K线 + 分钟K线） -->
-    <el-dialog
+    <!-- 趋势弹窗（复用公共组件） -->
+    <TrendDialog
+      ref="trendDialogRef"
       v-model="trendDialogVisible"
-      :title="`${currentStock.stockName || currentStock.stockCode} - 趋势`"
-      width="90%"
-      top="5vh"
-      destroy-on-close
+      :stock-code="currentStock.stockCode"
+      :stock-name="currentStock.stockName"
     >
       <template #header>
         <div class="trend-dialog-header">
@@ -93,49 +93,9 @@
           </div>
         </div>
       </template>
-      <el-tabs v-model="activeTab" @tab-change="handleTabChange">
-        <el-tab-pane label="日K线" name="day">
-          <div class="kline-toolbar">
-            <el-radio-group v-model="dayKlineDateRange" @change="handleDayKlineDateChange">
-              <el-radio-button label="week">近1周</el-radio-button>
-              <el-radio-button label="month">近1月</el-radio-button>
-              <el-radio-button label="quarter">近3月</el-radio-button>
-            </el-radio-group>
-            <el-button :icon="Refresh" @click="refreshDayKline" :loading="dayKlineLoading" style="margin-left: 16px">
-              刷新
-            </el-button>
-          </div>
-          <KlineChart
-            ref="dayChartRef"
-            v-loading="dayKlineLoading"
-            :data="dayKlineData"
-            :stock-name="currentStock.stockName"
-          />
-        </el-tab-pane>
-        <el-tab-pane label="分钟K线" name="minute">
-          <div class="kline-toolbar">
-            <el-radio-group v-model="klineType" @change="handleKlineTypeChange">
-              <el-radio-button :label="1">1分钟</el-radio-button>
-              <el-radio-button :label="5">5分钟</el-radio-button>
-            </el-radio-group>
-            <el-button :icon="Refresh" @click="refreshKline" :loading="klineLoading" style="margin-left: 16px">
-              刷新
-            </el-button>
-          </div>
-          <MinuteKlineChart
-            ref="minuteChartRef"
-            v-loading="klineLoading"
-            :data="klineData"
-            :stock-name="currentStock.stockName"
-            :k-type="klineType"
-            :has-more="hasMoreKline"
-            @load-more="loadMoreKline"
-          />
-        </el-tab-pane>
-      </el-tabs>
-    </el-dialog>
+    </TrendDialog>
 
-    <!-- PDF 预览弹窗：按顺序上下平铺日K线、分钟K线 -->
+    <!-- PDF 预览弹窗 -->
     <el-dialog
       v-model="previewDialogVisible"
       title="PDF 预览"
@@ -159,12 +119,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from 'vue'
-import { Refresh, Delete, Download, TrendCharts, View } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue'
+import { Refresh, Delete, Download, TrendCharts, View, Star } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { listWatchlist, deleteWatchlist, batchDeleteWatchlist, batchSyncKline, getMinuteKline, getKlineData } from '@/api/stock'
-import MinuteKlineChart from '../components/MinuteKlineChart.vue'
-import KlineChart from '../components/KlineChart.vue'
+import { listWatchlist, deleteWatchlist, batchDeleteWatchlist, batchSyncKline, scoreWatchlistStock } from '@/api/stock'
+import TrendDialog from '../components/TrendDialog.vue'
 import { jsPDF } from 'jspdf'
 
 const loading = ref(false)
@@ -172,9 +131,10 @@ const syncing = ref(false)
 const tableData = ref([])
 const selectedIds = ref([])
 
-// 图表 ref（用于导出图片）
-const dayChartRef = ref(null)
-const minuteChartRef = ref(null)
+// 趋势弹窗
+const trendDialogRef = ref(null)
+const trendDialogVisible = ref(false)
+const currentStock = ref({})
 
 // PDF 预览与导出
 const pdfLoading = ref(false)
@@ -187,24 +147,6 @@ const syncForm = ref({
   startDate: '',
   endDate: ''
 })
-
-// 趋势弹窗相关状态
-const trendDialogVisible = ref(false)
-const activeTab = ref('day')
-const currentStock = ref({})
-
-// 日K线相关状态
-const dayKlineLoading = ref(false)
-const dayKlineData = ref([])
-const dayKlineDateRange = ref('month')
-
-// 分钟K线相关状态
-const klineLoading = ref(false)
-const klineType = ref(1)
-const klineData = ref([])
-const hasMoreKline = ref(false)
-const earliestTimestamp = ref(null)
-const loadingMore = ref(false)
 
 // 获取自选列表
 const fetchWatchlist = async () => {
@@ -232,157 +174,21 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`
 }
 
-// 获取日K线日期范围
-const getDayKlineDateRange = () => {
-  const endDate = new Date()
-  const startDate = new Date()
-  if (dayKlineDateRange.value === 'week') {
-    startDate.setDate(startDate.getDate() - 7)
-  } else if (dayKlineDateRange.value === 'month') {
-    startDate.setMonth(startDate.getMonth() - 1)
-  } else {
-    startDate.setMonth(startDate.getMonth() - 3)
-  }
-  return { startDate: formatDate(startDate), endDate: formatDate(endDate) }
-}
-
-// 获取日K线数据
-const fetchDayKlineData = async () => {
-  dayKlineLoading.value = true
-  try {
-    const { startDate, endDate } = getDayKlineDateRange()
-    const res = await getKlineData(currentStock.value.stockCode, startDate, endDate)
-    dayKlineData.value = res.data || []
-  } catch (error) {
-    ElMessage.error(error.message || '获取日K线数据失败')
-  } finally {
-    dayKlineLoading.value = false
-  }
-}
-
-// 日K线日期范围切换
-const handleDayKlineDateChange = () => {
-  fetchDayKlineData()
-}
-
-// 刷新日K线
-const refreshDayKline = () => {
-  fetchDayKlineData()
-}
-
 // 查看趋势（打开弹窗）
 const handleViewTrend = (row) => {
   currentStock.value = row
-  activeTab.value = 'day'
-  // 重置数据
-  dayKlineData.value = []
-  klineData.value = []
-  hasMoreKline.value = false
-  earliestTimestamp.value = null
   trendDialogVisible.value = true
-  // 加载日K线数据
-  fetchDayKlineData()
 }
 
-// Tab 切换处理
-const handleTabChange = (tabName) => {
-  if (tabName === 'day' && dayKlineData.value.length === 0) {
-    fetchDayKlineData()
-  } else if (tabName === 'minute' && klineData.value.length === 0) {
-    fetchKlineData()
-  }
-}
-
-// 获取分钟K线数据
-const fetchKlineData = async (et = null) => {
-  klineLoading.value = true
-  try {
-    const res = await getMinuteKline(currentStock.value.stockCode, klineType.value, et, 100)
-    if (res.data) {
-      if (et) {
-        // 加载更多历史数据，插入到前面
-        klineData.value = [...res.data.klineList, ...klineData.value]
-      } else {
-        klineData.value = res.data.klineList || []
-      }
-      hasMoreKline.value = res.data.hasMore
-      earliestTimestamp.value = res.data.earliestTimestamp
-    }
-  } catch (error) {
-    ElMessage.error(error.message || '获取K线数据失败')
-  } finally {
-    klineLoading.value = false
-    loadingMore.value = false
-  }
-}
-
-// K线类型切换
-const handleKlineTypeChange = () => {
-  klineData.value = []
-  hasMoreKline.value = false
-  earliestTimestamp.value = null
-  fetchKlineData()
-}
-
-// 刷新K线
-const refreshKline = () => {
-  klineData.value = []
-  hasMoreKline.value = false
-  earliestTimestamp.value = null
-  fetchKlineData()
-}
-
-// 加载更多历史数据
-const loadMoreKline = () => {
-  if (loadingMore.value || !hasMoreKline.value || !earliestTimestamp.value) {
-    return
-  }
-  loadingMore.value = true
-  fetchKlineData(earliestTimestamp.value)
-}
-
-// 等待图表渲染/尺寸更新
-const waitForChartResize = (ms = 400) => new Promise(resolve => setTimeout(resolve, ms))
-
-/**
- * 按顺序获取日K线、分钟K线两张图表的 Base64 图片（会先切到对应 Tab 并等待渲染）
- */
-const getBothChartImages = async () => {
-  let dayImg = ''
-  let minuteImg = ''
-
-  // 1. 切到日K线 Tab 并等待
-  activeTab.value = 'day'
-  await nextTick()
-  await waitForChartResize()
-  if (dayChartRef.value && typeof dayChartRef.value.getDataURL === 'function') {
-    dayImg = dayChartRef.value.getDataURL({ type: 'png', pixelRatio: 2 }) || ''
-  }
-
-  // 2. 确保分钟 K 线已加载
-  if (klineData.value.length === 0) {
-    await fetchKlineData()
-  }
-  // 3. 切到分钟K线 Tab 并等待
-  activeTab.value = 'minute'
-  await nextTick()
-  await waitForChartResize()
-  if (minuteChartRef.value && typeof minuteChartRef.value.getDataURL === 'function') {
-    minuteImg = minuteChartRef.value.getDataURL({ type: 'png', pixelRatio: 2 }) || ''
-  }
-
-  return { dayImg, minuteImg }
-}
-
-// 预览 PDF 内容（按顺序上下平铺）
+// 预览 PDF 内容
 const handlePreviewPdf = async () => {
+  if (!trendDialogRef.value) return
   pdfLoading.value = true
   try {
-    const { dayImg, minuteImg } = await getBothChartImages()
+    const { dayImg, minuteImg } = await trendDialogRef.value.getBothChartImages()
     previewDayImage.value = dayImg
     previewMinuteImage.value = minuteImg
     previewDialogVisible.value = true
-    activeTab.value = 'day'
   } catch (e) {
     ElMessage.error(e?.message || '预览失败')
   } finally {
@@ -390,11 +196,12 @@ const handlePreviewPdf = async () => {
   }
 }
 
-// 导出 PDF：将两个 Tab 内容按顺序上下平铺到 PDF
+// 导出 PDF
 const handleExportPdf = async () => {
+  if (!trendDialogRef.value) return
   pdfLoading.value = true
   try {
-    const { dayImg, minuteImg } = await getBothChartImages()
+    const { dayImg, minuteImg } = await trendDialogRef.value.getBothChartImages()
     const title = `${currentStock.value.stockName || currentStock.value.stockCode} - 趋势`
 
     const doc = new jsPDF('p', 'mm', 'a4')
@@ -433,7 +240,6 @@ const handleExportPdf = async () => {
     const addImageToPdf = async (imgData, label, yStart) => {
       if (!imgData) return yStart
       let yy = yStart
-      // 使用 canvas 渲染标签
       const labelImg = renderTextToImage(label, 22, '#505050')
       const labelH = 5
       const labelW = (labelImg.width / labelImg.height) * labelH
@@ -463,7 +269,6 @@ const handleExportPdf = async () => {
 
     doc.save(`${title.replace(/\s*-\s*趋势$/, '')}_趋势.pdf`)
     ElMessage.success('导出成功')
-    activeTab.value = 'day'
   } catch (e) {
     ElMessage.error(e?.message || '导出失败')
   } finally {
@@ -505,7 +310,6 @@ const handleBatchDelete = async () => {
 
 // 打开批量同步对话框
 const handleBatchSync = () => {
-  // 默认同步近1个月
   const endDate = new Date()
   const startDate = new Date()
   startDate.setMonth(startDate.getMonth() - 1)
@@ -531,6 +335,20 @@ const confirmBatchSync = async () => {
   }
 }
 
+// 对自选股票打分
+const handleScore = async (row) => {
+  try {
+    row.scoring = true
+    const scoreDate = new Date().toISOString().split('T')[0]
+    await scoreWatchlistStock(row.stockCode, scoreDate)
+    ElMessage.success(`${row.stockName || row.stockCode} 打分成功`)
+  } catch (error) {
+    ElMessage.error(error.message || '打分失败')
+  } finally {
+    row.scoring = false
+  }
+}
+
 onMounted(() => {
   fetchWatchlist()
 })
@@ -545,11 +363,6 @@ onMounted(() => {
 }
 .table-card {
   margin-bottom: 15px;
-}
-.kline-toolbar {
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
 }
 
 .trend-dialog-header {

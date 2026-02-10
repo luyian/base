@@ -75,12 +75,22 @@ public class FundServiceImpl implements FundService {
 
         List<FundConfig> funds = fundConfigMapper.selectList(wrapper);
 
-        // 查询每个基金的持仓数量
-        for (FundConfig fund : funds) {
+        // 批量查询所有基金的持仓数量（避免N+1问题）
+        if (!funds.isEmpty()) {
+            List<Long> fundIds = funds.stream().map(FundConfig::getId).collect(Collectors.toList());
+            // 使用分组统计一次性查询所有基金的持仓数量
             LambdaQueryWrapper<FundHolding> holdingWrapper = new LambdaQueryWrapper<>();
-            holdingWrapper.eq(FundHolding::getFundId, fund.getId());
-            long count = fundHoldingMapper.selectCount(holdingWrapper);
-            fund.setHoldings(Collections.emptyList());
+            holdingWrapper.in(FundHolding::getFundId, fundIds)
+                    .select(FundHolding::getFundId);
+            List<FundHolding> allHoldings = fundHoldingMapper.selectList(holdingWrapper);
+
+            // 按基金ID分组统计数量
+            Map<Long, Long> holdingCountMap = allHoldings.stream()
+                    .collect(Collectors.groupingBy(FundHolding::getFundId, Collectors.counting()));
+
+            for (FundConfig fund : funds) {
+                fund.setHoldings(Collections.emptyList());
+            }
         }
 
         return funds;
@@ -378,16 +388,39 @@ public class FundServiceImpl implements FundService {
     }
 
     /**
-     * 按市场分组持仓
+     * 按市场分组持仓（优化：批量查询市场信息，避免N+1问题）
      */
     private Map<String, List<FundHolding>> groupByMarket(List<FundHolding> holdings) {
         Map<String, List<FundHolding>> marketGroups = new HashMap<>();
 
+        // 收集需要查询市场信息的股票代码
+        List<String> needQueryCodes = holdings.stream()
+                .filter(h -> h.getMarket() == null || h.getMarket().isEmpty())
+                .map(FundHolding::getStockCode)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 批量查询市场信息
+        Map<String, String> marketMap = new HashMap<>();
+        if (!needQueryCodes.isEmpty()) {
+            LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
+            wrapper.in(StockInfo::getStockCode, needQueryCodes)
+                    .select(StockInfo::getStockCode, StockInfo::getMarket);
+            List<StockInfo> stockInfoList = stockInfoMapper.selectList(wrapper);
+            marketMap = stockInfoList.stream()
+                    .filter(s -> s.getMarket() != null)
+                    .collect(Collectors.toMap(StockInfo::getStockCode, StockInfo::getMarket));
+        }
+
         for (FundHolding holding : holdings) {
             String market = holding.getMarket();
             if (market == null || market.isEmpty()) {
-                // 从数据库查询市场信息
-                market = getMarketByStockCode(holding.getStockCode());
+                // 从批量查询结果获取市场信息
+                market = marketMap.get(holding.getStockCode());
+                if (market == null) {
+                    // 根据代码规则推断
+                    market = inferMarketByStockCode(holding.getStockCode());
+                }
                 holding.setMarket(market);
             }
 
@@ -395,6 +428,19 @@ public class FundServiceImpl implements FundService {
         }
 
         return marketGroups;
+    }
+
+    /**
+     * 根据股票代码推断市场
+     */
+    private String inferMarketByStockCode(String stockCode) {
+        if (stockCode.startsWith("60") || stockCode.startsWith("68")) {
+            return "SH";
+        }
+        if (stockCode.startsWith("00") || stockCode.startsWith("30")) {
+            return "SZ";
+        }
+        return "HK";
     }
 
     /**
@@ -410,14 +456,7 @@ public class FundServiceImpl implements FundService {
             return stockInfo.getMarket();
         }
 
-        // 根据代码规则推断
-        if (stockCode.startsWith("60") || stockCode.startsWith("68")) {
-            return "SH";
-        }
-        if (stockCode.startsWith("00") || stockCode.startsWith("30")) {
-            return "SZ";
-        }
-        return "HK";
+        return inferMarketByStockCode(stockCode);
     }
 
     /**

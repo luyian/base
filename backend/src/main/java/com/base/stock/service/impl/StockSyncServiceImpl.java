@@ -744,4 +744,126 @@ public class StockSyncServiceImpl implements StockSyncService {
         log.info("补拉完成，成功: {}, 失败: {}", successCount, failCount);
         return successCount;
     }
+
+    @Override
+    public boolean syncStockInfo(String stockCode) {
+        log.info("开始同步股票详情，stockCode: {}", stockCode);
+
+        try {
+            // 1. 调用API获取股票详情
+            String json = iTickApiClient.fetchStockInfo(stockCode);
+
+            // 2. 解析JSON
+            JSONObject responseObj = JSON.parseObject(json);
+            Integer code = responseObj.getInteger("code");
+            if (code == null || code != 0) {
+                log.error("获取股票详情失败，stockCode: {}, response: {}", stockCode, json);
+                return false;
+            }
+
+            JSONObject data = responseObj.getJSONObject("data");
+            if (data == null || data.isEmpty()) {
+                log.warn("股票详情数据为空，stockCode: {}", stockCode);
+                return false;
+            }
+
+            // 3. 查询现有股票信息
+            LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(StockInfo::getStockCode, stockCode);
+            StockInfo stockInfo = stockInfoMapper.selectOne(wrapper);
+
+            if (stockInfo == null) {
+                log.warn("股票不存在，无法更新详情，stockCode: {}", stockCode);
+                return false;
+            }
+
+            // 4. 更新详情字段
+            stockInfo.setStockType(data.getString("t"));
+            stockInfo.setExchange(data.getString("e"));
+            stockInfo.setSector(data.getString("s"));
+            stockInfo.setIndustry(data.getString("i"));
+            stockInfo.setBusinessDesc(data.getString("bd"));
+            stockInfo.setWebsiteUrl(data.getString("wu"));
+            stockInfo.setMarketCap(data.getBigDecimal("mcb"));
+            stockInfo.setTotalShares(data.getBigDecimal("tso"));
+            stockInfo.setPeRatio(data.getBigDecimal("pet"));
+            stockInfo.setCurrency(data.getString("fcc"));
+            stockInfo.setHigh52Week(data.getBigDecimal("ph52"));
+            stockInfo.setLow52Week(data.getBigDecimal("pl52"));
+
+            // 5. 保存更新
+            stockInfoMapper.updateById(stockInfo);
+
+            log.info("同步股票详情成功，stockCode: {}", stockCode);
+            return true;
+
+        } catch (Exception e) {
+            log.error("同步股票详情异常，stockCode: {}", stockCode, e);
+            return false;
+        }
+    }
+
+    @Override
+    public int batchSyncStockInfo(String market) {
+        log.info("开始批量同步股票详情，market: {}", market);
+
+        // 1. 查询股票列表
+        LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(StockInfo::getStatus, 1)
+                .eq(StockInfo::getDeleted, 0);
+        if (market != null && !market.isEmpty()) {
+            wrapper.eq(StockInfo::getMarket, market);
+        }
+
+        List<StockInfo> stockList = stockInfoMapper.selectList(wrapper);
+
+        if (stockList.isEmpty()) {
+            log.warn("没有找到股票数据，market: {}", market);
+            return 0;
+        }
+
+        log.info("共找到 {} 只股票需要同步详情", stockList.size());
+
+        // 2. 逐个同步（因为API一次只能传一个股票代码）
+        int successCount = 0;
+        int failCount = 0;
+        int totalStocks = stockList.size();
+        for (int i = 0; i < stockList.size(); i++) {
+            StockInfo stock = stockList.get(i);
+            int currentIndex = i + 1;
+            int progress = (currentIndex * 100) / totalStocks;
+
+            try {
+                boolean success = syncStockInfo(stock.getStockCode());
+                if (success) {
+                    successCount++;
+                    log.info("[{}/{}] {}% | {} | 成功",
+                            currentIndex, totalStocks, progress, stock.getStockCode());
+                } else {
+                    failCount++;
+                    log.info("[{}/{}] {}% | {} | 失败",
+                            currentIndex, totalStocks, progress, stock.getStockCode());
+                }
+
+                // 添加延迟，避免请求过快
+                Thread.sleep(100);
+
+            } catch (Exception e) {
+                failCount++;
+                log.error("[{}/{}] {}% | {} | 异常 | {}",
+                        currentIndex, totalStocks, progress, stock.getStockCode(), e.getMessage());
+
+                // Token错误则停止同步
+                if (e.getMessage() != null &&
+                    (e.getMessage().contains("没有可用的 Token") ||
+                     e.getMessage().contains("Token 认证失败"))) {
+                    log.error("Token不可用，停止同步");
+                    break;
+                }
+            }
+        }
+
+        log.info("批量同步股票详情完成，成功: {}, 失败: {}", successCount, failCount);
+        return successCount;
+    }
 }

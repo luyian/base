@@ -62,8 +62,8 @@
 
       <!-- 分页 -->
       <el-pagination
-        v-model:current-page="queryForm.pageNum"
-        v-model:page-size="queryForm.pageSize"
+        v-model:current-page="queryForm.current"
+        v-model:page-size="queryForm.size"
         :page-sizes="[10, 20, 50, 100]"
         :total="total"
         layout="total, sizes, prev, pager, next, jumper"
@@ -271,8 +271,8 @@ const queryForm = reactive({
   configName: '',
   dataSourceType: '',
   status: null,
-  pageNum: 1,
-  pageSize: 10
+  current: 1,
+  size: 10
 })
 
 // 表格数据
@@ -341,7 +341,7 @@ const handleReset = () => {
   queryForm.configName = ''
   queryForm.dataSourceType = ''
   queryForm.status = null
-  queryForm.pageNum = 1
+  queryForm.current = 1
   handleQuery()
 }
 

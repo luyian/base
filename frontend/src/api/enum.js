@@ -3,11 +3,11 @@ import request from '@/utils/request'
 /**
  * 分页查询枚举列表
  */
-export function pageEnums(params) {
+export function pageEnums(data) {
   return request({
     url: '/system/enum/page',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 

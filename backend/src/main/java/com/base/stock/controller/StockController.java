@@ -2,6 +2,7 @@ package com.base.stock.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
+import com.base.stock.dto.StockQueryRequest;
 import com.base.stock.entity.StockInfo;
 import com.base.stock.entity.StockKline;
 import com.base.stock.service.StockService;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 股票查询控制器
@@ -32,14 +34,10 @@ public class StockController {
      * 分页查询股票列表
      */
     @ApiOperation("分页查询股票列表")
-    @GetMapping("/list")
+    @PostMapping("/list")
     @PreAuthorize("hasAuthority('stock:info:list')")
-    public Result<Page<StockInfo>> list(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(required = false) String market,
-            @RequestParam(required = false) String keyword) {
-        Page<StockInfo> result = stockService.pageStocks(page, size, market, keyword);
+    public Result<Page<StockInfo>> list(@RequestBody StockQueryRequest request) {
+        Page<StockInfo> result = stockService.pageStocks(request);
         return Result.success(result);
     }
 
@@ -66,5 +64,15 @@ public class StockController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate) {
         List<StockKline> klineList = stockService.listKlineData(stockCode, startDate, endDate);
         return Result.success(klineList);
+    }
+
+    /**
+     * 查询行业选项列表
+     */
+    @ApiOperation("查询行业选项列表")
+    @GetMapping("/industry/options")
+    @PreAuthorize("hasAuthority('stock:info:list')")
+    public Result<List<Map<String, String>>> industryOptions() {
+        return Result.success(stockService.listIndustryOptions());
     }
 }

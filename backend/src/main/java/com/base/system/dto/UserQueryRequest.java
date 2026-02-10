@@ -1,15 +1,18 @@
 package com.base.system.dto;
 
+import com.base.common.dto.BasePageRequest;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 用户查询请求参数
  */
 @Data
+@EqualsAndHashCode(callSuper = true)
 @ApiModel(description = "用户查询请求参数")
-public class UserQueryRequest {
+public class UserQueryRequest extends BasePageRequest {
 
     @ApiModelProperty(value = "用户名")
     private String username;
@@ -34,10 +37,4 @@ public class UserQueryRequest {
 
     @ApiModelProperty(value = "结束时间")
     private String endTime;
-
-    @ApiModelProperty(value = "当前页码", example = "1")
-    private Integer current = 1;
-
-    @ApiModelProperty(value = "每页大小", example = "10")
-    private Integer size = 10;
 }

@@ -45,7 +45,7 @@ public class UserServiceImpl implements UserService {
     @DataScope(deptAlias = "", userAlias = "")
     public Page<UserResponse> pageUsers(UserQueryRequest request) {
         // 构建分页对象
-        Page<SysUser> page = new Page<>(request.getCurrent(), request.getSize());
+        Page<SysUser> page = request.buildPage();
 
         // 构建查询条件
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();

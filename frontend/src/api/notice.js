@@ -3,11 +3,11 @@ import request from '@/utils/request'
 /**
  * 分页查询通知公告列表
  */
-export function pageNotices(params) {
+export function pageNotices(data) {
   return request({
     url: '/system/notice/page',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 
@@ -108,10 +108,10 @@ export function getUnreadCount() {
 /**
  * 获取我的通知列表
  */
-export function getMyNotices(params) {
+export function getMyNotices(data) {
   return request({
     url: '/system/notice/my',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }

@@ -596,6 +596,91 @@
 
 ---
 
+### 2026-02-10
+
+#### 股票行业中英文对照映射（改为后端转换）
+
+#### 分页查询统一改造（14个接口）
+
+**需求背景**：
+- 14个分页查询接口全部使用 GET 请求，不利于传递复杂查询条件
+- 没有统一的分页参数基类，各 QueryRequest 各自定义分页字段
+- 分页参数命名不一致：`current/size`（system）、`pageNum/pageSize`（export）、`page/size`（stock）
+- 参数类型不一致：Integer / Long / int 混用
+- stock 模块 4 个接口使用散参数，缺少请求对象
+
+**改造内容**：
+
+1. **创建 BasePageRequest 基类**
+   - `common/dto/BasePageRequest.java` - 统一分页参数（current/size，Long 类型），提供 `buildPage()` 便捷方法
+
+2. **改造 9 个 QueryRequest 类**（继承 BasePageRequest，删除自身分页字段）
+   - `UserQueryRequest`、`RoleQueryRequest`、`ConfigQueryRequest`
+   - `LoginLogQueryRequest`、`OperationLogQueryRequest`、`NoticeQueryRequest`
+   - `EnumQueryRequest`、`ExportConfigQueryRequest`、`ExportTaskQueryRequest`
+
+3. **新建 4 个 QueryRequest 类**（stock 模块）
+   - `StockQueryRequest`（market, industry, keyword）
+   - `SyncFailureQueryRequest`（stockCode, status）
+   - `RecommendQueryRequest`（recommendDate）
+   - `ScoreRuleQueryRequest`（预留扩展）
+
+4. **改造 14 个 Controller 方法**（GET → POST + @RequestBody）
+   - system 模块 8 个、export 模块 2 个、stock 模块 4 个
+
+5. **改造 Service 层**
+   - 9 个 ServiceImpl 中 `new Page<>()` 统一替换为 `request.buildPage()`
+   - StockService、RecommendService 接口签名改为接收 QueryRequest 对象
+   - SyncFailureService 新增 `pageFailures` 方法，查询逻辑从 Controller 下沉到 Service
+
+6. **改造前端**
+   - 11 个 API 方法从 `get + params` 改为 `post + data`
+   - 4 个页面分页参数统一为 `current/size`：ExportConfig、ExportTask、stock/index、recommend/index
+
+**新增文件**：
+- `backend/src/main/java/com/base/common/dto/BasePageRequest.java`
+- `backend/src/main/java/com/base/stock/dto/StockQueryRequest.java`
+- `backend/src/main/java/com/base/stock/dto/SyncFailureQueryRequest.java`
+- `backend/src/main/java/com/base/stock/recommend/dto/RecommendQueryRequest.java`
+- `backend/src/main/java/com/base/stock/recommend/dto/ScoreRuleQueryRequest.java`
+
+**修改文件（后端）**：
+- 9 个 QueryRequest 类、14 个 Controller、12 个 Service/ServiceImpl
+
+**修改文件（前端）**：
+- `api/user.js`、`api/role.js`、`api/config.js`、`api/loginLog.js`、`api/operationLog.js`
+- `api/notice.js`、`api/enum.js`、`api/exportConfig.js`、`api/exportTask.js`
+- `api/stock.js`、`api/recommend.js`
+- `views/system/ExportConfig.vue`、`views/system/ExportTask.vue`
+- `views/stock/index.vue`、`views/stock/recommend/index.vue`
+
+---
+
+**需求**：股票所属行业字段存储的是英文，需要显示中文；中文转换改为后端处理
+
+**实现方案**：
+- 通过系统枚举管理功能配置行业映射（`stock_industry`），支持后台动态维护
+- 后端查询股票列表时，从枚举服务获取映射，填充 `industryCn` 字段返回前端
+- 前端直接使用后端返回的 `industryCn` 字段显示中文
+- 行业下拉筛选选项通过独立接口 `/stock/industry/options` 获取
+
+**后端修改**：
+- `StockInfo.java` - 新增 `industryCn` 字段（`@TableField(exist = false)`，非数据库字段）
+- `StockService.java` - 新增 `listIndustryOptions()` 方法
+- `StockServiceImpl.java` - 注入 `EnumService`，查询列表后填充 `industryCn`；实现行业选项列表方法
+- `StockController.java` - 新增 `GET /stock/industry/options` 接口
+
+**前端修改**：
+- `frontend/src/api/stock.js` - 新增 `listIndustryOptions()` API 方法
+- `frontend/src/views/stock/index.vue` - 去掉枚举接口调用，改用后端 `industryCn` 字段和行业选项接口
+
+**数据库初始化**：
+- `backend/src/main/resources/db/init_stock_industry.sql` - 行业枚举初始化脚本（需修复语法错误后执行）
+
+**扩展方式**：通过系统管理 -> 枚举管理页面，编辑 `stock_industry` 类型即可动态添加/修改映射
+
+---
+
 ### 2026-02-09
 
 #### 基金估值功能优化
@@ -903,6 +988,8 @@ stock:
 
 | 日期 | 变更内容 |
 |------|----------|
+| 2026-02-10 | 分页查询统一改造（14个接口） |
+| 2026-02-10 | 股票行业中英文对照映射 |
 | 2026-02-09 | 修复股票推荐K线按钮报错 |
 | 2026-02-09 | 股票推荐单条打分权限控制 |
 | 2026-02-09 | 基金估值功能 |

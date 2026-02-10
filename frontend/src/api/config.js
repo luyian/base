@@ -3,11 +3,11 @@ import request from '@/utils/request'
 /**
  * 分页查询全局变量列表
  */
-export function pageConfigs(params) {
+export function pageConfigs(data) {
   return request({
     url: '/system/config/page',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 

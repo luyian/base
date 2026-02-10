@@ -2,15 +2,13 @@ import request from '@/utils/request'
 
 /**
  * 分页查询推荐股票列表
- * @param {String} recommendDate 推荐日期 (YYYY-MM-DD)
- * @param {Number} page 页码
- * @param {Number} size 每页大小
+ * @param {Object} data 查询参数对象 { recommendDate, current, size }
  */
-export function listRecommend(recommendDate, page, size) {
+export function listRecommend(data) {
   return request({
     url: '/stock/recommend/list',
-    method: 'get',
-    params: { recommendDate, page, size }
+    method: 'post',
+    data
   })
 }
 
@@ -74,14 +72,13 @@ export function listRules() {
 
 /**
  * 分页查询规则列表
- * @param {Number} page 页码
- * @param {Number} size 每页大小
+ * @param {Object} data 查询参数对象 { current, size }
  */
-export function pageRules(page, size) {
+export function pageRules(data) {
   return request({
     url: '/stock/recommend/rule/page',
-    method: 'get',
-    params: { page, size }
+    method: 'post',
+    data
   })
 }
 

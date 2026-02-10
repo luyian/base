@@ -69,7 +69,7 @@ public class NoticeServiceImpl implements NoticeService {
 
         // 分页查询
         Page<Notice> page = noticeMapper.selectPage(
-                new Page<>(request.getCurrent(), request.getSize()),
+                request.buildPage(),
                 wrapper
         );
 
@@ -253,7 +253,7 @@ public class NoticeServiceImpl implements NoticeService {
 
         // 分页查询
         Page<Notice> page = noticeMapper.selectPage(
-                new Page<>(request.getCurrent(), request.getSize()),
+                request.buildPage(),
                 wrapper
         );
 

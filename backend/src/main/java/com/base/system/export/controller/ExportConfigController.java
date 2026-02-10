@@ -39,9 +39,9 @@ public class ExportConfigController {
     private ExportConfigService exportConfigService;
 
     @ApiOperation("分页查询导出配置")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('system:export:config:list')")
-    public Result<Page<ExportConfigResponse>> page(ExportConfigQueryRequest request) {
+    public Result<Page<ExportConfigResponse>> page(@RequestBody ExportConfigQueryRequest request) {
         return Result.success(exportConfigService.pageConfigs(request));
     }
 

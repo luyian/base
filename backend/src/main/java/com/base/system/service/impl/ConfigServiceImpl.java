@@ -48,7 +48,7 @@ public class ConfigServiceImpl implements ConfigService {
                 .orderByDesc(Config::getCreateTime);
 
         // 分页查询
-        Page<Config> page = new Page<>(request.getCurrent(), request.getSize());
+        Page<Config> page = request.buildPage();
         configMapper.selectPage(page, wrapper);
 
         // 转换为响应对象

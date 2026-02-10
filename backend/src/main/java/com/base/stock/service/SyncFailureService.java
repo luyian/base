@@ -1,6 +1,8 @@
 package com.base.stock.service;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.base.stock.dto.SyncFailureQueryRequest;
 import com.base.stock.entity.SyncFailure;
 
 import java.time.LocalDate;
@@ -13,6 +15,14 @@ import java.util.Map;
  * @author base
  */
 public interface SyncFailureService extends IService<SyncFailure> {
+
+    /**
+     * 分页查询失败记录
+     *
+     * @param request 查询请求参数
+     * @return 分页结果
+     */
+    Page<SyncFailure> pageFailures(SyncFailureQueryRequest request);
 
     /**
      * 记录同步失败

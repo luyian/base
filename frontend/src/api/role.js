@@ -3,11 +3,11 @@ import request from '@/utils/request'
 /**
  * 分页查询角色列表
  */
-export function pageRoles(params) {
+export function pageRoles(data) {
   return request({
     url: '/system/role/page',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 

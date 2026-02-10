@@ -35,7 +35,7 @@ public class LoginLogServiceImpl implements LoginLogService {
         LambdaQueryWrapper<LoginLog> wrapper = buildQueryWrapper(request);
 
         // 分页查询
-        Page<LoginLog> page = new Page<>(request.getCurrent(), request.getSize());
+        Page<LoginLog> page = request.buildPage();
         Page<LoginLog> loginLogPage = loginLogMapper.selectPage(page, wrapper);
 
         // 转换为响应对象

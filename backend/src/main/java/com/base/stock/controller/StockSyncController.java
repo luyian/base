@@ -1,8 +1,8 @@
 package com.base.stock.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
+import com.base.stock.dto.SyncFailureQueryRequest;
 import com.base.stock.entity.SyncFailure;
 import com.base.stock.service.StockSyncService;
 import com.base.stock.service.SyncFailureService;
@@ -126,30 +126,10 @@ public class StockSyncController {
      * 查询失败记录列表
      */
     @ApiOperation("查询失败记录列表")
-    @GetMapping("/failure/list")
+    @PostMapping("/failure/list")
     @PreAuthorize("hasAuthority('stock:sync:failure:query')")
-    public Result<Page<SyncFailure>> listFailures(
-            @ApiParam("股票代码")
-            @RequestParam(required = false) String stockCode,
-            @ApiParam("状态：0-待重试，1-成功，2-放弃")
-            @RequestParam(required = false) Integer status,
-            @ApiParam("页码")
-            @RequestParam(defaultValue = "1") int page,
-            @ApiParam("每页大小")
-            @RequestParam(defaultValue = "20") int size) {
-        Page<SyncFailure> pageParam = new Page<>(page, size);
-        LambdaQueryWrapper<SyncFailure> wrapper = new LambdaQueryWrapper<>();
-
-        if (stockCode != null && !stockCode.isEmpty()) {
-            wrapper.eq(SyncFailure::getStockCode, stockCode);
-        }
-        if (status != null) {
-            wrapper.eq(SyncFailure::getStatus, status);
-        }
-
-        wrapper.orderByDesc(SyncFailure::getCreateTime);
-        Page<SyncFailure> result = syncFailureService.page(pageParam, wrapper);
-
+    public Result<Page<SyncFailure>> listFailures(@RequestBody SyncFailureQueryRequest request) {
+        Page<SyncFailure> result = syncFailureService.pageFailures(request);
         return Result.success(result);
     }
 

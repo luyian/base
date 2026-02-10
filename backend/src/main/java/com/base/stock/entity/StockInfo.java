@@ -120,4 +120,11 @@ public class StockInfo extends BaseEntity {
     @ApiModelProperty("52周最低价")
     @TableField("low_52_week")
     private BigDecimal low52Week;
+
+    /**
+     * 所属行业（中文）
+     */
+    @ApiModelProperty("所属行业（中文）")
+    @TableField(exist = false)
+    private String industryCn;
 }

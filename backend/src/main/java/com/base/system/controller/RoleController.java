@@ -28,9 +28,9 @@ public class RoleController {
      * 分页查询角色列表
      */
     @ApiOperation("分页查询角色列表")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('system:role:list')")
-    public Result<Page<RoleResponse>> pageRoles(RoleQueryRequest request) {
+    public Result<Page<RoleResponse>> pageRoles(@RequestBody RoleQueryRequest request) {
         Page<RoleResponse> page = roleService.pageRoles(request);
         return Result.success(page);
     }

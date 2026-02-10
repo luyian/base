@@ -1,12 +1,15 @@
 package com.base.system.dto.role;
 
+import com.base.common.dto.BasePageRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 角色查询请求参数
  */
 @Data
-public class RoleQueryRequest {
+@EqualsAndHashCode(callSuper = true)
+public class RoleQueryRequest extends BasePageRequest {
 
     /**
      * 角色名称
@@ -22,14 +25,4 @@ public class RoleQueryRequest {
      * 状态（0-禁用 1-正常）
      */
     private Integer status;
-
-    /**
-     * 当前页码
-     */
-    private Integer current = 1;
-
-    /**
-     * 每页大小
-     */
-    private Integer size = 10;
 }

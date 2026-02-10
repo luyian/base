@@ -30,10 +30,10 @@ public class UserController {
     /**
      * 分页查询用户列表
      */
-    @GetMapping("/page")
+    @PostMapping("/page")
     @ApiOperation("分页查询用户列表")
     @PreAuthorize("hasAuthority('system:user:list')")
-    public Result<Page<UserResponse>> pageUsers(UserQueryRequest request) {
+    public Result<Page<UserResponse>> pageUsers(@RequestBody UserQueryRequest request) {
         Page<UserResponse> page = userService.pageUsers(request);
         return Result.success(page);
     }

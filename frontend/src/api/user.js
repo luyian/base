@@ -3,11 +3,11 @@ import request from '@/utils/request'
 /**
  * 分页查询用户列表
  */
-export function pageUsers(params) {
+export function pageUsers(data) {
   return request({
     url: '/system/user/page',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 

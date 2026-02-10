@@ -2,6 +2,7 @@ package com.base.stock.recommend.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
+import com.base.stock.recommend.dto.ScoreRuleQueryRequest;
 import com.base.stock.recommend.entity.ScoreRule;
 import com.base.stock.recommend.service.ScoreRuleService;
 import io.swagger.annotations.Api;
@@ -40,12 +41,10 @@ public class ScoreRuleController {
      * 分页查询规则列表
      */
     @ApiOperation("分页查询规则列表")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('stock:rule:list')")
-    public Result<Page<ScoreRule>> page(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        Page<ScoreRule> pageParam = new Page<>(page, size);
+    public Result<Page<ScoreRule>> page(@RequestBody ScoreRuleQueryRequest request) {
+        Page<ScoreRule> pageParam = request.buildPage();
         Page<ScoreRule> result = scoreRuleService.page(pageParam);
         return Result.success(result);
     }

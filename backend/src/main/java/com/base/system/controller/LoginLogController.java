@@ -28,9 +28,9 @@ public class LoginLogController {
      * 分页查询登录日志列表
      */
     @ApiOperation("分页查询登录日志列表")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('log:login:list')")
-    public Result<Page<LoginLogResponse>> pageLoginLogs(LoginLogQueryRequest request) {
+    public Result<Page<LoginLogResponse>> pageLoginLogs(@RequestBody LoginLogQueryRequest request) {
         Page<LoginLogResponse> page = loginLogService.pageLoginLogs(request);
         return Result.success(page);
     }

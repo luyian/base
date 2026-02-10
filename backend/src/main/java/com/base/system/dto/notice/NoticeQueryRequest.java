@@ -1,6 +1,8 @@
 package com.base.system.dto.notice;
 
+import com.base.common.dto.BasePageRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 通知公告查询请求参数
@@ -9,7 +11,8 @@ import lombok.Data;
  * @since 2026-01-13
  */
 @Data
-public class NoticeQueryRequest {
+@EqualsAndHashCode(callSuper = true)
+public class NoticeQueryRequest extends BasePageRequest {
 
     /**
      * 通知标题
@@ -35,14 +38,4 @@ public class NoticeQueryRequest {
      * 发布人
      */
     private String publisher;
-
-    /**
-     * 当前页码
-     */
-    private Integer current = 1;
-
-    /**
-     * 每页显示数量
-     */
-    private Integer size = 10;
 }

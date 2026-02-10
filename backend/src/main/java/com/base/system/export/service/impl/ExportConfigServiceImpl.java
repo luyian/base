@@ -43,7 +43,7 @@ public class ExportConfigServiceImpl implements ExportConfigService {
 
     @Override
     public Page<ExportConfigResponse> pageConfigs(ExportConfigQueryRequest request) {
-        Page<ExportConfig> page = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<ExportConfig> page = request.buildPage();
 
         LambdaQueryWrapper<ExportConfig> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(request.getConfigCode()), ExportConfig::getConfigCode, request.getConfigCode())

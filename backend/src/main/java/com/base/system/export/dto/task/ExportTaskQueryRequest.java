@@ -1,6 +1,8 @@
 package com.base.system.export.dto.task;
 
+import com.base.common.dto.BasePageRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 导出任务查询请求
@@ -9,7 +11,8 @@ import lombok.Data;
  * @since 2026-02-04
  */
 @Data
-public class ExportTaskQueryRequest {
+@EqualsAndHashCode(callSuper = true)
+public class ExportTaskQueryRequest extends BasePageRequest {
 
     /**
      * 任务编号
@@ -45,14 +48,4 @@ public class ExportTaskQueryRequest {
      * 开始时间（止）
      */
     private String startTimeEnd;
-
-    /**
-     * 当前页码
-     */
-    private Integer pageNum = 1;
-
-    /**
-     * 每页大小
-     */
-    private Integer pageSize = 10;
 }

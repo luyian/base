@@ -10,6 +10,16 @@
             <el-option label="深市" value="SZ" />
           </el-select>
         </el-form-item>
+        <el-form-item label="所属行业">
+          <el-select v-model="queryForm.industry" placeholder="请选择行业" clearable filterable style="width: 200px">
+            <el-option
+              v-for="item in industryOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="关键词">
           <el-input v-model="queryForm.keyword" placeholder="股票代码/名称" clearable style="width: 200px" />
         </el-form-item>
@@ -37,7 +47,7 @@
             <el-tag v-else type="info" size="small">{{ row.market }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="industry" label="所属行业" min-width="120" align="center" show-overflow-tooltip />
+        <el-table-column prop="industryCn" label="所属行业" min-width="120" align="center" show-overflow-tooltip />
         <el-table-column prop="marketCap" label="总市值" width="120" align="right">
           <template #default="{ row }">
             {{ formatMarketCap(row.marketCap) }}
@@ -77,7 +87,7 @@
 
       <!-- 分页 -->
       <el-pagination
-        v-model:current-page="queryForm.page"
+        v-model:current-page="queryForm.current"
         v-model:page-size="queryForm.size"
         :total="total"
         :page-sizes="[10, 20, 50, 100]"
@@ -184,7 +194,7 @@
         <el-table-column prop="createTime" label="创建时间" width="160" align="center" />
       </el-table>
       <el-pagination
-        v-model:current-page="failureQuery.page"
+        v-model:current-page="failureQuery.current"
         v-model:page-size="failureQuery.size"
         :total="failureTotal"
         :page-sizes="[10, 20, 50]"
@@ -227,7 +237,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { Search, Refresh, View, Star, StarFilled, Download, Warning, InfoFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { listStocks, addWatchlist, deleteWatchlist, listWatchlist, syncStockList, batchSyncAllKline, batchSyncAllKlineConcurrent, listSyncFailures, retryFailedSync, batchSyncStockInfo } from '@/api/stock'
+import { listStocks, addWatchlist, deleteWatchlist, listWatchlist, syncStockList, batchSyncAllKline, batchSyncAllKlineConcurrent, listSyncFailures, retryFailedSync, batchSyncStockInfo, listIndustryOptions } from '@/api/stock'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -240,9 +250,10 @@ const total = ref(0)
 const watchlistMap = ref(new Map())
 
 const queryForm = ref({
-  page: 1,
+  current: 1,
   size: 20,
   market: '',
+  industry: '',
   keyword: ''
 })
 
@@ -271,7 +282,7 @@ const retryLoading = ref(false)
 const failureQuery = ref({
   stockCode: '',
   status: null,
-  page: 1,
+  current: 1,
   size: 20
 })
 
@@ -299,7 +310,7 @@ const handleOpenFailureDialog = () => {
   failureQuery.value = {
     stockCode: '',
     status: null,
-    page: 1,
+    current: 1,
     size: 20
   }
   failureDialogVisible.value = true
@@ -401,9 +412,10 @@ const handleQuery = async () => {
 
 const handleReset = () => {
   queryForm.value = {
-    page: 1,
+    current: 1,
     size: 20,
     market: '',
+    industry: '',
     keyword: ''
   }
   handleQuery()
@@ -458,6 +470,23 @@ const handleToggleWatchlist = async (row) => {
 }
 
 /**
+ * 行业选项列表（从后端接口加载）
+ */
+const industryOptions = ref([])
+
+/**
+ * 加载行业选项列表
+ */
+const loadIndustryOptions = async () => {
+  try {
+    const res = await listIndustryOptions()
+    industryOptions.value = res.data || []
+  } catch (error) {
+    console.error('加载行业选项失败', error)
+  }
+}
+
+/**
  * 格式化市值（亿为单位）
  */
 const formatMarketCap = (value) => {
@@ -508,6 +537,7 @@ const getPeClass = (value) => {
 onMounted(() => {
   handleQuery()
   loadWatchlist()
+  loadIndustryOptions()
 })
 </script>
 

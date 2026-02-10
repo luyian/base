@@ -1,6 +1,8 @@
 package com.base.system.export.dto.config;
 
+import com.base.common.dto.BasePageRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 导出配置查询请求
@@ -9,7 +11,8 @@ import lombok.Data;
  * @since 2026-02-04
  */
 @Data
-public class ExportConfigQueryRequest {
+@EqualsAndHashCode(callSuper = true)
+public class ExportConfigQueryRequest extends BasePageRequest {
 
     /**
      * 配置编码
@@ -30,14 +33,4 @@ public class ExportConfigQueryRequest {
      * 状态
      */
     private Integer status;
-
-    /**
-     * 当前页码
-     */
-    private Integer pageNum = 1;
-
-    /**
-     * 每页大小
-     */
-    private Integer pageSize = 10;
 }

@@ -3,6 +3,7 @@ package com.base.stock.recommend.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.base.stock.recommend.dto.RecommendQueryRequest;
 import com.base.stock.recommend.entity.RecommendStock;
 import com.base.stock.recommend.mapper.RecommendStockMapper;
 import com.base.stock.recommend.service.RecommendService;
@@ -24,9 +25,13 @@ import java.util.List;
 public class RecommendServiceImpl extends ServiceImpl<RecommendStockMapper, RecommendStock> implements RecommendService {
 
     @Override
-    public Page<RecommendStock> pageRecommend(LocalDate recommendDate, int page, int size) {
-        Page<RecommendStock> pageParam = new Page<>(page, size);
+    public Page<RecommendStock> pageRecommend(RecommendQueryRequest request) {
+        Page<RecommendStock> pageParam = request.buildPage();
         LambdaQueryWrapper<RecommendStock> wrapper = new LambdaQueryWrapper<>();
+        LocalDate recommendDate = request.getRecommendDate();
+        if (recommendDate == null) {
+            recommendDate = LocalDate.now();
+        }
         wrapper.eq(RecommendStock::getRecommendDate, recommendDate)
                 .orderByDesc(RecommendStock::getTotalScore);
         return this.page(pageParam, wrapper);

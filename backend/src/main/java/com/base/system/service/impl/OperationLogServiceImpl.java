@@ -69,7 +69,7 @@ public class OperationLogServiceImpl implements OperationLogService {
         wrapper.orderByDesc(OperationLog::getCreateTime);
 
         // 分页查询
-        Page<OperationLog> page = new Page<>(request.getCurrent(), request.getSize());
+        Page<OperationLog> page = request.buildPage();
         Page<OperationLog> operationLogPage = operationLogMapper.selectPage(page, wrapper);
 
         // 转换为响应对象

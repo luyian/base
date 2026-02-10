@@ -2,6 +2,7 @@ package com.base.stock.recommend.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.base.stock.recommend.dto.RecommendQueryRequest;
 import com.base.stock.recommend.entity.RecommendStock;
 
 import java.time.LocalDate;
@@ -17,12 +18,10 @@ public interface RecommendService extends IService<RecommendStock> {
     /**
      * 分页查询推荐股票列表
      *
-     * @param recommendDate 推荐日期
-     * @param page          页码
-     * @param size          每页大小
+     * @param request 查询请求参数
      * @return 分页结果
      */
-    Page<RecommendStock> pageRecommend(LocalDate recommendDate, int page, int size);
+    Page<RecommendStock> pageRecommend(RecommendQueryRequest request);
 
     /**
      * 查询推荐股票列表（不分页）

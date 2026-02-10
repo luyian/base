@@ -82,7 +82,7 @@
 
       <!-- 分页 -->
       <el-pagination
-        v-model:current-page="queryParams.page"
+        v-model:current-page="queryParams.current"
         v-model:page-size="queryParams.size"
         :total="total"
         :page-sizes="[10, 20, 50, 100]"
@@ -146,7 +146,7 @@ import TrendDialog from '../components/TrendDialog.vue'
 // 查询参数
 const queryParams = reactive({
   recommendDate: '',
-  page: 1,
+  current: 1,
   size: 10
 })
 
@@ -202,7 +202,7 @@ const initDate = () => {
 const fetchRecommendList = async () => {
   loading.value = true
   try {
-    const res = await listRecommend(queryParams.recommendDate, queryParams.page, queryParams.size)
+    const res = await listRecommend(queryParams)
     if (res.code === 200) {
       tableData.value = res.data.records || []
       total.value = res.data.total || 0
@@ -221,7 +221,7 @@ const fetchRecommendList = async () => {
  * 日期变更
  */
 const handleDateChange = () => {
-  queryParams.page = 1
+  queryParams.current = 1
   fetchRecommendList()
 }
 
@@ -332,7 +332,7 @@ const formatDetail = (detailJson) => {
  * 计算表格序号（考虑分页）
  */
 const getTableIndex = (index) => {
-  return (queryParams.page - 1) * queryParams.size + index + 1
+  return (queryParams.current - 1) * queryParams.size + index + 1
 }
 
 onMounted(async () => {

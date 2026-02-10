@@ -28,9 +28,9 @@ public class OperationLogController {
      * 分页查询操作日志列表
      */
     @ApiOperation("分页查询操作日志列表")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('log:operation:list')")
-    public Result<Page<OperationLogResponse>> pageOperationLogs(OperationLogQueryRequest request) {
+    public Result<Page<OperationLogResponse>> pageOperationLogs(@RequestBody OperationLogQueryRequest request) {
         Page<OperationLogResponse> page = operationLogService.pageOperationLogs(request);
         return Result.success(page);
     }

@@ -32,9 +32,9 @@ public class NoticeController {
     private final NoticeService noticeService;
 
     @Operation(summary = "分页查询通知公告列表")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('system:notice:list')")
-    public Result<Page<NoticeResponse>> pageNotices(NoticeQueryRequest request) {
+    public Result<Page<NoticeResponse>> pageNotices(@RequestBody NoticeQueryRequest request) {
         return Result.success(noticeService.pageNotices(request));
     }
 
@@ -110,8 +110,8 @@ public class NoticeController {
     }
 
     @Operation(summary = "获取我的通知列表")
-    @GetMapping("/my")
-    public Result<Page<MyNoticeResponse>> getMyNotices(NoticeQueryRequest request) {
+    @PostMapping("/my")
+    public Result<Page<MyNoticeResponse>> getMyNotices(@RequestBody NoticeQueryRequest request) {
         return Result.success(noticeService.getMyNotices(request));
     }
 }

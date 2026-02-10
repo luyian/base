@@ -5,6 +5,7 @@ import com.base.common.result.Result;
 import com.base.common.util.SecurityUtils;
 import com.base.stock.entity.StockInfo;
 import com.base.stock.mapper.StockInfoMapper;
+import com.base.stock.recommend.dto.RecommendQueryRequest;
 import com.base.stock.recommend.entity.RecommendStock;
 import com.base.stock.recommend.entity.ScoreRecord;
 import com.base.stock.recommend.mapper.ScoreRecordMapper;
@@ -45,13 +46,11 @@ public class RecommendController {
      * 只显示已打分的推荐股票
      */
     @ApiOperation("分页查询推荐股票列表")
-    @GetMapping("/list")
+    @PostMapping("/list")
     @PreAuthorize("hasAuthority('stock:recommend:list')")
-    public Result<Page<Map<String, Object>>> list(
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate recommendDate,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    public Result<Page<Map<String, Object>>> list(@RequestBody RecommendQueryRequest request) {
 
+        LocalDate recommendDate = request.getRecommendDate();
         // 默认使用当天日期
         if (recommendDate == null) {
             recommendDate = LocalDate.now();
@@ -60,7 +59,7 @@ public class RecommendController {
         Long userId = SecurityUtils.getCurrentUserId();
 
         // 1. 分页查询当天已打分的推荐股票
-        Page<RecommendStock> recommendPage = recommendService.pageRecommend(recommendDate, page, size);
+        Page<RecommendStock> recommendPage = recommendService.pageRecommend(request);
         List<RecommendStock> scoredList = recommendPage.getRecords();
 
         // 2. 查询用户自选股票（用于标记）
@@ -105,7 +104,7 @@ public class RecommendController {
         }
 
         // 5. 构建分页结果
-        Page<Map<String, Object>> resultPage = new Page<>(page, size);
+        Page<Map<String, Object>> resultPage = new Page<>(request.getCurrent(), request.getSize());
         resultPage.setTotal(recommendPage.getTotal());
         resultPage.setRecords(records);
 

@@ -33,9 +33,9 @@ public class EnumController {
      * 分页查询枚举列表
      */
     @ApiOperation("分页查询枚举列表")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('system:enum:list')")
-    public Result<Page<EnumResponse>> pageEnums(EnumQueryRequest request) {
+    public Result<Page<EnumResponse>> pageEnums(@RequestBody EnumQueryRequest request) {
         Page<EnumResponse> page = enumService.pageEnums(request);
         return Result.success(page);
     }

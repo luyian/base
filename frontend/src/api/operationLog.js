@@ -3,11 +3,11 @@ import request from '@/utils/request'
 /**
  * 分页查询操作日志列表
  */
-export function pageOperationLogs(params) {
+export function pageOperationLogs(data) {
   return request({
     url: '/system/log/operation/page',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 

@@ -57,7 +57,7 @@ public class ExportTaskServiceImpl implements ExportTaskService {
 
     @Override
     public Page<ExportTaskResponse> pageTasks(ExportTaskQueryRequest request) {
-        Page<ExportTask> page = new Page<>(request.getPageNum(), request.getPageSize());
+        Page<ExportTask> page = request.buildPage();
 
         LambdaQueryWrapper<ExportTask> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(request.getTaskNo()), ExportTask::getTaskNo, request.getTaskNo())

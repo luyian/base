@@ -45,9 +45,9 @@ public class ExportTaskController {
     private ExportTaskService exportTaskService;
 
     @ApiOperation("分页查询导出任务")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('system:export:task:list')")
-    public Result<Page<ExportTaskResponse>> page(ExportTaskQueryRequest request) {
+    public Result<Page<ExportTaskResponse>> page(@RequestBody ExportTaskQueryRequest request) {
         return Result.success(exportTaskService.pageTasks(request));
     }
 

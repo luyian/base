@@ -48,7 +48,7 @@ public class EnumServiceImpl implements EnumService {
                 .orderByDesc(Enum::getCreateTime);
 
         // 分页查询
-        Page<Enum> page = new Page<>(request.getCurrent(), request.getSize());
+        Page<Enum> page = request.buildPage();
         enumMapper.selectPage(page, wrapper);
 
         // 转换为响应对象

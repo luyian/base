@@ -232,11 +232,11 @@ export function checkWatchlist(stockCode) {
 /**
  * 分页查询股票列表
  */
-export function listStocks(params) {
+export function listStocks(data) {
   return request({
     url: '/stock/list',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 
@@ -246,6 +246,16 @@ export function listStocks(params) {
 export function getStockByCode(stockCode) {
   return request({
     url: `/stock/${stockCode}`,
+    method: 'get'
+  })
+}
+
+/**
+ * 查询行业选项列表
+ */
+export function listIndustryOptions() {
+  return request({
+    url: '/stock/industry/options',
     method: 'get'
   })
 }
@@ -337,11 +347,11 @@ export function batchSyncAllKlineConcurrent(market, startDate, endDate) {
 /**
  * 查询同步失败记录列表
  */
-export function listSyncFailures(params) {
+export function listSyncFailures(data) {
   return request({
     url: '/stock/sync/failure/list',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 

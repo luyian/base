@@ -1,12 +1,15 @@
 package com.base.system.dto.log;
 
+import com.base.common.dto.BasePageRequest;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * 操作日志查询请求参数
  */
 @Data
-public class OperationLogQueryRequest {
+@EqualsAndHashCode(callSuper = true)
+public class OperationLogQueryRequest extends BasePageRequest {
 
     /**
      * 操作模块
@@ -37,14 +40,4 @@ public class OperationLogQueryRequest {
      * 结束时间
      */
     private String endTime;
-
-    /**
-     * 当前页码
-     */
-    private Long current = 1L;
-
-    /**
-     * 每页显示数量
-     */
-    private Long size = 10L;
 }

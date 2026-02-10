@@ -3,11 +3,11 @@ import request from '@/utils/request'
 /**
  * 分页查询导出任务
  */
-export function pageExportTask(params) {
+export function pageExportTask(data) {
   return request({
     url: '/system/export/task/page',
-    method: 'get',
-    params
+    method: 'post',
+    data
   })
 }
 

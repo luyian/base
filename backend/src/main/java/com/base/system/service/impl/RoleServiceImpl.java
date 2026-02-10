@@ -36,7 +36,7 @@ public class RoleServiceImpl implements RoleService {
     @Override
     public Page<RoleResponse> pageRoles(RoleQueryRequest request) {
         // 构建分页对象
-        Page<Role> page = new Page<>(request.getCurrent(), request.getSize());
+        Page<Role> page = request.buildPage();
 
         // 构建查询条件
         LambdaQueryWrapper<Role> wrapper = new LambdaQueryWrapper<>();

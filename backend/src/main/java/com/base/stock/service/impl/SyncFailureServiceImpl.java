@@ -2,7 +2,9 @@ package com.base.stock.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.base.stock.dto.SyncFailureQueryRequest;
 import com.base.stock.entity.SyncFailure;
 import com.base.stock.mapper.SyncFailureMapper;
 import com.base.stock.service.SyncFailureService;
@@ -39,6 +41,23 @@ public class SyncFailureServiceImpl extends ServiceImpl<SyncFailureMapper, SyncF
      * 放弃重试状态
      */
     private static final int STATUS_ABANDONED = 2;
+
+    @Override
+    public Page<SyncFailure> pageFailures(SyncFailureQueryRequest request) {
+        Page<SyncFailure> pageParam = request.buildPage();
+        LambdaQueryWrapper<SyncFailure> wrapper = new LambdaQueryWrapper<>();
+
+        String stockCode = request.getStockCode();
+        if (stockCode != null && !stockCode.isEmpty()) {
+            wrapper.eq(SyncFailure::getStockCode, stockCode);
+        }
+        if (request.getStatus() != null) {
+            wrapper.eq(SyncFailure::getStatus, request.getStatus());
+        }
+
+        wrapper.orderByDesc(SyncFailure::getCreateTime);
+        return this.page(pageParam, wrapper);
+    }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW, rollbackFor = Exception.class)

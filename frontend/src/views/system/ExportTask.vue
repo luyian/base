@@ -104,8 +104,8 @@
 
       <!-- 分页 -->
       <el-pagination
-        v-model:current-page="queryForm.pageNum"
-        v-model:page-size="queryForm.pageSize"
+        v-model:current-page="queryForm.current"
+        v-model:page-size="queryForm.size"
         :page-sizes="[10, 20, 50, 100]"
         :total="total"
         layout="total, sizes, prev, pager, next, jumper"
@@ -148,8 +148,8 @@ const queryForm = reactive({
   status: null,
   startTimeBegin: '',
   startTimeEnd: '',
-  pageNum: 1,
-  pageSize: 10
+  current: 1,
+  size: 10
 })
 
 // 日期范围
@@ -222,7 +222,7 @@ const handleReset = () => {
   queryForm.status = null
   queryForm.startTimeBegin = ''
   queryForm.startTimeEnd = ''
-  queryForm.pageNum = 1
+  queryForm.current = 1
   dateRange.value = []
   handleQuery()
 }

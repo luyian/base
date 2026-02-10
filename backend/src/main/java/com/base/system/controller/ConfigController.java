@@ -30,9 +30,9 @@ public class ConfigController {
      * 分页查询全局变量列表
      */
     @ApiOperation("分页查询全局变量列表")
-    @GetMapping("/page")
+    @PostMapping("/page")
     @PreAuthorize("hasAuthority('system:config:list')")
-    public Result<Page<ConfigResponse>> pageConfigs(ConfigQueryRequest request) {
+    public Result<Page<ConfigResponse>> pageConfigs(@RequestBody ConfigQueryRequest request) {
         Page<ConfigResponse> page = configService.pageConfigs(request);
         return Result.success(page);
     }

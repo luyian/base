@@ -4,6 +4,49 @@
 
 ### 2026-02-11
 
+#### 飞书消息发送集成
+
+- **需求**：集成飞书消息发送能力，支持向飞书用户发送文字、图片、文件消息
+- **架构设计**：策略模式处理不同消息类型，FeishuMessageHandler 接口 + 各类型实现类
+- **飞书绑定**：复用 `sys_user_oauth` 表，oauthType="feishu"，oauthId 存储 open_id
+- **Token 管理**：Redis 缓存 tenant_access_token，提前 5 分钟刷新，synchronized 防并发
+- **后端新增文件**：
+  - `common/feishu/config/FeishuConfig.java` - 飞书应用配置（@ConfigurationProperties）
+  - `common/feishu/constant/FeishuMsgTypeEnum.java` - 消息类型枚举（text/image/file）
+  - `common/feishu/constant/FeishuReceiveIdTypeEnum.java` - 接收者 ID 类型枚举
+  - `common/feishu/dto/FeishuBaseResponse.java` - 飞书 API 通用响应基类
+  - `common/feishu/dto/FeishuSendMessageRequest.java` - 发送消息请求 DTO
+  - `common/feishu/dto/FeishuSendMessageResponse.java` - 发送消息响应 DTO
+  - `common/feishu/dto/FeishuUploadImageResponse.java` - 上传图片响应 DTO
+  - `common/feishu/dto/FeishuUploadFileResponse.java` - 上传文件响应 DTO
+  - `common/feishu/dto/FeishuBindRequest.java` - 绑定飞书请求 DTO
+  - `common/feishu/handler/FeishuMessageHandler.java` - 消息处理器接口（策略模式核心）
+  - `common/feishu/handler/TextMessageHandler.java` - 文本消息处理器
+  - `common/feishu/handler/ImageMessageHandler.java` - 图片消息处理器
+  - `common/feishu/handler/FileMessageHandler.java` - 文件消息处理器
+  - `common/feishu/client/FeishuApiClient.java` - 飞书 API 底层调用封装
+  - `common/feishu/service/FeishuTokenService.java` - Token 管理接口
+  - `common/feishu/service/FeishuMessageService.java` - 消息发送接口
+  - `common/feishu/service/impl/FeishuTokenServiceImpl.java` - Token 实现（Redis 缓存）
+  - `common/feishu/service/impl/FeishuMessageServiceImpl.java` - 消息发送实现
+  - `system/controller/FeishuController.java` - REST API 控制器
+- **后端修改文件**：
+  - `application-dev.yml` - 新增 feishu 配置段（enabled/appId/appSecret/baseUrl/timeout/retry）
+- **前端新增文件**：
+  - `frontend/src/api/feishu.js` - 飞书 API 封装
+- **前端修改文件**：
+  - `frontend/src/views/profile/Index.vue` - 第三方账号 tab 新增飞书绑定/解绑功能
+- **API 接口**：
+  - `POST /system/feishu/bind` - 绑定飞书 open_id
+  - `DELETE /system/feishu/unbind` - 解绑飞书账号
+  - `GET /system/feishu/bindInfo` - 查询飞书绑定信息
+  - `POST /system/feishu/send` - 发送消息（指定 receiveId）
+  - `POST /system/feishu/send/user/{userId}` - 发送消息给系统用户
+  - `POST /system/feishu/upload/image` - 上传图片
+  - `POST /system/feishu/upload/file` - 上传文件
+- **扩展方式**：新增消息类型只需添加枚举值 + 创建 Handler 实现类 + @Component，无需改动 Service/Controller
+- **关联影响**：复用 sys_user_oauth 表和 UserOauthMapper，不影响现有 OAuth 登录功能
+
 #### Docker 部署配置
 
 - **需求**：添加 Dockerfile 实现前后端合并部署，一键构建镜像

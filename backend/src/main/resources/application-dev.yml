@@ -106,6 +106,15 @@ stock:
     batch-size: 100
 
 # OAuth 第三方登录配置
+# 飞书配置
+feishu:
+  enabled: true
+  app-id: cli_a906a4c972f99bcc
+  app-secret: x7RQFPRqzVKNnurLmrq5CgXESbDItgmM
+  base-url: https://open.feishu.cn/open-apis
+  timeout: 30000
+  retry: 3
+
 oauth:
   enabled: false
   github:

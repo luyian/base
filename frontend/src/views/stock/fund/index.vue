@@ -351,7 +351,7 @@ const handleRefreshValuation = async () => {
 // 从详情弹窗进入编辑
 const handleEditFromDetail = () => {
   detailDialogVisible.value = false
-  handleEdit({ id: currentFund.value.fundId })
+  handleEdit({ fundId: currentFund.value.fundId })
 }
 
 // 新建基金

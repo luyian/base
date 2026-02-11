@@ -3,6 +3,7 @@ package com.base.system.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.ResultCode;
+import com.base.system.constant.DataScopeEnum;
 import com.base.system.dto.role.*;
 import com.base.system.entity.Role;
 import com.base.system.entity.RolePermission;
@@ -218,27 +219,7 @@ public class RoleServiceImpl implements RoleService {
     private RoleResponse convertToResponse(Role role) {
         RoleResponse response = new RoleResponse();
         BeanUtils.copyProperties(role, response);
-        response.setDataScopeName(getDataScopeName(role.getDataScope()));
+        response.setDataScopeName(DataScopeEnum.getDescByCode(role.getDataScope()));
         return response;
-    }
-
-    /**
-     * 获取数据权限范围名称
-     */
-    private String getDataScopeName(Integer dataScope) {
-        switch (dataScope) {
-            case 1:
-                return "全部数据";
-            case 2:
-                return "本部门及以下";
-            case 3:
-                return "本部门";
-            case 4:
-                return "仅本人";
-            case 5:
-                return "自定义";
-            default:
-                return "未知";
-        }
     }
 }

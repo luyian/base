@@ -188,8 +188,82 @@
                     绑定
                   </el-button>
                 </div>
+
+                <!-- 飞书绑定 -->
+                <div class="oauth-item">
+                  <div class="oauth-item-left">
+                    <svg viewBox="0 0 24 24" width="28" height="28" class="oauth-icon">
+                      <path d="M3.576 5.856l5.808 4.896-5.808 7.392V5.856z" fill="#00D6B9"/>
+                      <path d="M3.576 18.144l5.808-7.392 4.032 3.408-5.088 6.48a2.88 2.88 0 01-4.752-2.496z" fill="#3370FF"/>
+                      <path d="M13.416 14.16l4.032-5.136a2.88 2.88 0 014.752 2.496V18.144l-8.784-3.984z" fill="#3370FF"/>
+                      <path d="M22.2 11.52a2.88 2.88 0 00-4.752-2.496l-4.032 5.136 8.784 3.984V11.52z" fill="#00D6B9"/>
+                    </svg>
+                    <div class="oauth-item-info">
+                      <div class="oauth-item-name">飞书</div>
+                      <div class="oauth-item-status" v-if="feishuBindInfo">
+                        已绑定：{{ feishuBindInfo.feishuName || feishuBindInfo.openId }}
+                      </div>
+                      <div class="oauth-item-status unbound" v-else>未绑定</div>
+                    </div>
+                  </div>
+                  <el-button
+                    v-if="feishuBindInfo"
+                    type="danger"
+                    size="small"
+                    plain
+                    :loading="unbindFeishuLoading"
+                    @click="handleUnbindFeishu"
+                  >
+                    解绑
+                  </el-button>
+                  <el-button
+                    v-else
+                    type="primary"
+                    size="small"
+                    plain
+                    @click="feishuBindDialogVisible = true"
+                  >
+                    绑定
+                  </el-button>
+                </div>
               </div>
             </el-tab-pane>
+
+            <!-- 飞书绑定弹窗 -->
+            <el-dialog
+              v-model="feishuBindDialogVisible"
+              title="绑定飞书账号"
+              width="450px"
+              :close-on-click-modal="false"
+            >
+              <el-form
+                ref="feishuBindFormRef"
+                :model="feishuBindForm"
+                :rules="feishuBindRules"
+                label-width="100px"
+              >
+                <el-form-item label="飞书 Open ID" prop="openId">
+                  <el-input
+                    v-model="feishuBindForm.openId"
+                    placeholder="请输入飞书 open_id"
+                    clearable
+                  />
+                </el-form-item>
+                <el-form-item label="飞书用户名" prop="feishuName">
+                  <el-input
+                    v-model="feishuBindForm.feishuName"
+                    placeholder="请输入飞书用户名（可选）"
+                    clearable
+                  />
+                </el-form-item>
+              </el-form>
+              <template #footer>
+                <el-button @click="feishuBindDialogVisible = false">取消</el-button>
+                <el-button type="primary" :loading="bindFeishuLoading" @click="handleBindFeishu">
+                  确定
+                </el-button>
+              </template>
+            </el-dialog>
           </el-tabs>
         </el-card>
       </el-col>
@@ -205,6 +279,7 @@ import { getProfile, updateProfile, updatePassword } from '@/api/profile'
 import { uploadAvatar } from '@/api/file'
 import { listOauthBindings, unbindOauth } from '@/api/oauth'
 import { getGithubAuthUrl } from '@/api/oauth'
+import { getFeishuBindInfo, bindFeishu, unbindFeishu } from '@/api/feishu'
 import { useUserStore } from '@/store/user'
 
 // 默认头像
@@ -433,6 +508,7 @@ const handleAvatarChange = async (event) => {
 onMounted(() => {
   loadProfile()
   loadOauthBindings()
+  loadFeishuBindInfo()
 })
 
 // 第三方账号绑定列表
@@ -483,6 +559,78 @@ const handleBindGithub = async () => {
     ElMessage.error('获取 GitHub 授权地址失败')
   } finally {
     bindGithubLoading.value = false
+  }
+}
+
+// 飞书绑定相关
+const feishuBindInfo = ref(null)
+const feishuBindDialogVisible = ref(false)
+const bindFeishuLoading = ref(false)
+const unbindFeishuLoading = ref(false)
+const feishuBindFormRef = ref(null)
+const feishuBindForm = reactive({
+  openId: '',
+  feishuName: ''
+})
+const feishuBindRules = {
+  openId: [
+    { required: true, message: '请输入飞书 open_id', trigger: 'blur' }
+  ]
+}
+
+// 加载飞书绑定信息
+const loadFeishuBindInfo = async () => {
+  try {
+    const res = await getFeishuBindInfo()
+    feishuBindInfo.value = res.data || null
+  } catch (error) {
+    console.error('获取飞书绑定信息失败:', error)
+  }
+}
+
+// 绑定飞书
+const handleBindFeishu = async () => {
+  if (!feishuBindFormRef.value) return
+  await feishuBindFormRef.value.validate(async (valid) => {
+    if (valid) {
+      bindFeishuLoading.value = true
+      try {
+        await bindFeishu({
+          openId: feishuBindForm.openId,
+          feishuName: feishuBindForm.feishuName
+        })
+        ElMessage.success('绑定成功')
+        feishuBindDialogVisible.value = false
+        feishuBindForm.openId = ''
+        feishuBindForm.feishuName = ''
+        await loadFeishuBindInfo()
+      } catch (error) {
+        ElMessage.error(error.message || '绑定失败')
+      } finally {
+        bindFeishuLoading.value = false
+      }
+    }
+  })
+}
+
+// 解绑飞书
+const handleUnbindFeishu = async () => {
+  try {
+    await ElMessageBox.confirm('确定要解绑飞书账号吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    unbindFeishuLoading.value = true
+    await unbindFeishu()
+    ElMessage.success('解绑成功')
+    feishuBindInfo.value = null
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '解绑失败')
+    }
+  } finally {
+    unbindFeishuLoading.value = false
   }
 }
 </script>

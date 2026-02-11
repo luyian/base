@@ -23,7 +23,7 @@ public class DailyScoreTask {
     /**
      * 每天16:30执行打分任务（港股收盘后）
      */
-    @Scheduled(cron = "0 30 16 * * ?")
+//    @Scheduled(cron = "0 30 16 * * ?")
     public void executeDailyScore() {
         log.info("========== 开始执行每日打分任务 ==========");
         try {

@@ -4,6 +4,65 @@
 
 ### 2026-02-11
 
+#### 消息中心 + 基金权限重构
+
+**需求背景**：
+1. 消息中心：用户订阅定时推送，初步实现每天 14:30 推送基金估值到飞书。三层解耦架构：ContentBuilder（内容生成）、ChannelSender（渠道发送）、MessagePushService（协调调度）
+2. 基金权限重构：`stk_fund_config` 去掉 `user_id` 字段，基金变为公共资源（仅管理员可新增/编辑/删除）。新增 `stk_fund_watchlist` 表实现用户自选
+
+**数据库变更**：
+- `fund_refactor.sql`：stk_fund_config 去掉 user_id、fund_code 加唯一索引、新建 stk_fund_watchlist 自选表
+- `subscription_schema.sql`：新建 msg_subscription 消息订阅表
+
+**后端新增文件**：
+- `stock/fund/entity/FundWatchlist.java` - 基金自选实体
+- `stock/fund/mapper/FundWatchlistMapper.java` - 自选 Mapper
+- `message/constant/SubscriptionTypeEnum.java` - 订阅类型枚举
+- `message/constant/ChannelEnum.java` - 推送渠道枚举
+- `message/entity/Subscription.java` - 订阅实体
+- `message/dto/SubscriptionResponse.java` - 订阅响应 DTO
+- `message/mapper/SubscriptionMapper.java` - 订阅 Mapper
+- `message/channel/ChannelSender.java` - 渠道发送器接口
+- `message/channel/FeishuChannelSender.java` - 飞书渠道实现
+- `message/content/ContentBuilder.java` - 内容生成器接口
+- `message/content/FundValuationContentBuilder.java` - 基金估值内容生成
+- `message/service/SubscriptionService.java` - 订阅管理接口
+- `message/service/MessagePushService.java` - 推送调度接口
+- `message/service/impl/SubscriptionServiceImpl.java` - 订阅管理实现
+- `message/service/impl/MessagePushServiceImpl.java` - 推送调度实现
+- `message/task/MessagePushTask.java` - 定时任务（每天14:30）
+- `message/controller/SubscriptionController.java` - 订阅 API 控制器
+
+**后端修改文件**：
+- `stock/fund/entity/FundConfig.java` - 去掉 userId 字段
+- `stock/fund/service/FundService.java` - 接口重构：新增自选管理、byUserId 方法
+- `stock/fund/service/impl/FundServiceImpl.java` - 去掉 SecurityUtils 权限校验，新增自选逻辑和 getAllValuationByUserId
+- `stock/fund/controller/FundController.java` - CRUD 加 @PreAuthorize 权限注解，新增自选接口
+- `stock/fund/dto/FundValuationResponse.java` - 新增 inWatchlist 字段
+- `config/MybatisPlusConfig.java` - @MapperScan 添加 com.base.message.mapper
+
+**前端新增文件**：
+- `frontend/src/api/subscription.js` - 订阅 API
+- `frontend/src/views/message/index.vue` - 消息中心页面
+
+**前端修改文件**：
+- `frontend/src/api/fund.js` - 新增自选相关 API（addWatchlist、removeWatchlist、listMyWatchlist、getMyWatchlistValuation）
+- `frontend/src/views/stock/fund/index.vue` - 管理员/普通用户权限区分，自选按钮，仅自选筛选
+- `frontend/src/router/index.js` - 添加消息中心路由
+
+**API 接口**：
+- 基金自选：`POST/DELETE /stock/fund/watchlist/{fundId}`、`GET /stock/fund/watchlist/list`、`GET /stock/fund/watchlist/valuation`
+- 基金管理（需权限）：`POST /stock/fund`、`PUT /stock/fund/{id}`、`DELETE /stock/fund/{id}`
+- 消息订阅：`GET /message/subscription/list`、`PUT /message/subscription/toggle`、`POST /message/subscription/push/{subType}`
+
+**扩展方式**：
+- 新增推送渠道：实现 ChannelSender + @Component
+- 新增订阅类型：实现 ContentBuilder + @Component，MessagePushTask 加 @Scheduled 方法
+
+**关联影响**：依赖飞书消息集成模块（FeishuMessageService），复用 FundService 的估值计算逻辑
+
+---
+
 #### 飞书消息发送集成
 
 - **需求**：集成飞书消息发送能力，支持向飞书用户发送文字、图片、文件消息

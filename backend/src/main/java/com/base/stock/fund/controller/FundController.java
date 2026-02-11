@@ -8,6 +8,7 @@ import com.base.stock.fund.service.FundService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,8 +27,10 @@ public class FundController {
 
     private final FundService fundService;
 
+    // ========== 所有用户接口 ==========
+
     /**
-     * 查询基金列表（带缓存估值）
+     * 查询所有基金列表（带缓存估值和自选状态）
      */
     @ApiOperation("查询基金列表（带缓存估值）")
     @GetMapping("/list")
@@ -47,9 +50,64 @@ public class FundController {
     }
 
     /**
+     * 获取单个基金实时估值
+     */
+    @ApiOperation("获取单个基金实时估值")
+    @GetMapping("/{id}/valuation")
+    public Result<FundValuationResponse> getValuation(@PathVariable Long id) {
+        FundValuationResponse response = fundService.getValuation(id);
+        return Result.success(response);
+    }
+
+    // ========== 自选接口（所有用户） ==========
+
+    /**
+     * 加自选
+     */
+    @ApiOperation("加自选")
+    @PostMapping("/watchlist/{fundId}")
+    public Result<Void> addWatchlist(@PathVariable Long fundId) {
+        fundService.addWatchlist(fundId);
+        return Result.success();
+    }
+
+    /**
+     * 取消自选
+     */
+    @ApiOperation("取消自选")
+    @DeleteMapping("/watchlist/{fundId}")
+    public Result<Void> removeWatchlist(@PathVariable Long fundId) {
+        fundService.removeWatchlist(fundId);
+        return Result.success();
+    }
+
+    /**
+     * 我的自选基金列表
+     */
+    @ApiOperation("我的自选基金列表")
+    @GetMapping("/watchlist/list")
+    public Result<List<FundConfig>> myWatchlist() {
+        List<FundConfig> funds = fundService.listMyWatchlistFunds();
+        return Result.success(funds);
+    }
+
+    /**
+     * 我的自选基金估值
+     */
+    @ApiOperation("我的自选基金估值")
+    @GetMapping("/watchlist/valuation")
+    public Result<List<FundValuationResponse>> myWatchlistValuation() {
+        List<FundValuationResponse> responses = fundService.getMyWatchlistValuation();
+        return Result.success(responses);
+    }
+
+    // ========== 管理员接口 ==========
+
+    /**
      * 创建基金
      */
     @ApiOperation("创建基金")
+    @PreAuthorize("hasAuthority('stock:fund:add')")
     @PostMapping
     public Result<Long> create(@Validated @RequestBody FundConfigRequest request) {
         Long fundId = fundService.createFund(request);
@@ -60,6 +118,7 @@ public class FundController {
      * 更新基金
      */
     @ApiOperation("更新基金")
+    @PreAuthorize("hasAuthority('stock:fund:edit')")
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable Long id, @Validated @RequestBody FundConfigRequest request) {
         fundService.updateFund(id, request);
@@ -70,39 +129,10 @@ public class FundController {
      * 删除基金
      */
     @ApiOperation("删除基金")
+    @PreAuthorize("hasAuthority('stock:fund:delete')")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         fundService.deleteFund(id);
         return Result.success();
-    }
-
-    /**
-     * 获取单个基金实时估值
-     */
-    @ApiOperation("获取单个基金实时估值")
-    @GetMapping("/{id}/valuation")
-    public Result<FundValuationResponse> getValuation(@PathVariable Long id) {
-        FundValuationResponse response = fundService.getValuation(id);
-        return Result.success(response);
-    }
-
-    /**
-     * 批量获取基金实时估值
-     */
-    @ApiOperation("批量获取基金实时估值")
-    @PostMapping("/valuation/batch")
-    public Result<List<FundValuationResponse>> batchGetValuation(@RequestBody List<Long> fundIds) {
-        List<FundValuationResponse> responses = fundService.batchGetValuation(fundIds);
-        return Result.success(responses);
-    }
-
-    /**
-     * 获取所有基金实时估值
-     */
-    @ApiOperation("获取所有基金实时估值")
-    @GetMapping("/valuation/all")
-    public Result<List<FundValuationResponse>> getAllValuation() {
-        List<FundValuationResponse> responses = fundService.getAllValuation();
-        return Result.success(responses);
     }
 }

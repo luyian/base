@@ -4,6 +4,9 @@
     <el-card class="action-card" shadow="never">
       <el-form :inline="true">
         <el-form-item>
+          <el-switch v-model="onlyWatchlist" active-text="仅自选" @change="fetchFundList" />
+        </el-form-item>
+        <el-form-item v-if="hasPermission('stock:fund:add')">
           <el-button type="primary" :icon="Plus" @click="handleAdd">新建基金</el-button>
         </el-form-item>
       </el-form>
@@ -16,19 +19,41 @@
           <template #header>
             <div class="fund-header">
               <span class="fund-name">{{ fund.fundName }}</span>
-              <el-dropdown @click.stop trigger="click">
-                <el-icon class="more-icon"><MoreFilled /></el-icon>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item @click="handleEdit(fund)">
-                      <el-icon><Edit /></el-icon>编辑
-                    </el-dropdown-item>
-                    <el-dropdown-item @click="handleDelete(fund)" divided>
-                      <el-icon><Delete /></el-icon>删除
-                    </el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
+              <div class="fund-actions" @click.stop>
+                <!-- 自选按钮 -->
+                <el-button
+                  v-if="fund.inWatchlist"
+                  type="warning"
+                  size="small"
+                  link
+                  @click="handleRemoveWatchlist(fund)"
+                >
+                  <el-icon><StarFilled /></el-icon>
+                </el-button>
+                <el-button
+                  v-else
+                  type="info"
+                  size="small"
+                  link
+                  @click="handleAddWatchlist(fund)"
+                >
+                  <el-icon><Star /></el-icon>
+                </el-button>
+                <!-- 管理员操作 -->
+                <el-dropdown v-if="isAdmin" trigger="click">
+                  <el-icon class="more-icon"><MoreFilled /></el-icon>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item @click="handleEdit(fund)">
+                        <el-icon><Edit /></el-icon>编辑
+                      </el-dropdown-item>
+                      <el-dropdown-item @click="handleDelete(fund)" divided>
+                        <el-icon><Delete /></el-icon>删除
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
             </div>
           </template>
           <div class="fund-content">
@@ -64,8 +89,8 @@
     </el-row>
 
     <!-- 空状态 -->
-    <el-empty v-if="!loading && fundList.length === 0" description="暂无基金配置">
-      <el-button type="primary" @click="handleAdd">创建第一个基金</el-button>
+    <el-empty v-if="!loading && fundList.length === 0" :description="onlyWatchlist ? '暂无自选基金' : '暂无基金配置'">
+      <el-button v-if="isAdmin && !onlyWatchlist" type="primary" @click="handleAdd">创建第一个基金</el-button>
     </el-empty>
 
     <!-- 基金详情弹窗 -->
@@ -90,7 +115,7 @@
           <el-button type="success" :icon="Refresh" @click="handleRefreshValuation" :loading="valuationLoading">
             刷新估值
           </el-button>
-          <el-button type="primary" :icon="Edit" @click="handleEditFromDetail">
+          <el-button v-if="isAdmin" type="primary" :icon="Edit" @click="handleEditFromDetail">
             编辑基金
           </el-button>
         </div>
@@ -223,12 +248,30 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Refresh, Edit, Delete, MoreFilled } from '@element-plus/icons-vue'
-import { listFunds, getFundById, createFund, updateFund, deleteFund, getFundValuation } from '@/api/fund'
+import { Plus, Refresh, Edit, Delete, MoreFilled, Star, StarFilled } from '@element-plus/icons-vue'
+import { listFunds, getFundById, createFund, updateFund, deleteFund, getFundValuation, addWatchlist, removeWatchlist } from '@/api/fund'
 import { listStocks } from '@/api/stock'
+import { useUserStore } from '@/store/user'
+
+const userStore = useUserStore()
+
+// 权限判断
+const hasPermission = (perm) => userStore.hasPermission(perm)
+const isAdmin = computed(() => {
+  return hasPermission('stock:fund:add') || hasPermission('stock:fund:edit') || hasPermission('stock:fund:delete')
+})
+
+// 自选筛选
+const onlyWatchlist = ref(false)
 
 // 基金列表
-const fundList = ref([])
+const allFundList = ref([])
+const fundList = computed(() => {
+  if (onlyWatchlist.value) {
+    return allFundList.value.filter(f => f.inWatchlist)
+  }
+  return allFundList.value
+})
 const loading = ref(false)
 
 // 详情弹窗
@@ -288,12 +331,12 @@ onMounted(() => {
   fetchFundList()
 })
 
-// 获取基金列表（不获取估值）
+// 获取基金列表
 const fetchFundList = async () => {
   loading.value = true
   try {
     const res = await listFunds()
-    fundList.value = res.data || []
+    allFundList.value = res.data || []
   } catch (error) {
     console.error('获取基金列表失败', error)
     ElMessage.error('获取基金列表失败')
@@ -302,7 +345,31 @@ const fetchFundList = async () => {
   }
 }
 
-// 查看详情（显示缓存数据，无缓存时自动刷新）
+// 加自选
+const handleAddWatchlist = async (fund) => {
+  try {
+    await addWatchlist(fund.fundId)
+    fund.inWatchlist = true
+    ElMessage.success('已加入自选')
+  } catch (error) {
+    console.error('加自选失败', error)
+    ElMessage.error('加自选失败')
+  }
+}
+
+// 取消自选
+const handleRemoveWatchlist = async (fund) => {
+  try {
+    await removeWatchlist(fund.fundId)
+    fund.inWatchlist = false
+    ElMessage.success('已取消自选')
+  } catch (error) {
+    console.error('取消自选失败', error)
+    ElMessage.error('取消自选失败')
+  }
+}
+
+// 查看详情
 const handleViewDetail = async (fund) => {
   currentFund.value = {
     fundId: fund.fundId,
@@ -316,7 +383,6 @@ const handleViewDetail = async (fund) => {
   }
   detailDialogVisible.value = true
 
-  // 只有无缓存时才自动获取实时估值
   if (!fund.cacheTime) {
     await fetchValuation(fund.fundId)
   }
@@ -478,57 +544,30 @@ const handleSubmit = async () => {
 
 // 格式化缓存时间
 const formatCacheTime = (timestamp) => {
-  if (!timestamp) {
-    return ''
-  }
+  if (!timestamp) return ''
   const now = Date.now()
   const diff = now - timestamp
   const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) {
-    return '刚刚更新'
-  } else if (minutes < 60) {
-    return `${minutes}分钟前`
-  } else {
-    const hours = Math.floor(minutes / 60)
-    return `${hours}小时前`
-  }
-}
-
-// 格式化日期
-const formatDate = (dateStr) => {
-  if (!dateStr) {
-    return '-'
-  }
-  const date = new Date(dateStr)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  if (minutes < 1) return '刚刚更新'
+  if (minutes < 60) return `${minutes}分钟前`
+  const hours = Math.floor(minutes / 60)
+  return `${hours}小时前`
 }
 
 // 格式化涨跌幅
 const formatChangePercent = (value) => {
-  if (value === null || value === undefined) {
-    return '-'
-  }
+  if (value === null || value === undefined) return '-'
   const num = Number(value)
-  if (num > 0) {
-    return '+' + num.toFixed(2) + '%'
-  }
+  if (num > 0) return '+' + num.toFixed(2) + '%'
   return num.toFixed(2) + '%'
 }
 
 // 获取涨跌幅样式类
 const getChangeClass = (value) => {
-  if (value === null || value === undefined) {
-    return ''
-  }
+  if (value === null || value === undefined) return ''
   const num = Number(value)
-  if (num > 0) {
-    return 'rise'
-  } else if (num < 0) {
-    return 'fall'
-  }
+  if (num > 0) return 'rise'
+  if (num < 0) return 'fall'
   return ''
 }
 </script>
@@ -563,6 +602,12 @@ const getChangeClass = (value) => {
   font-size: 16px;
 }
 
+.fund-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .more-icon {
   cursor: pointer;
   font-size: 18px;
@@ -586,13 +631,6 @@ const getChangeClass = (value) => {
 
 .info-row .value {
   text-align: right;
-}
-
-.info-row .desc-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 150px;
 }
 
 .fund-footer {

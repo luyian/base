@@ -13,12 +13,14 @@ import java.util.List;
  */
 public interface FundService {
 
+    // ========== 基金管理（管理员） ==========
+
     /**
-     * 查询当前用户的基金列表
+     * 查询所有基金列表
      *
      * @return 基金列表
      */
-    List<FundConfig> listFunds();
+    List<FundConfig> listAllFunds();
 
     /**
      * 根据ID查询基金详情（包含持仓）
@@ -51,6 +53,31 @@ public interface FundService {
      */
     void deleteFund(Long id);
 
+    // ========== 用户自选 ==========
+
+    /**
+     * 加自选
+     *
+     * @param fundId 基金ID
+     */
+    void addWatchlist(Long fundId);
+
+    /**
+     * 取消自选
+     *
+     * @param fundId 基金ID
+     */
+    void removeWatchlist(Long fundId);
+
+    /**
+     * 查询我的自选基金列表
+     *
+     * @return 自选基金列表
+     */
+    List<FundConfig> listMyWatchlistFunds();
+
+    // ========== 估值（所有用户） ==========
+
     /**
      * 获取单个基金的实时估值
      *
@@ -60,19 +87,19 @@ public interface FundService {
     FundValuationResponse getValuation(Long fundId);
 
     /**
-     * 批量获取基金的实时估值
+     * 获取我的自选基金估值
      *
-     * @param fundIds 基金ID列表
      * @return 估值响应列表
      */
-    List<FundValuationResponse> batchGetValuation(List<Long> fundIds);
+    List<FundValuationResponse> getMyWatchlistValuation();
 
     /**
-     * 获取当前用户所有基金的实时估值
+     * 按用户ID查询自选基金估值（定时任务用，不依赖 SecurityUtils）
      *
+     * @param userId 用户ID
      * @return 估值响应列表
      */
-    List<FundValuationResponse> getAllValuation();
+    List<FundValuationResponse> getAllValuationByUserId(Long userId);
 
     /**
      * 获取单个基金的缓存估值
@@ -83,7 +110,7 @@ public interface FundService {
     FundValuationResponse getCachedValuation(Long fundId);
 
     /**
-     * 查询基金列表（带缓存估值）
+     * 查询所有基金列表（带缓存估值）
      *
      * @return 基金估值列表（使用Redis缓存的估值数据）
      */

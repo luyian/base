@@ -112,6 +112,62 @@ src/
 | admin | admin123 | 超级管理员 |
 | test | admin123 | 测试用户 |
 
+### 消息中心模块
+
+#### 架构设计
+
+三层解耦架构，支持多渠道（飞书/钉钉/邮件）和多订阅类型扩展：
+
+```
+定时任务触发
+    ↓
+MessagePushService.executePush(subType)
+    ↓
+查询该 subType 的活跃订阅，按 userId 分组
+    ↓
+对每个用户：
+    ├── ContentBuilder.build(userId) → 生成纯文本内容（与渠道无关）
+    └── 遍历该用户的渠道订阅：
+        └── ChannelSender.send(userId, message) → 通过对应渠道发送
+```
+
+#### 模块结构
+
+```
+com.base.message/
+├── constant/          # SubscriptionTypeEnum, ChannelEnum
+├── entity/            # Subscription
+├── dto/               # SubscriptionResponse
+├── mapper/            # SubscriptionMapper
+├── channel/           # ChannelSender 接口 + FeishuChannelSender
+├── content/           # ContentBuilder 接口 + FundValuationContentBuilder
+├── service/impl/      # SubscriptionServiceImpl, MessagePushServiceImpl
+├── task/              # MessagePushTask（@Scheduled 定时任务）
+└── controller/        # SubscriptionController
+```
+
+#### 扩展方式
+
+- **新增推送渠道**：实现 `ChannelSender` 接口 + `@Component`，无需改其他代码
+- **新增订阅类型**：实现 `ContentBuilder` 接口 + `@Component`，在 `MessagePushTask` 中添加 `@Scheduled` 方法
+
+#### API 接口
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/message/subscription/list` | 查询我的订阅列表 |
+| PUT | `/message/subscription/toggle?subType=xxx&channel=xxx&enabled=true` | 开启/关闭订阅 |
+| POST | `/message/subscription/push/{subType}` | 手动触发推送（需权限） |
+
+### 基金模块权限模型
+
+基金为公共资源，管理员管理基金配置，普通用户通过自选关注基金。
+
+- **管理员接口**（需 `@PreAuthorize`）：创建/编辑/删除基金
+- **所有用户接口**：查询列表、查看详情、估值查询、加自选/取消自选
+
+自选表 `stk_fund_watchlist`（fund_id + user_id 联合唯一）实现用户与基金的多对多关系。
+
 ### API 文档
 
 后端启动后访问: http://localhost:8080/doc.html (Knife4j)

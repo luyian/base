@@ -19,7 +19,8 @@ import org.springframework.context.annotation.Configuration;
     "com.base.system.export.mapper",
     "com.base.stock.mapper",
     "com.base.stock.recommend.mapper",
-    "com.base.stock.fund.mapper"
+    "com.base.stock.fund.mapper",
+    "com.base.message.mapper"
 })
 public class MybatisPlusConfig {
 

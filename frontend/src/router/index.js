@@ -80,6 +80,12 @@ const constantRoutes = [
         name: 'StockMappingEdit',
         component: () => import('@/views/stock/mapping/edit.vue'),
         meta: { title: '编辑映射配置', icon: 'Connection' }
+      },
+      {
+        path: 'message',
+        name: 'MessageCenter',
+        component: () => import('@/views/message/index.vue'),
+        meta: { title: '消息中心', icon: 'Bell' }
       }
     ]
   }

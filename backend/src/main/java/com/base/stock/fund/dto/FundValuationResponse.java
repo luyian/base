@@ -83,4 +83,9 @@ public class FundValuationResponse {
      * 缓存时间（用于前端显示）
      */
     private Long cacheTime;
+
+    /**
+     * 是否在当前用户的自选列表中
+     */
+    private Boolean inWatchlist;
 }

@@ -26,11 +26,6 @@ public class FundConfig implements Serializable {
     private Long id;
 
     /**
-     * 用户ID
-     */
-    private Long userId;
-
-    /**
      * 基金名称
      */
     private String fundName;

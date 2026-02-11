@@ -21,7 +21,7 @@ public class StockSyncTask {
     /**
      * 每天 0:00 重置 Token 每日计数
      */
-    @Scheduled(cron = "0 0 0 * * ?")
+//    @Scheduled(cron = "0 0 0 * * ?")
     public void resetTokenDailyCount() {
         log.info("开始执行定时任务：重置 Token 每日计数");
         try {

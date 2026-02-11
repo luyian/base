@@ -10,6 +10,18 @@ const constantRoutes = [
     meta: { title: '登录' }
   },
   {
+    path: '/oauth/callback',
+    name: 'OauthCallback',
+    component: () => import('@/views/OauthCallback.vue'),
+    meta: { title: 'OAuth 登录中' }
+  },
+  {
+    path: '/oauth/bind',
+    name: 'OauthBind',
+    component: () => import('@/views/OauthBind.vue'),
+    meta: { title: '绑定账号' }
+  },
+  {
     path: '/',
     component: () => import('@/layout/Index.vue'),
     redirect: '/dashboard',
@@ -101,6 +113,12 @@ router.beforeEach(async (to, from, next) => {
     } else {
       next()
     }
+    return
+  }
+
+  // OAuth 相关页面，直接放行
+  if (to.path.startsWith('/oauth/')) {
+    next()
     return
   }
 

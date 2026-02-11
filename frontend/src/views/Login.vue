@@ -76,6 +76,20 @@
             </el-button>
           </el-form-item>
         </el-form>
+
+        <!-- 第三方登录 -->
+        <div v-if="oauthEnabled" class="oauth-section">
+          <el-divider>其他登录方式</el-divider>
+          <div class="oauth-buttons">
+            <el-tooltip content="GitHub 登录" placement="bottom">
+              <div class="oauth-btn" @click="handleGithubLogin" :class="{ 'oauth-btn-loading': githubLoading }">
+                <svg viewBox="0 0 16 16" width="24" height="24" fill="currentColor">
+                  <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg>
+              </div>
+            </el-tooltip>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -87,6 +101,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import { login, getCaptcha } from '@/api/auth'
+import { getGithubAuthUrl, isOauthEnabled } from '@/api/oauth'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -129,6 +144,12 @@ const captchaUrl = ref('')
 
 // 加载状态
 const loading = ref(false)
+
+// GitHub 登录加载状态
+const githubLoading = ref(false)
+
+// 第三方登录是否启用
+const oauthEnabled = ref(false)
 
 /**
  * 生成粒子随机样式
@@ -200,10 +221,35 @@ const handleLogin = async () => {
 // 组件挂载时获取验证码并触发入场动画
 onMounted(() => {
   refreshCaptcha()
+  checkOauthEnabled()
   requestAnimationFrame(() => {
     mounted.value = true
   })
 })
+
+// 查询第三方登录是否启用
+const checkOauthEnabled = async () => {
+  try {
+    const res = await isOauthEnabled()
+    oauthEnabled.value = res.data === true
+  } catch (error) {
+    oauthEnabled.value = false
+  }
+}
+
+// GitHub 登录
+const handleGithubLogin = async () => {
+  if (githubLoading.value) return
+  githubLoading.value = true
+  try {
+    const res = await getGithubAuthUrl()
+    window.location.href = res.data
+  } catch (err) {
+    ElMessage.error('获取 GitHub 授权地址失败')
+  } finally {
+    githubLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -421,6 +467,49 @@ onMounted(() => {
 
 .login-button:active {
   transform: translateY(0);
+}
+
+/* ========== 第三方登录 ========== */
+.oauth-section {
+  margin-top: 8px;
+}
+
+.oauth-section :deep(.el-divider__text) {
+  font-size: 13px;
+  color: #909399;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.oauth-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+
+.oauth-btn {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid #dcdfe6;
+  cursor: pointer;
+  color: #606266;
+  transition: all 0.3s;
+}
+
+.oauth-btn:hover {
+  color: #409eff;
+  border-color: #409eff;
+  background: rgba(64, 158, 255, 0.05);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.2);
+}
+
+.oauth-btn-loading {
+  opacity: 0.6;
+  pointer-events: none;
 }
 
 /* ========== 响应式适配 ========== */

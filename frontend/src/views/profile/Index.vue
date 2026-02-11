@@ -141,13 +141,54 @@
                     show-password
                     clearable
                   />
-                </el-form-item>      <el-form-item>
+                </el-form-item>
+                <el-form-item>
                   <el-button type="primary" @click="handleUpdatePassword" :loading="passwordLoading">
                     修改
                   </el-button>
                   <el-button @click="handleResetPassword">重置</el-button>
                 </el-form-item>
               </el-form>
+            </el-tab-pane>
+
+            <!-- 第三方账号标签页 -->
+            <el-tab-pane label="第三方账号" name="oauth">
+              <div class="oauth-manage">
+                <div class="oauth-item">
+                  <div class="oauth-item-left">
+                    <svg viewBox="0 0 16 16" width="28" height="28" fill="#24292f" class="oauth-icon">
+                      <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                    <div class="oauth-item-info">
+                      <div class="oauth-item-name">GitHub</div>
+                      <div class="oauth-item-status" v-if="githubBinding">
+                        已绑定：{{ githubBinding.oauthName }}
+                      </div>
+                      <div class="oauth-item-status unbound" v-else>未绑定</div>
+                    </div>
+                  </div>
+                  <el-button
+                    v-if="githubBinding"
+                    type="danger"
+                    size="small"
+                    plain
+                    :loading="unbindLoading"
+                    @click="handleUnbind('github')"
+                  >
+                    解绑
+                  </el-button>
+                  <el-button
+                    v-else
+                    type="primary"
+                    size="small"
+                    plain
+                    :loading="bindGithubLoading"
+                    @click="handleBindGithub"
+                  >
+                    绑定
+                  </el-button>
+                </div>
+              </div>
             </el-tab-pane>
           </el-tabs>
         </el-card>
@@ -158,10 +199,12 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 import { getProfile, updateProfile, updatePassword } from '@/api/profile'
 import { uploadAvatar } from '@/api/file'
+import { listOauthBindings, unbindOauth } from '@/api/oauth'
+import { getGithubAuthUrl } from '@/api/oauth'
 import { useUserStore } from '@/store/user'
 
 // 默认头像
@@ -389,7 +432,59 @@ const handleAvatarChange = async (event) => {
 // 初始化
 onMounted(() => {
   loadProfile()
+  loadOauthBindings()
 })
+
+// 第三方账号绑定列表
+const oauthBindings = ref([])
+const githubBinding = ref(null)
+const unbindLoading = ref(false)
+const bindGithubLoading = ref(false)
+
+// 加载第三方账号绑定列表
+const loadOauthBindings = async () => {
+  try {
+    const res = await listOauthBindings()
+    oauthBindings.value = res.data || []
+    githubBinding.value = oauthBindings.value.find(item => item.oauthType === 'github') || null
+  } catch (error) {
+    console.error('获取第三方账号绑定列表失败:', error)
+  }
+}
+
+// 解绑第三方账号
+const handleUnbind = async (oauthType) => {
+  try {
+    await ElMessageBox.confirm('确定要解绑该第三方账号吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    unbindLoading.value = true
+    await unbindOauth(oauthType)
+    ElMessage.success('解绑成功')
+    await loadOauthBindings()
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error(error.message || '解绑失败')
+    }
+  } finally {
+    unbindLoading.value = false
+  }
+}
+
+// 绑定 GitHub
+const handleBindGithub = async () => {
+  bindGithubLoading.value = true
+  try {
+    const res = await getGithubAuthUrl()
+    window.location.href = res.data
+  } catch (error) {
+    ElMessage.error('获取 GitHub 授权地址失败')
+  } finally {
+    bindGithubLoading.value = false
+  }
+}
 </script>
 
 <style scoped>
@@ -476,5 +571,46 @@ onMounted(() => {
 .password-form {
   max-width: 600px;
   padding: 20px;
+}
+
+/* ========== 第三方账号管理 ========== */
+.oauth-manage {
+  padding: 20px;
+}
+
+.oauth-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.oauth-item-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.oauth-icon {
+  flex-shrink: 0;
+}
+
+.oauth-item-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.oauth-item-status {
+  font-size: 13px;
+  color: #67c23a;
+  margin-top: 4px;
+}
+
+.oauth-item-status.unbound {
+  color: #909399;
 }
 </style>

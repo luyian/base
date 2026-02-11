@@ -104,3 +104,12 @@ stock:
     batch-threshold: 100
     # 批量请求大小
     batch-size: 100
+
+# OAuth 第三方登录配置
+oauth:
+  enabled: false
+  github:
+    client-id: your-github-client-id
+    client-secret: your-github-client-secret
+    redirect-uri: http://localhost:3000/oauth/callback
+  default-role-id: 2

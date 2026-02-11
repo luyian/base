@@ -4,6 +4,39 @@
 
 ### 2026-02-11
 
+#### GitHub OAuth 第三方登录功能
+
+- **需求**：新增 GitHub OAuth 第三方登录，首次登录支持"创建新账号"或"绑定已有账号"
+- **OAuth 流程**：前端跳转 GitHub 授权 → 回调携带 code+state → 后端换 token 获取用户信息 → 已绑定直接登录/未绑定跳转绑定页
+- **数据库**：
+  - 新建 `sys_user_oauth` 表（第三方登录绑定表）
+  - SQL 文件：`backend/src/main/resources/db/oauth_schema.sql`
+- **后端新增文件**：
+  - `config/OauthConfig.java` - OAuth 配置属性类
+  - `system/entity/UserOauth.java` - 第三方绑定实体
+  - `system/mapper/UserOauthMapper.java` - Mapper 接口
+  - `system/dto/oauth/OauthCallbackRequest.java` - 回调请求 DTO
+  - `system/dto/oauth/OauthCallbackResponse.java` - 回调响应 DTO
+  - `system/dto/oauth/OauthBindNewRequest.java` - 创建新账号绑定请求
+  - `system/dto/oauth/OauthBindExistRequest.java` - 绑定已有账号请求
+  - `system/dto/oauth/GithubUserInfo.java` - GitHub 用户信息 DTO
+  - `system/service/OauthService.java` - OAuth 服务接口
+  - `system/service/impl/OauthServiceImpl.java` - OAuth 服务实现
+  - `system/controller/OauthController.java` - OAuth 控制器（/auth/oauth，无需认证）
+  - `system/controller/UserOauthController.java` - 第三方账号管理控制器（/system/oauth，需认证）
+- **后端修改文件**：
+  - `application-dev.yml` - 新增 oauth.github 配置项
+- **前端新增文件**：
+  - `api/oauth.js` - OAuth API 封装
+  - `views/OauthCallback.vue` - OAuth 回调中转页
+  - `views/OauthBind.vue` - 首次登录绑定选择页
+- **前端修改文件**：
+  - `views/Login.vue` - 添加 GitHub 登录按钮和第三方登录区域
+  - `router/index.js` - 添加 /oauth/callback 和 /oauth/bind 路由，路由守卫放行
+  - `views/profile/Index.vue` - 个人中心添加"第三方账号"标签页（绑定/解绑管理）
+- **安全设计**：state 防 CSRF（Redis 3分钟过期）、oauthToken 临时凭证（5分钟过期）、client-secret 仅后端存储
+- **关联影响**：SecurityConfig 中 /auth/** 已放行，OauthController 路径自动被覆盖；UserOauthMapper 在 com.base.system.mapper 包下，MybatisPlusConfig 无需修改
+
 #### 登录验证码开关功能
 
 - **需求**：开发模式下可配置跳过验证码校验

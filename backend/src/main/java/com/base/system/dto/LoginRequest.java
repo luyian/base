@@ -30,14 +30,12 @@ public class LoginRequest {
     /**
      * 验证码
      */
-    @ApiModelProperty(value = "验证码", required = true)
-    @NotBlank(message = "验证码不能为空")
+    @ApiModelProperty(value = "验证码")
     private String captcha;
 
     /**
      * 验证码唯一标识
      */
-    @ApiModelProperty(value = "验证码唯一标识", required = true)
-    @NotBlank(message = "验证码标识不能为空")
+    @ApiModelProperty(value = "验证码唯一标识")
     private String captchaKey;
 }

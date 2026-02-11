@@ -46,7 +46,7 @@
               @keyup.enter="handleLogin"
             />
           </el-form-item>
-          <el-form-item prop="captcha">
+          <el-form-item v-if="captchaEnabled" prop="captcha">
             <div class="captcha-box">
               <el-input
                 v-model="loginForm.captcha"
@@ -82,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
@@ -106,7 +106,7 @@ const loginForm = reactive({
 })
 
 // 表单验证规则
-const loginRules = {
+const loginRules = computed(() => ({
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' }
   ],
@@ -114,10 +114,15 @@ const loginRules = {
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
   ],
-  captcha: [
-    { required: true, message: '请输入验证码', trigger: 'blur' }
-  ]
-}
+  ...(captchaEnabled.value ? {
+    captcha: [
+      { required: true, message: '请输入验证码', trigger: 'blur' }
+    ]
+  } : {})
+}))
+
+// 验证码是否启用
+const captchaEnabled = ref(true)
 
 // 验证码图片地址
 const captchaUrl = ref('')
@@ -148,8 +153,11 @@ const getParticleStyle = (index) => {
 const refreshCaptcha = async () => {
   try {
     const res = await getCaptcha()
-    captchaUrl.value = res.data.captchaImage
-    loginForm.captchaKey = res.data.captchaKey
+    captchaEnabled.value = res.data.enabled !== false
+    if (captchaEnabled.value) {
+      captchaUrl.value = res.data.captchaImage
+      loginForm.captchaKey = res.data.captchaKey
+    }
   } catch (error) {
     console.error('获取验证码失败:', error)
   }

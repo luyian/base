@@ -2,6 +2,23 @@
 
 ---
 
+### 2026-02-11
+
+#### 登录验证码开关功能
+
+- **需求**：开发模式下可配置跳过验证码校验
+- **实现方案**：通过 `captcha.enabled` 配置项控制验证码是否启用
+- **配置方式**：`application.yml` 中设置 `captcha.enabled: false` 即可关闭验证码
+- **后端修改**：
+  - `CaptchaResponse.java` - 新增 `enabled` 字段，标识验证码是否启用
+  - `AuthServiceImpl.java` - 新增 `captchaEnabled` 配置读取；`generateCaptcha()` 未启用时返回空数据；`login()` 未启用时跳过验证码校验
+  - `application.yml` - 新增 `captcha.enabled: true` 配置项
+- **前端修改**：
+  - `Login.vue` - 根据接口返回的 `enabled` 字段动态显示/隐藏验证码输入框和图片；表单验证规则改为 computed 动态计算
+- **关联影响**：不影响其他模块，仅影响登录流程
+
+---
+
 ## 股票数据分析功能
 
 > 基于需求文档 `stock-requirement.md`，已完成全部开发

@@ -32,4 +32,10 @@ public class CaptchaResponse {
      */
     @ApiModelProperty("过期时间（秒）")
     private Long expiresIn;
+
+    /**
+     * 验证码是否启用
+     */
+    @ApiModelProperty("验证码是否启用")
+    private Boolean enabled;
 }

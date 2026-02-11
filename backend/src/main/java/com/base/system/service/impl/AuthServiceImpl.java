@@ -70,6 +70,12 @@ public class AuthServiceImpl implements AuthService {
     private LoginLogService loginLogService;
 
     /**
+     * 验证码是否启用
+     */
+    @Value("${captcha.enabled:true}")
+    private Boolean captchaEnabled;
+
+    /**
      * 验证码过期时间（秒）
      */
     @Value("${captcha.expiration:300}")
@@ -99,6 +105,14 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public CaptchaResponse generateCaptcha() {
+        // 验证码未启用时，返回空数据并标记未启用
+        if (!Boolean.TRUE.equals(captchaEnabled)) {
+            CaptchaResponse response = new CaptchaResponse();
+            response.setEnabled(false);
+            log.info("验证码未启用，跳过生成");
+            return response;
+        }
+
         // 生成验证码
         String code = CaptchaUtil.generateCode();
         String captchaKey = UUID.randomUUID().toString();
@@ -111,7 +125,8 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("生成验证码成功，captchaKey: {}", captchaKey);
 
-        return new CaptchaResponse(captchaKey, captchaImage, captchaExpiration);
+        CaptchaResponse response = new CaptchaResponse(captchaKey, captchaImage, captchaExpiration, true);
+        return response;
     }
 
     @Override
@@ -126,17 +141,19 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(ResultCode.ACCOUNT_LOCKED);
         }
 
-        // 2. 验证验证码
-        String captchaKey = CAPTCHA_PREFIX + request.getCaptchaKey();
-        String cachedCaptcha = redisUtil.get(captchaKey, String.class);
-        if (cachedCaptcha == null) {
-            throw new BusinessException(ResultCode.CAPTCHA_EXPIRED);
+        // 2. 验证验证码（未启用时跳过）
+        if (Boolean.TRUE.equals(captchaEnabled)) {
+            String captchaKey = CAPTCHA_PREFIX + request.getCaptchaKey();
+            String cachedCaptcha = redisUtil.get(captchaKey, String.class);
+            if (cachedCaptcha == null) {
+                throw new BusinessException(ResultCode.CAPTCHA_EXPIRED);
+            }
+            if (!cachedCaptcha.equalsIgnoreCase(request.getCaptcha())) {
+                throw new BusinessException(ResultCode.CAPTCHA_ERROR);
+            }
+            // 验证码使用后立即删除
+            redisUtil.delete(captchaKey);
         }
-        if (!cachedCaptcha.equalsIgnoreCase(request.getCaptcha())) {
-            throw new BusinessException(ResultCode.CAPTCHA_ERROR);
-        }
-        // 验证码使用后立即删除
-        redisUtil.delete(captchaKey);
 
         // 3. 查询用户
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();

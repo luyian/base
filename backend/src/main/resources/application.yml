@@ -51,6 +51,7 @@ jwt:
 
 # 验证码配置
 captcha:
+  enabled: false
   expiration: 300
 
 # 登录配置

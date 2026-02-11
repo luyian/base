@@ -20,6 +20,17 @@
 - **环境变量**：DB_HOST、DB_PORT、DB_NAME、DB_USER、DB_PASSWORD、REDIS_HOST、REDIS_PORT、REDIS_PASSWORD
 - **关联影响**：不影响现有开发环境，Docker 使用独立的 `docker` profile
 
+#### 自选股列表优化：去掉备注列，添加股票详情字段
+
+- **需求**：自选股列表去掉备注列，添加所属行业、总市值、总股本、市盈率四列
+- **后端修改**：
+  - `Watchlist.java` - 新增 `industry`、`industryCn`、`marketCap`、`totalShares`、`peRatio` 非数据库字段
+  - `WatchlistMapper.java` - SQL 关联查询新增 `s.industry, s.market_cap, s.total_shares, s.pe_ratio` 字段
+  - `WatchlistServiceImpl.java` - 注入 `EnumService`，查询后通过枚举映射填充行业中文名称
+- **前端修改**：
+  - `watchlist/index.vue` - 去掉备注列，新增所属行业、总市值、总股本、市盈率列；添加 `formatMarketCap` 格式化函数（万/亿单位）
+- **关联影响**：依赖 `stock_industry` 枚举配置做行业中英文转换，与股票列表页逻辑一致
+
 #### 菜单管理列表查询按钮权限
 
 - **需求**：菜单管理列表也查询按钮类型（type=3），但默认不展开

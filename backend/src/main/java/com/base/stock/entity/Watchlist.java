@@ -8,6 +8,8 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.math.BigDecimal;
+
 /**
  * 自选股票实体类
  *
@@ -58,4 +60,39 @@ public class Watchlist extends BaseEntity {
     @TableField(exist = false)
     @ApiModelProperty("市场")
     private String market;
+
+    /**
+     * 所属行业英文（关联查询）
+     */
+    @TableField(exist = false)
+    @ApiModelProperty("所属行业英文")
+    private String industry;
+
+    /**
+     * 所属行业中文
+     */
+    @TableField(exist = false)
+    @ApiModelProperty("所属行业中文")
+    private String industryCn;
+
+    /**
+     * 总市值（关联查询）
+     */
+    @TableField(exist = false)
+    @ApiModelProperty("总市值")
+    private BigDecimal marketCap;
+
+    /**
+     * 总股本（关联查询）
+     */
+    @TableField(exist = false)
+    @ApiModelProperty("总股本")
+    private BigDecimal totalShares;
+
+    /**
+     * 市盈率（关联查询）
+     */
+    @TableField(exist = false)
+    @ApiModelProperty("市盈率")
+    private BigDecimal peRatio;
 }

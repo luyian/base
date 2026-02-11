@@ -33,7 +33,22 @@
             <el-tag v-else type="info" size="small">{{ row.market }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="150" align="center" />
+        <el-table-column prop="industryCn" label="所属行业" min-width="120" align="center" show-overflow-tooltip />
+        <el-table-column prop="marketCap" label="总市值" width="130" align="right">
+          <template #default="{ row }">
+            {{ row.marketCap != null ? formatMarketCap(row.marketCap) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="totalShares" label="总股本" width="130" align="right">
+          <template #default="{ row }">
+            {{ row.totalShares != null ? formatMarketCap(row.totalShares) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="peRatio" label="市盈率" width="100" align="right">
+          <template #default="{ row }">
+            {{ row.peRatio != null ? row.peRatio.toFixed(2) : '-' }}
+          </template>
+        </el-table-column>
         <el-table-column prop="createTime" label="添加时间" width="180" align="center" />
         <el-table-column label="操作" width="250" align="center" fixed="right">
           <template #default="{ row }">
@@ -147,6 +162,16 @@ const syncForm = ref({
   startDate: '',
   endDate: ''
 })
+
+// 格式化市值/股本（万/亿）
+const formatMarketCap = (value) => {
+  if (value >= 100000000) {
+    return (value / 100000000).toFixed(2) + '亿'
+  } else if (value >= 10000) {
+    return (value / 10000).toFixed(2) + '万'
+  }
+  return value.toFixed(2)
+}
 
 // 获取自选列表
 const fetchWatchlist = async () => {

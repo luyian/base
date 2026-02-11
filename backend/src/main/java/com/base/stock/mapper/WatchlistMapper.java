@@ -22,7 +22,7 @@ public interface WatchlistMapper extends BaseMapper<Watchlist> {
      * @param userId 用户ID
      * @return 自选列表
      */
-    @Select("SELECT w.*, s.stock_name, s.market " +
+    @Select("SELECT w.*, s.stock_name, s.market, s.industry, s.market_cap, s.total_shares, s.pe_ratio " +
             "FROM stk_watchlist w " +
             "LEFT JOIN stk_stock_info s ON w.stock_code = s.stock_code " +
             "WHERE w.user_id = #{userId} AND w.deleted = 0 " +

@@ -11,6 +11,8 @@ import com.base.stock.entity.Watchlist;
 import com.base.stock.mapper.StockInfoMapper;
 import com.base.stock.mapper.WatchlistMapper;
 import com.base.stock.service.WatchlistService;
+import com.base.system.dto.enums.EnumResponse;
+import com.base.system.service.EnumService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -37,10 +40,29 @@ public class WatchlistServiceImpl implements WatchlistService {
     private final WatchlistMapper watchlistMapper;
     private final ITickApiClient iTickApiClient;
     private final StockInfoMapper stockInfoMapper;
+    private final EnumService enumService;
 
     @Override
     public List<Watchlist> listByUserId(Long userId) {
-        return watchlistMapper.selectListWithStockInfo(userId);
+        List<Watchlist> list = watchlistMapper.selectListWithStockInfo(userId);
+        fillIndustryCn(list);
+        return list;
+    }
+
+    /**
+     * 填充行业中文名称
+     */
+    private void fillIndustryCn(List<Watchlist> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+        Map<String, String> industryMap = enumService.listByType("stock_industry").stream()
+                .collect(Collectors.toMap(EnumResponse::getEnumCode, EnumResponse::getEnumValue, (v1, v2) -> v1));
+        for (Watchlist item : list) {
+            if (item.getIndustry() != null) {
+                item.setIndustryCn(industryMap.getOrDefault(item.getIndustry(), item.getIndustry()));
+            }
+        }
     }
 
     @Override

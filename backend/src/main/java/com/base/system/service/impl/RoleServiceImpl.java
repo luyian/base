@@ -174,10 +174,13 @@ public class RoleServiceImpl implements RoleService {
         wrapper.eq(RolePermission::getRoleId, request.getRoleId());
         rolePermissionMapper.delete(wrapper);
 
-        // 批量添加新的角色权限关联
+        // 批量添加新的角色权限关联（去重，避免唯一键冲突）
         if (request.getPermissionIds() != null && !request.getPermissionIds().isEmpty()) {
+            List<Long> distinctIds = request.getPermissionIds().stream()
+                    .distinct()
+                    .collect(Collectors.toList());
             List<RolePermission> rolePermissions = new ArrayList<>();
-            for (Long permissionId : request.getPermissionIds()) {
+            for (Long permissionId : distinctIds) {
                 RolePermission rolePermission = new RolePermission();
                 rolePermission.setRoleId(request.getRoleId());
                 rolePermission.setPermissionId(permissionId);

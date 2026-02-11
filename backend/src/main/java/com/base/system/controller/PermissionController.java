@@ -85,7 +85,7 @@ public class PermissionController {
      * 获取所有权限树（用于角色分配权限）
      */
     @GetMapping("/all/tree")
-    @PreAuthorize("hasAuthority('system:permission:list')")
+    @PreAuthorize("hasAuthority('system:permission:list') or hasAuthority('system:role:edit')")
     public Result<List<PermissionResponse>> getAllPermissionTree() {
         List<PermissionResponse> list = permissionService.getAllPermissionTree();
         return Result.success(list);

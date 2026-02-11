@@ -106,7 +106,7 @@ public class RoleController {
      */
     @ApiOperation("分配权限")
     @PutMapping("/assign-permissions")
-    @PreAuthorize("hasAuthority('system:role:assignPermission')")
+    @PreAuthorize("hasAuthority('system:role:permission')")
     public Result<Void> assignPermissions(@Validated @RequestBody RoleAssignPermissionRequest request) {
         roleService.assignPermissions(request);
         return Result.success();

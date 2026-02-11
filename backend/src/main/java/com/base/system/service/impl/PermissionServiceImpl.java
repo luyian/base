@@ -187,9 +187,9 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
             return new ArrayList<>();
         }
 
-        // 按父级ID分组
+        // 按父级ID分组（parentId 为 null 时视为顶级节点 0）
         Map<Long, List<Permission>> permissionMap = permissionList.stream()
-                .collect(Collectors.groupingBy(Permission::getParentId));
+                .collect(Collectors.groupingBy(p -> p.getParentId() != null ? p.getParentId() : 0L));
 
         // 递归构建树形结构
         return buildTree(permissionMap, parentId);

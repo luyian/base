@@ -4,6 +4,22 @@
 
 ### 2026-02-11
 
+#### Docker 部署配置
+
+- **需求**：添加 Dockerfile 实现前后端合并部署，一键构建镜像
+- **方案**：多阶段构建（multi-stage build），Nginx 托管前端静态文件 + 反向代理后端 API
+- **新增文件**：
+  - `Dockerfile` - 三阶段构建（Node 构建前端 → Maven 构建后端 → JRE + Nginx 运行）
+  - `.dockerignore` - 排除 node_modules、target、.git 等无关文件
+  - `nginx.conf` - Nginx 配置（静态文件 + /api 反向代理到 localhost:8080）
+  - `docker-entrypoint.sh` - 启动脚本（同时启动 Nginx 和 Java）
+  - `backend/src/main/resources/application-docker.yml` - Docker 环境配置（MySQL/Redis 地址通过环境变量注入）
+- **运行方式**：
+  - 构建：`docker build -t base-system .`
+  - 运行：`docker run -d -p 80:80 -e DB_HOST=xxx -e REDIS_HOST=xxx base-system`
+- **环境变量**：DB_HOST、DB_PORT、DB_NAME、DB_USER、DB_PASSWORD、REDIS_HOST、REDIS_PORT、REDIS_PASSWORD
+- **关联影响**：不影响现有开发环境，Docker 使用独立的 `docker` profile
+
 #### 菜单管理列表查询按钮权限
 
 - **需求**：菜单管理列表也查询按钮类型（type=3），但默认不展开

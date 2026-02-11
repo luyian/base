@@ -4,6 +4,21 @@
 
 ### 2026-02-11
 
+#### 菜单管理列表查询按钮权限
+
+- **需求**：菜单管理列表也查询按钮类型（type=3），但默认不展开
+- **后端修改**：`PermissionServiceImpl.java` - 去掉 `treePermissions` 方法中默认过滤按钮的逻辑（原来 type 为空时只查目录和菜单）
+- **前端修改**：`Permission.vue` - 去掉 `default-expand-all`，表格默认收起
+- **修改文件**：
+  - `backend/src/main/java/com/base/system/service/impl/PermissionServiceImpl.java`
+  - `frontend/src/views/system/Permission.vue`
+
+#### 分配权限叶子节点横向排列
+
+- **需求**：角色管理"分配权限"对话框中，叶子节点（如用户查询、用户新增等）改为一行显示四个
+- **实现**：在 `Role.vue` 中添加全局 CSS 样式，对 el-tree 二级子节点容器使用 flex 布局，每个叶子节点宽度 25%
+- **修改文件**：`frontend/src/views/system/Role.vue` - 新增 `<style>` 块（非 scoped）
+
 #### GitHub OAuth 第三方登录功能
 
 - **需求**：新增 GitHub OAuth 第三方登录，首次登录支持"创建新账号"或"绑定已有账号"

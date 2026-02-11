@@ -55,7 +55,6 @@
         row-key="id"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         v-loading="loading"
-        default-expand-all
       >
         <el-table-column prop="permissionName" label="权限名称" min-width="200" />
         <el-table-column prop="permissionCode" label="权限编码" min-width="150" />

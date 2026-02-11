@@ -178,7 +178,7 @@
     <el-dialog
       v-model="permissionDialogVisible"
       title="分配权限"
-      width="600px"
+      width="900px"
       @close="handlePermissionDialogClose"
     >
       <el-tree
@@ -187,7 +187,6 @@
         show-checkbox
         node-key="id"
         :props="{ children: 'children', label: 'permissionName' }"
-        default-expand-all
       />
       <template #footer>
         <el-button @click="permissionDialogVisible = false">取消</el-button>
@@ -560,5 +559,31 @@ onMounted(() => {
 .el-pagination {
   margin-top: 20px;
   justify-content: flex-end;
+}
+</style>
+
+<style>
+/* 分配权限树叶子节点一行四个 */
+.el-tree-node.is-leaf + .el-tree-node.is-leaf {
+  margin-left: 0;
+}
+
+/* 顶级目录之间增加行间距 */
+.el-tree > .el-tree-node + .el-tree-node {
+  margin-top: 16px;
+}
+
+/* 二级目录之间增加行间距 */
+.el-tree > .el-tree-node > .el-tree-node__children > .el-tree-node + .el-tree-node {
+  margin-top: 12px;
+}
+
+.el-tree > .el-tree-node > .el-tree-node__children > .el-tree-node > .el-tree-node__children {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.el-tree > .el-tree-node > .el-tree-node__children > .el-tree-node > .el-tree-node__children > .el-tree-node {
+  width: 25%;
 }
 </style>

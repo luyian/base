@@ -43,11 +43,6 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
                 .eq(request.getType() != null, Permission::getType, request.getType())
                 .eq(request.getStatus() != null, Permission::getStatus, request.getStatus());
 
-        // 如果没有指定类型，默认只查询目录和菜单，不包括按钮
-        if (request.getType() == null) {
-            wrapper.in(Permission::getType, 1, 2);
-        }
-
         wrapper.orderByAsc(Permission::getSort)
                 .orderByDesc(Permission::getCreateTime);
 

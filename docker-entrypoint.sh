@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# 启动 Redis
+redis-server /etc/redis/redis.conf &
+
 # 启动 Nginx
 nginx
 

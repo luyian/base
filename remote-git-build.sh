@@ -9,13 +9,17 @@ set -e
 REPO_URL="https://github.com/luyian/base.git"
 BRANCH="master"
 PROJECT_DIR="base"
+SKIP_GIT=${1:-false}  # 传入 skip 跳过 git 操作
 
 echo "=== 远程Docker构建脚本 ==="
 echo "仓库地址: $REPO_URL"
 echo "分支: $BRANCH"
 
 # 拉取代码
-if [ -d "$PROJECT_DIR" ]; then
+if [ "$SKIP_GIT" = "skip" ]; then
+    echo "跳过 git 操作，使用已有代码..."
+    cd $PROJECT_DIR
+elif [ -d "$PROJECT_DIR" ]; then
     echo "项目目录已存在，正在更新代码..."
     cd $PROJECT_DIR
     git fetch origin $BRANCH
@@ -70,7 +74,7 @@ docker run --rm \
 
 # Docker 镜像打包（不需要网络）
 echo "=== Docker 镜像打包 ==="
-docker build -t base-app .
+docker build --network=host -t b
 
 echo "Docker镜像构建完成！"
 docker images | grep base-app

@@ -39,14 +39,34 @@ docker run --rm \
 
 # 后端构建（使用 Maven 容器 + 宿主机网络 + 缓存本地仓库）
 echo "=== 后端构建 ==="
-mkdir -p "$PROJECT_PATH/.m2"
+MAVEN_REPO="$HOME/.m2"
+mkdir -p "$MAVEN_REPO"
+
+# 生成 Maven settings.xml（阿里云镜像）
+cat > "$MAVEN_REPO/settings.xml" << 'EOF'
+<settings>
+  <mirrors>
+    <mirror>
+      <id>aliyun</id>
+      <mirrorOf>central</mirrorOf>
+      <url>https://maven.aliyun.com/repository/central</url>
+    </mirror>
+    <mirror>
+      <id>aliyun-public</id>
+      <mirrorOf>*</mirrorOf>
+      <url>https://maven.aliyun.com/repository/public</url>
+    </mirror>
+  </mirrors>
+</settings>
+EOF
+
 docker run --rm \
     --network=host \
     -v "$PROJECT_PATH/backend":/app \
-    -v "$PROJECT_PATH/.m2":/root/.m2 \
+    -v "$MAVEN_REPO":/root/.m2 \
     -w /app \
     maven:3.8-openjdk-8 \
-    mvn clean package -DskipTests -B
+    mvn clean package -DskipTests -B -s /root/.m2/settings.xml
 
 # Docker 镜像打包（不需要网络）
 echo "=== Docker 镜像打包 ==="

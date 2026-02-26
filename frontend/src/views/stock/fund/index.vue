@@ -99,6 +99,7 @@
       :title="currentFund.fundName + ' - 实时估值'"
       width="80%"
       destroy-on-close
+      @close="fetchFundList"
     >
       <div class="detail-header">
         <el-descriptions :column="4" border>
@@ -442,8 +443,13 @@ const handleEdit = async (fund) => {
     formData.description = fundDetail.description
     formData.holdings = (fundDetail.holdings || []).map(h => ({
       stockCode: h.stockCode,
+      stockName: h.stockName,
       weight: h.weight
     }))
+    // 预填充已有持仓的股票选项，确保回显时能显示股票名称
+    stockOptions.value = (fundDetail.holdings || [])
+      .filter(h => h.stockCode)
+      .map(h => ({ stockCode: h.stockCode, stockName: h.stockName || h.stockCode }))
     if (formData.holdings.length === 0) {
       formData.holdings = [{ stockCode: '', weight: null }]
     }

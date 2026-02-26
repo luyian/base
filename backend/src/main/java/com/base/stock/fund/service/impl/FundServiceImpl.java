@@ -13,9 +13,11 @@ import com.base.stock.fund.dto.FundValuationResponse;
 import com.base.stock.fund.dto.StockQuote;
 import com.base.stock.fund.entity.FundConfig;
 import com.base.stock.fund.entity.FundHolding;
+import com.base.stock.fund.entity.FundValuationRecord;
 import com.base.stock.fund.entity.FundWatchlist;
 import com.base.stock.fund.mapper.FundConfigMapper;
 import com.base.stock.fund.mapper.FundHoldingMapper;
+import com.base.stock.fund.mapper.FundValuationRecordMapper;
 import com.base.stock.fund.mapper.FundWatchlistMapper;
 import com.base.stock.fund.service.FundService;
 import com.base.stock.mapper.StockInfoMapper;
@@ -28,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -48,10 +52,13 @@ public class FundServiceImpl implements FundService {
     private static final String FUND_VALUATION_CACHE_KEY = "fund:valuation:";
     /** 缓存过期时间（1小时） */
     private static final long CACHE_EXPIRE_SECONDS = 3600;
+    /** 收盘时间：15:30 */
+    private static final LocalTime MARKET_CLOSE_TIME = LocalTime.of(15, 30);
 
     private final FundConfigMapper fundConfigMapper;
     private final FundHoldingMapper fundHoldingMapper;
     private final FundWatchlistMapper fundWatchlistMapper;
+    private final FundValuationRecordMapper fundValuationRecordMapper;
     private final StockInfoMapper stockInfoMapper;
     private final TokenManagerService tokenManagerService;
     private final ITickConfig iTickConfig;
@@ -193,7 +200,39 @@ public class FundServiceImpl implements FundService {
         String cacheKey = FUND_VALUATION_CACHE_KEY + fundId;
         redisUtil.set(cacheKey, response, CACHE_EXPIRE_SECONDS);
         log.info("基金估值已缓存，fundId: {}, cacheKey: {}", fundId, cacheKey);
+
+        // 15:30 之后将估值持久化到数据库
+        if (LocalTime.now().isAfter(MARKET_CLOSE_TIME)) {
+            saveValuationRecord(fundId, response);
+        }
         return response;
+    }
+
+    /**
+     * 将估值结果持久化到数据库（upsert）
+     */
+    private void saveValuationRecord(Long fundId, FundValuationResponse response) {
+        try {
+            LocalDate today = LocalDate.now();
+            FundValuationRecord existing = fundValuationRecordMapper.selectByFundIdAndDate(fundId, today);
+            FundValuationRecord record = existing != null ? existing : new FundValuationRecord();
+            record.setFundId(fundId);
+            record.setTradeDate(today);
+            record.setEstimatedChangePercent(response.getEstimatedChangePercent());
+            record.setHoldingCount(response.getHoldingCount());
+            record.setSuccessCount(response.getSuccessCount());
+            record.setFailCount(response.getFailCount());
+            record.setTotalWeight(response.getTotalWeight());
+            record.setQuotesJson(JSON.toJSONString(response.getQuotes()));
+            if (existing != null) {
+                fundValuationRecordMapper.updateById(record);
+            } else {
+                fundValuationRecordMapper.insert(record);
+            }
+            log.info("基金估值记录已保存，fundId: {}, tradeDate: {}", fundId, today);
+        } catch (Exception e) {
+            log.error("保存基金估值记录失败，fundId: {}", fundId, e);
+        }
     }
 
     @Override
@@ -233,6 +272,10 @@ public class FundServiceImpl implements FundService {
                 response.setCacheTime(System.currentTimeMillis());
                 String cacheKey = FUND_VALUATION_CACHE_KEY + fund.getId();
                 redisUtil.set(cacheKey, response, CACHE_EXPIRE_SECONDS);
+                // 15:30 之后持久化到数据库
+                if (LocalTime.now().isAfter(MARKET_CLOSE_TIME)) {
+                    saveValuationRecord(fund.getId(), response);
+                }
                 responses.add(response);
             } catch (Exception e) {
                 log.error("获取基金估值失败，fundId: {}", fund.getId(), e);
@@ -269,6 +312,16 @@ public class FundServiceImpl implements FundService {
 
         List<FundValuationResponse> responses = new ArrayList<>();
         for (FundConfig fund : funds) {
+            // 优先从当日数据库记录读取（15:30后的数据）
+            FundValuationResponse dbRecord = getTodayDbValuation(fund.getId());
+            if (dbRecord != null) {
+                dbRecord.setFundName(fund.getFundName());
+                dbRecord.setFundCode(fund.getFundCode());
+                dbRecord.setDescription(fund.getDescription());
+                dbRecord.setInWatchlist(watchlistFundIds.contains(fund.getId()));
+                responses.add(dbRecord);
+                continue;
+            }
             FundValuationResponse cached = getCachedValuation(fund.getId());
             if (cached != null) {
                 cached.setFundName(fund.getFundName());
@@ -291,6 +344,34 @@ public class FundServiceImpl implements FundService {
     }
 
     // ========== 私有方法 ==========
+
+    /**
+     * 从数据库读取当日估值记录（15:30后才有数据）
+     */
+    private FundValuationResponse getTodayDbValuation(Long fundId) {
+        if (LocalTime.now().isBefore(MARKET_CLOSE_TIME)) {
+            return null;
+        }
+        FundValuationRecord record = fundValuationRecordMapper.selectByFundIdAndDate(fundId, LocalDate.now());
+        if (record == null) {
+            return null;
+        }
+        FundValuationResponse response = new FundValuationResponse();
+        response.setFundId(record.getFundId());
+        response.setEstimatedChangePercent(record.getEstimatedChangePercent());
+        response.setHoldingCount(record.getHoldingCount());
+        response.setSuccessCount(record.getSuccessCount());
+        response.setFailCount(record.getFailCount());
+        response.setTotalWeight(record.getTotalWeight());
+        response.setAllSuccess(record.getFailCount() == null || record.getFailCount() == 0);
+        response.setCacheTime(record.getUpdateTime() != null
+                ? record.getUpdateTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                : record.getCreateTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+        if (record.getQuotesJson() != null) {
+            response.setQuotes(JSON.parseArray(record.getQuotesJson(), StockQuote.class));
+        }
+        return response;
+    }
 
     /**
      * 按用户ID查询自选基金列表

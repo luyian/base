@@ -18,7 +18,6 @@ echo "分支: $BRANCH"
 # 拉取代码
 if [ "$SKIP_GIT" = "skip" ]; then
     echo "跳过 git 操作，使用已有代码..."
-    cd $PROJECT_DIR
 elif [ -d "$PROJECT_DIR" ]; then
     echo "项目目录已存在，正在更新代码..."
     cd $PROJECT_DIR
@@ -74,7 +73,7 @@ docker run --rm \
 
 # Docker 镜像打包（不需要网络）
 echo "=== Docker 镜像打包 ==="
-docker build --network=host -t b
+docker build --network=host -t base-app -f "$PROJECT_PATH/Dockerfile" "$PROJECT_PATH"
 
 echo "Docker镜像构建完成！"
 docker images | grep base-app

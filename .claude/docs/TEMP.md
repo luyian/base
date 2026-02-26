@@ -125,6 +125,10 @@
 - 实时估值：iTick 批量报价接口（每次最多 3 个），CompletableFuture 并发请求
 - 加权涨跌幅：Σ(股票涨跌幅 × 权重) / 100
 - Redis 缓存估值（key: `fund:valuation:{fundId}`，1 小时过期），列表页显示缓存数据，详情页实时获取
+- **估值持久化**：15:30 后获取的估值写入 `stk_fund_valuation_record` 表（fund_id + trade_date 唯一），列表页优先读取当日数据库记录
+- 新增文件：`FundValuationRecord.java`、`FundValuationRecordMapper.java`、`db/fund_valuation_record.sql`
+- 前端编辑基金时，持仓股票名称回显：`handleEdit` 同时保存 `stockName`，并预填充 `stockOptions`
+- 关闭详情弹窗后自动刷新基金列表（`@close="fetchFundList"`）
 - API：CRUD `/stock/fund/*`、估值 `/stock/fund/{id}/valuation`、自选 `/stock/fund/watchlist/*`
 
 ---

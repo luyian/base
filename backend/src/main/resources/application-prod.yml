@@ -51,6 +51,11 @@ jwt:
 knife4j:
   enable: false
 
+# 验证码配置
+captcha:
+  enabled: true
+  expiration: 300
+
 # 文件上传配置
 file:
   upload:

@@ -31,7 +31,7 @@
     <!-- 操作按钮 -->
     <el-card class="table-card" shadow="never">
       <template #header>
-        <el-button type="primary" @click="handleAdd">新增配置</el-button>
+        <el-button v-permission="'system:export:config:add'" type="primary" @click="handleAdd">新增配置</el-button>
       </template>
 
       <!-- 表格 -->
@@ -53,9 +53,9 @@
         <el-table-column prop="createTime" label="创建时间" width="170" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="primary" link @click="handleFields(row)">字段配置</el-button>
-            <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'system:export:config:edit'" type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'system:export:config:query'" type="primary" link @click="handleFields(row)">字段配置</el-button>
+            <el-button v-permission="'system:export:config:delete'" type="danger" link @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

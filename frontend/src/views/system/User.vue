@@ -208,6 +208,7 @@ import {
   assignRoles,
   getUserRoleIds
 } from '@/api/user'
+import { listAllRoles } from '@/api/role'
 
 // 查询表单
 const queryForm = reactive({
@@ -397,8 +398,9 @@ const handleAssignRole = async (row) => {
     // 获取用户已有的角色ID列表
     const { data } = await getUserRoleIds(row.id)
     selectedRoleIds.value = data
-    // TODO: 获取所有角色列表
-    allRoles.value = []
+    // 获取所有角色列表
+    const { data: roles } = await listAllRoles()
+    allRoles.value = roles
     roleDialogVisible.value = true
   } catch (error) {
     ElMessage.error('获取角色信息失败')

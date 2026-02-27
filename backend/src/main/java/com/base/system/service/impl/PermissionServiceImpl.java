@@ -12,8 +12,10 @@ import com.base.system.dto.permission.PermissionResponse;
 import com.base.system.dto.permission.PermissionSaveRequest;
 import com.base.system.entity.Permission;
 import com.base.system.entity.RolePermission;
+import com.base.system.entity.SysUser;
 import com.base.system.mapper.PermissionMapper;
 import com.base.system.mapper.RolePermissionMapper;
+import com.base.system.mapper.SysUserMapper;
 import com.base.system.service.PermissionService;
 import com.base.system.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permission> implements PermissionService {
 
     private final RolePermissionMapper rolePermissionMapper;
+    private final SysUserMapper userMapper;
 
     @Override
     public List<PermissionResponse> treePermissions(PermissionQueryRequest request) {
@@ -138,19 +141,21 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
 
     @Override
     public List<PermissionResponse> getCurrentUserMenuTree() {
-        // 获取当前用户名
+        // 获取当前用户
         String username = SecurityUtils.getCurrentUsername();
+        SysUser user = userMapper.selectOne(new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getUsername, username));
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+        }
 
-        // TODO: 根据用户角色查询权限，这里暂时返回所有菜单
-        // 实际应该根据用户的角色查询对应的权限
-        LambdaQueryWrapper<Permission> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(Permission::getType, 1, 2) // 查询目录和菜单（1-目录，2-菜单）
-                .eq(Permission::getStatus, 1) // 只查询正常状态
-                .eq(Permission::getVisible, 1) // 只查询可见的
-                .orderByAsc(Permission::getSort)
-                .orderByDesc(Permission::getCreateTime);
-
-        List<Permission> permissionList = list(wrapper);
+        // 根据用户ID查询权限，过滤出目录和菜单
+        List<Permission> permissionList = baseMapper.selectPermissionsByUserId(user.getId()).stream()
+                .filter(p -> p.getType() == 1 || p.getType() == 2)
+                .filter(p -> p.getStatus() == 1)
+                .filter(p -> p.getVisible() == 1)
+                .sorted(java.util.Comparator.comparing(Permission::getSort))
+                .collect(Collectors.toList());
 
         // 转换为树形结构
         return buildPermissionTree(permissionList, 0L);

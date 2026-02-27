@@ -54,7 +54,7 @@
           <template #default="{ row }">
             <el-button v-permission="'stock:watchlist:score'" type="warning" link :icon="Star" @click="handleScore(row)" :loading="row.scoring">打分</el-button>
             <el-button type="primary" link :icon="TrendCharts" @click="handleViewTrend(row)">趋势</el-button>
-            <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'stock:watchlist:delete'" type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

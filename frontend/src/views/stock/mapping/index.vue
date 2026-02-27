@@ -2,7 +2,7 @@
   <div class="mapping-container">
     <!-- 操作栏 -->
     <el-card class="action-card" shadow="never">
-      <el-button type="primary" :icon="Plus" @click="handleAdd">添加映射配置</el-button>
+      <el-button v-permission="'stock:mapping:add'" type="primary" :icon="Plus" @click="handleAdd">添加映射配置</el-button>
     </el-card>
 
     <!-- 表格 -->
@@ -22,8 +22,8 @@
         <el-table-column prop="updateTime" label="更新时间" width="180" align="center" />
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'stock:mapping:edit'" type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'stock:mapping:delete'" type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

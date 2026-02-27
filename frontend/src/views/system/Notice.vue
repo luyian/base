@@ -41,8 +41,9 @@
     <!-- 操作栏和表格 -->
     <el-card class="table-card">
       <div class="toolbar">
-        <el-button type="primary" :icon="Plus" @click="handleAdd">新增通知</el-button>
+        <el-button v-permission="'system:notice:add'" type="primary" :icon="Plus" @click="handleAdd">新增通知</el-button>
         <el-button
+          v-permission="'system:notice:delete'"
           type="danger"
           :icon="Delete"
           :disabled="selectedIds.length === 0"
@@ -88,9 +89,10 @@
         <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" :icon="View" @click="handleView(row)">查看详情</el-button>
-            <el-button link type="primary" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'system:notice:edit'" link type="primary" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
             <el-button
           v-if="row.status === 0"
+              v-permission="'system:notice:edit'"
               link
               type="success"
               :icon="Promotion"
@@ -98,7 +100,7 @@
             >
               发布
             </el-button>
-            <el-button link type="danger" :icon="Delete" @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'system:notice:delete'" link type="danger" :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

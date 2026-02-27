@@ -37,9 +37,9 @@
     <el-card class="table-card">
       <div class="toolbar">
         <div>
-          <el-button type="danger" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除</el-button>
-          <el-button type="danger" @click="handleClear">清空日志</el-button>
-          <el-button type="success" @click="handleExport" :loading="exporting">导出</el-button>
+          <el-button v-permission="'log:login:delete'" type="danger" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除</el-button>
+          <el-button v-permission="'log:login:delete'" type="danger" @click="handleClear">清空日志</el-button>
+          <el-button v-permission="'log:login:list'" type="success" @click="handleExport" :loading="exporting">导出</el-button>
         </div>
       </div>
 
@@ -68,7 +68,7 @@
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" @click="handleView(row)">详情</el-button>
-            <el-button link type="danger" @click="handleDelete(row.id)">删除</el-button>
+            <el-button v-permission="'log:login:delete'" link type="danger" @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

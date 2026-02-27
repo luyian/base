@@ -26,10 +26,10 @@
         <el-form-item>
           <el-button type="primary" :icon="Search" @click="handleQuery">查询</el-button>
           <el-button :icon="Refresh" @click="handleReset">重置</el-button>
-          <el-button type="warning" :icon="Download" @click="handleOpenSyncDialog">同步股票</el-button>
-          <el-button type="success" :icon="Download" @click="handleOpenSyncAllDialog">拉取K线</el-button>
-          <el-button type="info" :icon="InfoFilled" @click="handleOpenSyncInfoDialog">同步详情</el-button>
-          <el-button type="danger" :icon="Warning" @click="handleOpenFailureDialog">失败记录</el-button>
+          <el-button v-permission="'stock:sync:execute'" type="warning" :icon="Download" @click="handleOpenSyncDialog">同步股票</el-button>
+          <el-button v-permission="'stock:sync:execute'" type="success" :icon="Download" @click="handleOpenSyncAllDialog">拉取K线</el-button>
+          <el-button v-permission="'stock:sync:execute'" type="info" :icon="InfoFilled" @click="handleOpenSyncInfoDialog">同步详情</el-button>
+          <el-button v-permission="'stock:sync:failure:query'" type="danger" :icon="Warning" @click="handleOpenFailureDialog">失败记录</el-button>
         </el-form-item>
       </el-form>
     </el-card>

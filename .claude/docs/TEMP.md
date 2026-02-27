@@ -133,6 +133,24 @@
 
 ---
 
+## 用户管理
+
+### 分配角色修复（2026-02-27）
+- 修复分配角色弹窗显示空白的问题：`User.vue` 的 `handleAssignRole` 方法原先未调用角色列表接口，直接赋空数组
+- 导入 `listAllRoles` 并在打开弹窗前调用，填充 `allRoles` 数据
+
+### 按钮权限控制补全（2026-02-27）
+- 为所有缺少 `v-permission` 指令的页面按钮补上权限控制，没有权限的按钮不渲染
+- 涉及页面：Enum、LoginLog、Config、ExportConfig、Region、Permission、OperationLog、Department、Notice、stock/index、token、mapping、watchlist、recommend/rule
+- 权限码与后端 `@PreAuthorize` 注解保持一致
+
+### 菜单按权限渲染修复（2026-02-27）
+- 修复 `PermissionServiceImpl.getCurrentUserMenuTree()` 未按用户权限过滤菜单的问题
+- 原实现直接查询所有菜单返回，改为通过 `selectPermissionsByUserId` 查询当前用户拥有的权限，再过滤出目录和菜单
+- 新增注入 `SysUserMapper`，用于根据用户名查询用户 ID
+
+---
+
 ## Docker 部署
 
 - 构建脚本 `remote-git-build.sh`：宿主机上 git clone docker 分支 → npm build → mvn package → docker build

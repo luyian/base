@@ -35,7 +35,7 @@
     <!-- 操作栏 -->
     <el-card class="table-card">
       <div class="toolbar">
-        <el-button type="primary" :icon="Plus" @click="handleAdd">新增部门</el-button>
+        <el-button v-permission="'system:dept:add'" type="primary" :icon="Plus" @click="handleAdd">新增部门</el-button>
         <el-button :icon="Expand" @click="handleExpandAll">展开全部</el-button>
         <el-button :icon="Fold" @click="handleCollapseAll">折叠全部</el-button>
       </div>
@@ -66,13 +66,13 @@
         <el-table-column prop="createTime" label="创建时间" min-width="160" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="Plus" @click="handleAddChild(row)">
+            <el-button v-permission="'system:dept:add'" type="primary" link :icon="Plus" @click="handleAddChild(row)">
               新增
             </el-button>
-            <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">
+            <el-button v-permission="'system:dept:edit'" type="primary" link :icon="Edit" @click="handleEdit(row)">
               编辑
             </el-button>
-            <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">
+            <el-button v-permission="'system:dept:delete'" type="danger" link :icon="Delete" @click="handleDelete(row)">
               删除
             </el-button>
           </template>

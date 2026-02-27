@@ -31,8 +31,8 @@
     <!-- 操作栏 -->
     <el-card class="table-card">
       <div class="toolbar">
-        <el-button type="primary" @click="handleAdd">新增配置</el-button>
-        <el-button type="danger" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除</el-button>
+        <el-button v-permission="'system:config:add'" type="primary" @click="handleAdd">新增配置</el-button>
+        <el-button v-permission="'system:config:delete'" type="danger" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除</el-button>
         <el-button type="success" @click="handleRefreshCache">刷新缓存</el-button>
       </div>
 
@@ -65,8 +65,8 @@
         <el-table-column prop="createTime" label="创建时间" width="180" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="danger" link @click="handleDelete(row.id)">删除</el-button>
+            <el-button v-permission="'system:config:edit'" type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'system:config:delete'" type="danger" link @click="handleDelete(row.id)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

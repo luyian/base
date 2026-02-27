@@ -16,7 +16,7 @@
     <!-- 操作栏 -->
     <el-card class="table-card">
       <div class="toolbar">
-        <el-button type="primary" :icon="Plus" @click="handleAdd">新增枚举类型</el-button>
+        <el-button v-permission="'system:enum:add'" type="primary" :icon="Plus" @click="handleAdd">新增枚举类型</el-button>
         <el-button type="success" :icon="Refresh" @click="handleRefreshCache">刷新缓存</el-button>
       </div>
 
@@ -32,8 +32,8 @@
         <el-table-column prop="createTime" label="创建时间" min-width="180" />
         <el-table-column label="操作" min-width="180" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
-            <el-button link type="danger" :icon="Delete" @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'system:enum:edit'" link type="primary" :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'system:enum:delete'" link type="danger" :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

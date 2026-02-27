@@ -2,11 +2,11 @@
   <div class="token-container">
     <!-- 操作栏 -->
     <el-card class="action-card" shadow="never">
-      <el-button type="primary" :icon="Plus" @click="handleAdd">添加Token</el-button>
-      <el-button type="danger" :icon="Delete" @click="handleBatchDelete" :disabled="selectedIds.length === 0">
+      <el-button v-permission="'stock:token:add'" type="primary" :icon="Plus" @click="handleAdd">添加Token</el-button>
+      <el-button v-permission="'stock:token:delete'" type="danger" :icon="Delete" @click="handleBatchDelete" :disabled="selectedIds.length === 0">
         批量删除
       </el-button>
-      <el-button type="warning" :icon="Refresh" @click="handleResetDaily">重置每日计数</el-button>
+      <el-button v-permission="'stock:token:edit'" type="warning" :icon="Refresh" @click="handleResetDaily">重置每日计数</el-button>
     </el-card>
 
     <!-- 表格 -->
@@ -42,20 +42,22 @@
         </el-table-column>
         <el-table-column label="操作" width="200" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'stock:token:edit'" type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
             <el-button
               v-if="row.status === 1"
+              v-permission="'stock:token:edit'"
               type="warning"
               link
               @click="handleDisable(row)"
             >作废</el-button>
             <el-button
               v-else
+              v-permission="'stock:token:edit'"
               type="success"
               link
               @click="handleEnable(row)"
             >启用</el-button>
-            <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'stock:token:delete'" type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>

@@ -47,9 +47,10 @@
         <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
         <el-table-column label="操作" width="250" align="center" fixed="right">
           <template #default="{ row }">
-            <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'stock:rule:edit'" type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
             <el-button
               v-if="row.status === 1"
+              v-permission="'stock:rule:edit'"
               type="warning"
               link
               :icon="Close"
@@ -59,6 +60,7 @@
             </el-button>
             <el-button
               v-else
+              v-permission="'stock:rule:edit'"
               type="success"
               link
               :icon="Check"

@@ -10,7 +10,7 @@ nginx
 exec java \
     -Djava.security.egd=file:/dev/./urandom \
     -Dspring.profiles.active=docker \
-    -DDB_HOST=${DB_HOST:-127.0.0.1} \
+    -DDB_HOST=${DB_HOST:-119.45.176.101} \
     -DDB_PORT=${DB_PORT:-13306} \
     -DDB_NAME=${DB_NAME:-base_system} \
     -DDB_USER=${DB_USER:-root} \

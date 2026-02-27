@@ -1,6 +1,27 @@
 import request from '@/utils/request'
 
 /**
+ * 获取飞书 OAuth 授权地址
+ */
+export function getFeishuAuthUrl() {
+    return request({
+        url: '/system/feishu/oauth/url',
+        method: 'get'
+    })
+}
+
+/**
+ * 飞书 OAuth 回调处理
+ */
+export function handleFeishuCallback(data) {
+    return request({
+        url: '/system/feishu/oauth/callback',
+        method: 'post',
+        data
+    })
+}
+
+/**
  * 绑定飞书账号
  */
 export function bindFeishu(data) {

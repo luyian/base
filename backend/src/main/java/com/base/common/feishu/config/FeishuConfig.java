@@ -44,4 +44,9 @@ public class FeishuConfig {
      * 请求失败重试次数
      */
     private Integer retry = 3;
+
+    /**
+     * OAuth 授权回调地址
+     */
+    private String redirectUri;
 }

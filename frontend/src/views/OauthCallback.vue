@@ -15,6 +15,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { Loading, CircleCloseFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import { handleGithubCallback } from '@/api/oauth'
+import { handleFeishuCallback } from '@/api/feishu'
 
 const router = useRouter()
 const route = useRoute()
@@ -27,28 +28,36 @@ const goLogin = () => {
   router.push('/login')
 }
 
-onMounted(async () => {
-  const code = route.query.code
-  const state = route.query.state
-
-  if (!code || !state) {
-    message.value = '授权参数缺失，请重新登录'
+/**
+ * 处理飞书 OAuth 回调
+ * 飞书绑定场景：用户已登录，回调后绑定到当前账号，跳回个人中心
+ */
+const processFeishuCallback = async (code, state) => {
+  try {
+    await handleFeishuCallback({ code, state })
+    message.value = '绑定成功，正在跳转...'
+    setTimeout(() => router.push('/profile'), 500)
+  } catch (err) {
+    message.value = err.message || '飞书绑定失败，请重试'
     error.value = true
-    return
   }
+}
 
+/**
+ * 处理 GitHub OAuth 回调
+ * GitHub 登录场景：可能未登录，回调后登录或跳转绑定页
+ */
+const processGithubCallback = async (code, state) => {
   try {
     const res = await handleGithubCallback({ code, state })
     const data = res.data
 
     if (!data.needBind) {
-      // 已绑定，直接登录
       userStore.setToken(data.token)
       await userStore.loadUserInfo()
       message.value = '登录成功，正在跳转...'
       setTimeout(() => router.push('/'), 500)
     } else {
-      // 未绑定，跳转绑定页
       router.push({
         path: '/oauth/bind',
         query: {
@@ -61,6 +70,24 @@ onMounted(async () => {
   } catch (err) {
     message.value = err.message || '授权处理失败，请重试'
     error.value = true
+  }
+}
+
+onMounted(async () => {
+  const code = route.query.code
+  const state = route.query.state
+  const platform = route.query.platform
+
+  if (!code || !state) {
+    message.value = '授权参数缺失，请重新登录'
+    error.value = true
+    return
+  }
+
+  if (platform === 'feishu') {
+    await processFeishuCallback(code, state)
+  } else {
+    await processGithubCallback(code, state)
   }
 })
 </script>

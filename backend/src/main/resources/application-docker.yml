@@ -93,6 +93,7 @@ feishu:
   base-url: https://open.feishu.cn/open-apis
   timeout: 30000
   retry: 3
+  redirect-uri: http://119.45.176.101/oauth/callback?platform=feishu
 
 oauth:
   enabled: false

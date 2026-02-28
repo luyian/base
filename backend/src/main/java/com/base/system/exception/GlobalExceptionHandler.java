@@ -1,5 +1,6 @@
 package com.base.system.exception;
 
+import com.base.common.exception.BusinessException;
 import com.base.common.result.Result;
 import com.base.common.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;

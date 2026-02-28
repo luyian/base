@@ -48,23 +48,24 @@ service.interceptors.response.use(
     console.error('响应错误:', error)
 
     if (error.response) {
+      const bodyMessage = error.response.data?.message
       switch (error.response.status) {
         case 401:
-          ElMessage.error('未授权，请重新登录')
+          ElMessage.error(bodyMessage || '未授权，请重新登录')
           localStorage.removeItem('token')
           router.push('/login')
           break
         case 403:
-          ElMessage.error('拒绝访问')
+          ElMessage.error(bodyMessage || '拒绝访问')
           break
         case 404:
-          ElMessage.error('请求的资源不存在')
+          ElMessage.error(bodyMessage || '请求的资源不存在')
           break
         case 500:
-          ElMessage.error('服务器内部错误')
+          ElMessage.error(bodyMessage || '服务器内部错误')
           break
         default:
-          ElMessage.error(error.response.data.message || '请求失败')
+          ElMessage.error(bodyMessage || '请求失败')
       }
     } else {
       ElMessage.error('网络连接失败')

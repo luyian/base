@@ -116,7 +116,7 @@ public class FieldMappingProcessor {
             }
             return LocalDateTime.ofInstant(
                     java.time.Instant.ofEpochMilli(timestamp),
-                    java.time.ZoneId.systemDefault()
+                    java.time.ZoneId.of("Asia/Shanghai")
             ).toLocalDate();
         }
         String format = dateFormat != null ? dateFormat : DEFAULT_DATE_FORMAT;
@@ -139,7 +139,7 @@ public class FieldMappingProcessor {
             }
             return LocalDateTime.ofInstant(
                     java.time.Instant.ofEpochMilli(timestamp),
-                    java.time.ZoneId.systemDefault()
+                    java.time.ZoneId.of("Asia/Shanghai")
             );
         }
         String format = dateFormat != null ? dateFormat : DEFAULT_DATETIME_FORMAT;
@@ -166,7 +166,7 @@ public class FieldMappingProcessor {
             }
             return LocalDateTime.ofInstant(
                     java.time.Instant.ofEpochMilli(timestamp),
-                    java.time.ZoneId.systemDefault()
+                    java.time.ZoneId.of("Asia/Shanghai")
             ).toLocalDate();
         }
         throw new IllegalArgumentException("timestamp 类型需要数字值: " + value);

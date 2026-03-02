@@ -151,12 +151,12 @@ public class WatchlistServiceImpl implements WatchlistService {
                     JSONObject item = dataArray.getJSONObject(i);
                     MinuteKlineResponse.MinuteKlineItem klineItem = new MinuteKlineResponse.MinuteKlineItem();
 
-                    // 解析时间戳
+                    // 解析时间戳（统一使用东八区时区）
                     Long timestamp = item.getLong("t");
                     if (timestamp != null) {
                         klineItem.setTimestamp(timestamp);
                         String tradeTime = Instant.ofEpochMilli(timestamp)
-                                .atZone(ZoneId.systemDefault())
+                                .atZone(ZoneId.of("Asia/Shanghai"))
                                 .format(TIME_FORMATTER);
                         klineItem.setTradeTime(tradeTime);
                     }

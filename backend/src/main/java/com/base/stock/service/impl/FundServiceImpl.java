@@ -365,8 +365,8 @@ public class FundServiceImpl implements FundService {
         response.setTotalWeight(record.getTotalWeight());
         response.setAllSuccess(record.getFailCount() == null || record.getFailCount() == 0);
         response.setCacheTime(record.getUpdateTime() != null
-                ? record.getUpdateTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-                : record.getCreateTime().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+                ? record.getUpdateTime().atZone(java.time.ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli()
+                : record.getCreateTime().atZone(java.time.ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli());
         if (record.getQuotesJson() != null) {
             response.setQuotes(JSON.parseArray(record.getQuotesJson(), StockQuote.class));
         }

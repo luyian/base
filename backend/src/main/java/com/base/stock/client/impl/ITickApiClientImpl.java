@@ -86,7 +86,7 @@ public class ITickApiClientImpl implements ITickApiClient {
         Long et = null;
         if (endDate != null) {
             et = endDate.atTime(23, 59, 59)
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(ZoneId.of("Asia/Shanghai"))
                     .toInstant()
                     .toEpochMilli();
         }
@@ -198,7 +198,7 @@ public class ITickApiClientImpl implements ITickApiClient {
         Long et = null;
         if (endDate != null) {
             et = endDate.atTime(23, 59, 59)
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(ZoneId.of("Asia/Shanghai"))
                     .toInstant()
                     .toEpochMilli();
         }
@@ -357,7 +357,7 @@ public class ITickApiClientImpl implements ITickApiClient {
         Long et = null;
         if (endDate != null) {
             et = endDate.atTime(23, 59, 59)
-                    .atZone(ZoneId.systemDefault())
+                    .atZone(ZoneId.of("Asia/Shanghai"))
                     .toInstant()
                     .toEpochMilli();
         }

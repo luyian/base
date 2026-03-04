@@ -176,4 +176,22 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
 }
+
+@media (max-width: 768px) {
+  .stock-detail-container {
+    padding: 0;
+  }
+  .card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  :deep(.el-descriptions__body .el-descriptions__table tr) {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  :deep(.el-descriptions__body .el-descriptions__table tr td) {
+    flex: 1 1 100%;
+    display: block;
+  }
+}
 </style>

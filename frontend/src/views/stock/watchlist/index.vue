@@ -437,4 +437,21 @@ onMounted(() => {
   background: #f5f7fa;
   border-radius: 4px;
 }
+
+@media (max-width: 768px) {
+  .watchlist-container {
+    padding: 0;
+  }
+  .action-card .el-card__body,
+  .table-card .el-card__body {
+    padding: 12px;
+  }
+  .trend-dialog-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .trend-dialog-actions {
+    flex-wrap: wrap;
+  }
+}
 </style>

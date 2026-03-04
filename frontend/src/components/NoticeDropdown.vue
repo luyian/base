@@ -347,4 +347,11 @@ onUnmounted(() => {
   background-color: #f5f7fa;
   border-radius: 4px;
 }
+
+@media (max-width: 768px) {
+  .notice-dropdown-body {
+    min-width: 280px;
+    max-width: 95vw;
+  }
+}
 </style>

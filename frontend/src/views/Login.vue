@@ -531,4 +531,33 @@ const handleGithubLogin = async () => {
     padding: 40px 32px 28px;
   }
 }
+
+@media (max-width: 480px) {
+  .login-panel {
+    padding: 16px;
+  }
+
+  .login-box {
+    width: 100%;
+    max-width: 360px;
+    padding: 28px 20px 24px;
+  }
+
+  .login-title {
+    font-size: 20px;
+  }
+
+  .login-subtitle {
+    font-size: 13px;
+  }
+
+  .login-button {
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .login-form :deep(.el-input__wrapper) {
+    min-height: 44px;
+  }
+}
 </style>

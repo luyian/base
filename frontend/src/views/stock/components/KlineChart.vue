@@ -305,4 +305,10 @@ defineExpose({
   width: 100%;
   height: 500px;
 }
+
+@media (max-width: 768px) {
+  .kline-chart {
+    height: 320px;
+  }
+}
 </style>

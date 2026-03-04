@@ -97,4 +97,14 @@ onMounted(() => {
 .table-card {
   margin-bottom: 15px;
 }
+
+@media (max-width: 768px) {
+  .mapping-container {
+    padding: 0;
+  }
+  .action-card .el-card__body,
+  .table-card .el-card__body {
+    padding: 12px;
+  }
+}
 </style>

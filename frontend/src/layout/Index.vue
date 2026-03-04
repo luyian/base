@@ -1,14 +1,21 @@
 <template>
-  <div class="layout-container">
+  <div class="layout-container" :class="{ 'layout-mobile': isMobile, 'sidebar-open': isMobile && sidebarOpen }">
+    <!-- 移动端遮罩 -->
+    <div
+      v-if="isMobile && sidebarOpen"
+      class="sidebar-mask"
+      aria-hidden="true"
+      @click="sidebarOpen = false"
+    />
     <!-- 侧边栏 -->
-    <el-aside :width="isCollapse ? '64px' : '200px'" class="layout-aside">
+    <el-aside :width="isCollapse && !isMobile ? '64px' : '200px'" class="layout-aside">
       <div class="logo">
         <span v-if="!isCollapse">后台管理系统</span>
         <span v-else>后台</span>
       </div>
       <el-menu
         :default-active="activeMenu"
-        :collapse="isCollapse"
+        :collapse="isCollapse && !isMobile"
         :unique-opened="true"
         @select="handleMenuSelect"
       >
@@ -75,7 +82,10 @@
       <!-- 顶部栏 -->
       <el-header class="layout-header">
         <div class="header-left">
-          <el-icon class="collapse-icon" @click="toggleCollapse">
+          <el-icon v-if="isMobile" class="collapse-icon" @click="sidebarOpen = !sidebarOpen">
+            <Menu />
+          </el-icon>
+          <el-icon v-else class="collapse-icon" @click="toggleCollapse">
             <Expand v-if="isCollapse" />
             <Fold v-else />
           </el-icon>
@@ -85,7 +95,7 @@
           <el-dropdown @command="handleCommand">
             <span class="user-info">
               <el-icon><User /></el-icon>
-              <span>{{ userInfo?.nickname || userInfo?.username || '管理员' }}</span>
+              <span class="user-name">{{ isMobile ? '管理' : (userInfo?.nickname || userInfo?.username || '管理员') }}</span>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
@@ -106,10 +116,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { HomeFilled, Setting, User, Expand, Fold, Document, Bell } from '@element-plus/icons-vue'
+import { HomeFilled, Setting, User, Expand, Fold, Menu, Document, Bell } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import NoticeDropdown from '@/components/NoticeDropdown.vue'
 
@@ -117,8 +127,41 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-// 侧边栏折叠状态
+// 侧边栏折叠状态（桌面端）
 const isCollapse = ref(false)
+
+// 移动端侧栏展开状态
+const sidebarOpen = ref(false)
+
+// 是否移动端（≤768px）
+const isMobile = ref(false)
+const mobileQuery = typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)') : null
+
+function updateMobile() {
+  isMobile.value = mobileQuery ? mobileQuery.matches : false
+  if (isMobile.value) {
+    sidebarOpen.value = false
+  }
+}
+
+onMounted(() => {
+  if (mobileQuery) {
+    updateMobile()
+    mobileQuery.addEventListener('change', updateMobile)
+  }
+})
+
+onUnmounted(() => {
+  if (mobileQuery) {
+    mobileQuery.removeEventListener('change', updateMobile)
+  }
+})
+
+watch(() => route.path, () => {
+  if (isMobile.value) {
+    sidebarOpen.value = false
+  }
+})
 
 // 用户信息
 const userInfo = computed(() => userStore.userInfo)
@@ -141,6 +184,9 @@ const toggleCollapse = () => {
 const handleMenuSelect = (index) => {
   if (index && index.startsWith('/')) {
     router.push(index)
+    if (isMobile.value) {
+      sidebarOpen.value = false
+    }
   }
 }
 
@@ -268,5 +314,36 @@ const handleCommand = (command) => {
 .layout-content {
   background-color: #f0f2f5;
   padding: 20px;
+}
+
+/* 移动端：侧栏抽屉 + 遮罩 */
+.sidebar-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  transition: opacity 0.3s;
+}
+
+.layout-mobile .layout-aside {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 1001;
+  width: 260px !important;
+  max-width: 80vw;
+  transform: translateX(-100%);
+  transition: transform 0.3s;
+}
+
+.layout-mobile.sidebar-open .layout-aside {
+  transform: translateX(0);
+}
+
+@media (max-width: 768px) {
+  .layout-header {
+    padding: 0 12px;
+  }
 }
 </style>

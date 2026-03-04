@@ -399,4 +399,10 @@ defineExpose({
   width: 100%;
   height: 500px;
 }
+
+@media (max-width: 768px) {
+  .minute-kline-chart {
+    height: 320px;
+  }
+}
 </style>

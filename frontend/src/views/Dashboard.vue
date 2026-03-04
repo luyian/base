@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
     <el-row :gutter="20">
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon user">
@@ -14,7 +14,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon role">
@@ -27,7 +27,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon permission">
@@ -40,7 +40,7 @@
           </div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="24" :sm="12" :md="6">
         <el-card class="stat-card">
           <div class="stat-content">
             <div class="stat-icon dept">
@@ -56,7 +56,7 @@
     </el-row>
 
     <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card>
           <template #header>
             <span>最近登录</span>
@@ -68,7 +68,7 @@
           </el-table>
         </el-card>
       </el-col>
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card>
           <template #header>
             <span>系统通知</span>

@@ -222,4 +222,17 @@ onMounted(() => {
 .mapping-editor {
   width: 100%;
 }
+
+@media (max-width: 768px) {
+  .mapping-edit-container {
+    padding: 12px;
+  }
+  .card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .mapping-edit-container :deep(.el-form) {
+    max-width: 100%;
+  }
+}
 </style>

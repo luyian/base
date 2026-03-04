@@ -361,4 +361,14 @@ onMounted(() => {
 .table-card {
   min-height: 600px;
 }
+
+@media (max-width: 768px) {
+  .rule-container {
+    padding: 0;
+  }
+  .action-card .el-card__body,
+  .table-card .el-card__body {
+    padding: 12px;
+  }
+}
 </style>

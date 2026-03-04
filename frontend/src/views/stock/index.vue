@@ -566,4 +566,14 @@ onMounted(() => {
 .pe-high {
   color: #f56c6c;
 }
+
+@media (max-width: 768px) {
+  .stock-container {
+    padding: 0;
+  }
+  .search-card .el-card__body,
+  .table-card .el-card__body {
+    padding: 12px;
+  }
+}
 </style>

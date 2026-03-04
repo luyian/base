@@ -304,4 +304,14 @@ defineExpose({
   display: flex;
   align-items: center;
 }
+
+@media (max-width: 768px) {
+  .kline-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .kline-toolbar .el-radio-group {
+    flex-wrap: wrap;
+  }
+}
 </style>

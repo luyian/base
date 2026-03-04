@@ -737,4 +737,17 @@ const getChangeClass = (value) => {
 .total-weight {
   color: #606266;
 }
+
+@media (max-width: 768px) {
+  .fund-container {
+    padding: 0;
+  }
+  .action-card .el-card__body {
+    padding: 12px;
+  }
+  .fund-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}
 </style>

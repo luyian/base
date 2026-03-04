@@ -1,8 +1,8 @@
-package com.base.stock.fund.service;
+package com.base.stock.service;
 
-import com.base.stock.fund.dto.FundConfigRequest;
-import com.base.stock.fund.dto.FundValuationResponse;
-import com.base.stock.fund.entity.FundConfig;
+import com.base.stock.dto.FundConfigRequest;
+import com.base.stock.dto.FundValuationResponse;
+import com.base.stock.entity.FundConfig;
 
 import java.util.List;
 

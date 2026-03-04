@@ -1,7 +1,7 @@
-package com.base.stock.fund.mapper;
+package com.base.stock.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.base.stock.fund.entity.FundConfig;
+import com.base.stock.entity.FundConfig;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

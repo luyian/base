@@ -1,11 +1,11 @@
-package com.base.stock.recommend.engine;
+package com.base.stock.engine;
 
 import com.base.stock.entity.StockInfo;
 import com.base.stock.entity.StockKline;
-import com.base.stock.recommend.entity.ScoreRule;
-import com.base.stock.recommend.strategy.ScoreContext;
-import com.base.stock.recommend.strategy.ScoreResult;
-import com.base.stock.recommend.strategy.ScoreStrategy;
+import com.base.stock.entity.ScoreRule;
+import com.base.stock.strategy.ScoreContext;
+import com.base.stock.strategy.ScoreResult;
+import com.base.stock.strategy.ScoreStrategy;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

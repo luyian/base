@@ -1,8 +1,8 @@
 package com.base.message.content;
 
-import com.base.stock.fund.dto.FundValuationResponse;
-import com.base.stock.fund.dto.StockQuote;
-import com.base.stock.fund.service.FundService;
+import com.base.stock.dto.FundValuationResponse;
+import com.base.stock.dto.StockQuote;
+import com.base.stock.service.FundService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

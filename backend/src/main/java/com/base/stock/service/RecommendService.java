@@ -1,9 +1,9 @@
-package com.base.stock.recommend.service;
+package com.base.stock.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.base.stock.recommend.dto.RecommendQueryRequest;
-import com.base.stock.recommend.entity.RecommendStock;
+import com.base.stock.dto.RecommendQueryRequest;
+import com.base.stock.entity.RecommendStock;
 
 import java.time.LocalDate;
 import java.util.List;

@@ -1,16 +1,16 @@
-package com.base.stock.recommend.controller;
+package com.base.stock.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
 import com.base.common.util.SecurityUtils;
 import com.base.stock.entity.StockInfo;
 import com.base.stock.mapper.StockInfoMapper;
-import com.base.stock.recommend.dto.RecommendQueryRequest;
-import com.base.stock.recommend.entity.RecommendStock;
-import com.base.stock.recommend.entity.ScoreRecord;
-import com.base.stock.recommend.mapper.ScoreRecordMapper;
-import com.base.stock.recommend.service.RecommendService;
-import com.base.stock.recommend.service.ScoreService;
+import com.base.stock.dto.RecommendQueryRequest;
+import com.base.stock.entity.RecommendStock;
+import com.base.stock.entity.ScoreRecord;
+import com.base.stock.mapper.ScoreRecordMapper;
+import com.base.stock.service.RecommendService;
+import com.base.stock.service.ScoreService;
 import com.base.stock.service.WatchlistService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import io.swagger.annotations.Api;

@@ -1,10 +1,10 @@
-package com.base.stock.recommend.strategy.impl;
+package com.base.stock.strategy.impl;
 
 import com.base.stock.entity.StockKline;
-import com.base.stock.recommend.entity.ScoreRule;
-import com.base.stock.recommend.strategy.ScoreContext;
-import com.base.stock.recommend.strategy.ScoreResult;
-import com.base.stock.recommend.strategy.ScoreStrategy;
+import com.base.stock.entity.ScoreRule;
+import com.base.stock.strategy.ScoreContext;
+import com.base.stock.strategy.ScoreResult;
+import com.base.stock.strategy.ScoreStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

@@ -286,9 +286,9 @@ VALUES ('RSI_OVERSOLD', 'RSI超卖', 'RSI指标低于30，表明超卖', 'TECHNI
 
 **步骤2：创建策略实现类**
 ```java
-package com.base.stock.recommend.strategy.impl;
+package com.base.stock.strategy.impl;
 
-import com.base.stock.recommend.strategy.ScoreStrategy;
+import com.base.stock.strategy.ScoreStrategy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 

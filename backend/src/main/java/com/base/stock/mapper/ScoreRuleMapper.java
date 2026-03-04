@@ -1,7 +1,7 @@
-package com.base.stock.recommend.mapper;
+package com.base.stock.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.base.stock.recommend.entity.ScoreRule;
+import com.base.stock.entity.ScoreRule;
 import org.apache.ibatis.annotations.Mapper;
 
 /**

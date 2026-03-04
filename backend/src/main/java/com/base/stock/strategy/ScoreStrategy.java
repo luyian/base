@@ -1,6 +1,6 @@
-package com.base.stock.recommend.strategy;
+package com.base.stock.strategy;
 
-import com.base.stock.recommend.entity.ScoreRule;
+import com.base.stock.entity.ScoreRule;
 
 /**
  * 打分策略接口

@@ -3,7 +3,7 @@ package com.base.stock.controller;
 import com.base.common.result.Result;
 import com.base.stock.dto.MinuteKlineResponse;
 import com.base.stock.entity.Watchlist;
-import com.base.stock.recommend.service.ScoreService;
+import com.base.stock.service.ScoreService;
 import com.base.stock.service.WatchlistService;
 import com.base.system.util.SecurityUtils;
 import io.swagger.annotations.Api;

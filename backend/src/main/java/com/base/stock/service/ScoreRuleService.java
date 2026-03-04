@@ -1,7 +1,7 @@
-package com.base.stock.recommend.service;
+package com.base.stock.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.base.stock.recommend.entity.ScoreRule;
+import com.base.stock.entity.ScoreRule;
 
 import java.util.List;
 

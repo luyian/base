@@ -1,6 +1,6 @@
-package com.base.stock.recommend.task;
+package com.base.stock.task;
 
-import com.base.stock.recommend.service.ScoreService;
+import com.base.stock.service.ScoreService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

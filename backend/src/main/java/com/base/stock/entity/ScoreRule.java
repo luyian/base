@@ -1,4 +1,4 @@
-package com.base.stock.recommend.entity;
+package com.base.stock.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;

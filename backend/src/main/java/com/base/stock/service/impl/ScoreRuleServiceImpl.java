@@ -1,10 +1,10 @@
-package com.base.stock.recommend.service.impl;
+package com.base.stock.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.base.stock.recommend.entity.ScoreRule;
-import com.base.stock.recommend.mapper.ScoreRuleMapper;
-import com.base.stock.recommend.service.ScoreRuleService;
+import com.base.stock.entity.ScoreRule;
+import com.base.stock.mapper.ScoreRuleMapper;
+import com.base.stock.service.ScoreRuleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

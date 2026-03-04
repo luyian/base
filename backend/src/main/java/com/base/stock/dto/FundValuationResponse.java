@@ -1,6 +1,6 @@
-package com.base.stock.fund.dto;
+package com.base.stock.dto;
 
-import com.base.stock.fund.entity.FundConfig;
+import com.base.stock.entity.FundConfig;
 import lombok.Data;
 
 import java.math.BigDecimal;

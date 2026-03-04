@@ -1,4 +1,4 @@
-package com.base.stock.recommend.service;
+package com.base.stock.service;
 
 import java.time.LocalDate;
 

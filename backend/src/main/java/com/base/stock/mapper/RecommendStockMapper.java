@@ -1,7 +1,7 @@
-package com.base.stock.recommend.mapper;
+package com.base.stock.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.base.stock.recommend.entity.RecommendStock;
+import com.base.stock.entity.RecommendStock;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 

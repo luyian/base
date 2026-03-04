@@ -1,4 +1,4 @@
-package com.base.stock.recommend.dto;
+package com.base.stock.dto;
 
 import com.base.common.dto.BasePageRequest;
 import io.swagger.annotations.ApiModel;

@@ -1,8 +1,8 @@
-package com.base.stock.recommend.strategy;
+package com.base.stock.strategy;
 
 import com.base.stock.entity.StockInfo;
 import com.base.stock.entity.StockKline;
-import com.base.stock.recommend.entity.ScoreRule;
+import com.base.stock.entity.ScoreRule;
 import lombok.Builder;
 import lombok.Data;
 

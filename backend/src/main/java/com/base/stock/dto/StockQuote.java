@@ -1,4 +1,4 @@
-package com.base.stock.fund.dto;
+package com.base.stock.dto;
 
 import lombok.Data;
 

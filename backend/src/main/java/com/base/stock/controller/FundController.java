@@ -1,10 +1,10 @@
-package com.base.stock.fund.controller;
+package com.base.stock.controller;
 
 import com.base.common.result.Result;
-import com.base.stock.fund.dto.FundConfigRequest;
-import com.base.stock.fund.dto.FundValuationResponse;
-import com.base.stock.fund.entity.FundConfig;
-import com.base.stock.fund.service.FundService;
+import com.base.stock.dto.FundConfigRequest;
+import com.base.stock.dto.FundValuationResponse;
+import com.base.stock.entity.FundConfig;
+import com.base.stock.service.FundService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;

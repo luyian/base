@@ -1,10 +1,10 @@
-package com.base.stock.recommend.controller;
+package com.base.stock.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
-import com.base.stock.recommend.dto.ScoreRuleQueryRequest;
-import com.base.stock.recommend.entity.ScoreRule;
-import com.base.stock.recommend.service.ScoreRuleService;
+import com.base.stock.dto.ScoreRuleQueryRequest;
+import com.base.stock.entity.ScoreRule;
+import com.base.stock.service.ScoreRuleService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;

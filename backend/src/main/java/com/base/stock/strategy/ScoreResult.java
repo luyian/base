@@ -1,4 +1,4 @@
-package com.base.stock.recommend.strategy;
+package com.base.stock.strategy;
 
 import lombok.Builder;
 import lombok.Data;

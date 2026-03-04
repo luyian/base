@@ -1,4 +1,4 @@
-package com.base.stock.fund.entity;
+package com.base.stock.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonFormat;

@@ -1,12 +1,12 @@
-package com.base.stock.recommend.service.impl;
+package com.base.stock.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.base.stock.recommend.dto.RecommendQueryRequest;
-import com.base.stock.recommend.entity.RecommendStock;
-import com.base.stock.recommend.mapper.RecommendStockMapper;
-import com.base.stock.recommend.service.RecommendService;
+import com.base.stock.dto.RecommendQueryRequest;
+import com.base.stock.entity.RecommendStock;
+import com.base.stock.mapper.RecommendStockMapper;
+import com.base.stock.service.RecommendService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

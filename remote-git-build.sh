@@ -81,3 +81,10 @@ docker images | grep base-app
 echo ""
 echo "运行容器:"
 echo "docker run -d -p 80:80 -p 6379:6379 --name base-app-container base-app"
+echo ""
+echo "先停掉再删除，然后重新启动"
+echo "docker stop base-app-container && docker rm base-app-container && docker run -d --network host --name base-app-container base-app"
+echo ""
+echo "查看容器日志:"
+echo "docker logs -f base-app-container"
+

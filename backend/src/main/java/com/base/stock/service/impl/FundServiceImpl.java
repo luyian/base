@@ -22,6 +22,7 @@ import com.base.stock.mapper.FundWatchlistMapper;
 import com.base.stock.service.FundService;
 import com.base.stock.mapper.StockInfoMapper;
 import com.base.stock.service.TokenManagerService;
+import com.base.system.service.ConfigService;
 import com.base.system.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -63,6 +66,7 @@ public class FundServiceImpl implements FundService {
     private final TokenManagerService tokenManagerService;
     private final ITickConfig iTickConfig;
     private final RedisUtil redisUtil;
+    private final ConfigService configService;
 
     // ========== 基金管理（管理员） ==========
 
@@ -409,9 +413,22 @@ public class FundServiceImpl implements FundService {
     }
 
     /**
-     * 计算基金估值
+     * 计算基金估值（在线接口用，内部自行拉取报价）
      */
     private FundValuationResponse calculateValuation(FundConfig fund) {
+        List<FundHolding> holdings = fund.getHoldings();
+        if (holdings == null || holdings.isEmpty()) {
+            return buildValuationResponse(fund, Collections.emptyMap());
+        }
+        Map<String, List<FundHolding>> marketGroups = groupByMarket(holdings);
+        Map<String, StockQuote> quoteMap = fetchQuotesConcurrently(marketGroups);
+        return buildValuationResponse(fund, quoteMap);
+    }
+
+    /**
+     * 根据已有的 quoteMap 计算基金估值（批量刷新用，报价已统一拉取）
+     */
+    private FundValuationResponse buildValuationResponse(FundConfig fund, Map<String, StockQuote> quoteMap) {
         FundValuationResponse response = new FundValuationResponse();
         response.setFundId(fund.getId());
         response.setFundName(fund.getFundName());
@@ -433,13 +450,6 @@ public class FundServiceImpl implements FundService {
 
         response.setHoldingCount(holdings.size());
 
-        // 按市场分组
-        Map<String, List<FundHolding>> marketGroups = groupByMarket(holdings);
-
-        // 多线程获取报价
-        Map<String, StockQuote> quoteMap = fetchQuotesConcurrently(marketGroups);
-
-        // 计算估值
         List<StockQuote> quotes = new ArrayList<>();
         BigDecimal totalWeightedChange = BigDecimal.ZERO;
         BigDecimal totalWeight = BigDecimal.ZERO;
@@ -458,9 +468,19 @@ public class FundServiceImpl implements FundService {
                 quote.setErrorMsg("未获取到报价");
                 failCount++;
             } else {
-                quote.setWeight(holding.getWeight());
-                quote.setStockName(holding.getStockName());
-                quote.setMarket(holding.getMarket());
+                // 复制一份，避免多基金共享同一 StockQuote 对象导致 weight 互相覆盖
+                StockQuote copy = new StockQuote();
+                copy.setStockCode(quote.getStockCode());
+                copy.setPrice(quote.getPrice());
+                copy.setLastClose(quote.getLastClose());
+                copy.setChange(quote.getChange());
+                copy.setChangePercent(quote.getChangePercent());
+                copy.setSuccess(quote.getSuccess());
+                copy.setErrorMsg(quote.getErrorMsg());
+                copy.setWeight(holding.getWeight());
+                copy.setStockName(holding.getStockName());
+                copy.setMarket(holding.getMarket());
+                quote = copy;
 
                 if (quote.getSuccess() && quote.getChangePercent() != null) {
                     BigDecimal weightedChange = quote.getChangePercent()
@@ -536,6 +556,30 @@ public class FundServiceImpl implements FundService {
         return "HK";
     }
 
+    private static final String CONFIG_KEY_QUOTE_THREAD_COUNT = "fund.quote.thread.count";
+    private static final int DEFAULT_QUOTE_THREAD_COUNT = 6;
+
+    private ExecutorService createQuoteExecutor() {
+        int threadCount = DEFAULT_QUOTE_THREAD_COUNT;
+        try {
+            String val = configService.getConfigValueByKey(CONFIG_KEY_QUOTE_THREAD_COUNT);
+            if (val != null && !val.isEmpty()) {
+                threadCount = Integer.parseInt(val.trim());
+                if (threadCount < 1) {
+                    threadCount = DEFAULT_QUOTE_THREAD_COUNT;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("读取基金报价线程数配置失败，使用默认值: {}", DEFAULT_QUOTE_THREAD_COUNT);
+        }
+        log.info("创建报价拉取线程池, 线程数: {}", threadCount);
+        return Executors.newFixedThreadPool(threadCount, r -> {
+            Thread t = new Thread(r, "fund-quote-fetch");
+            t.setDaemon(true);
+            return t;
+        });
+    }
+
     /**
      * 多线程获取报价
      */
@@ -566,42 +610,47 @@ public class FundServiceImpl implements FundService {
             return quoteMap;
         }
 
-        List<CompletableFuture<Map<String, StockQuote>>> futures = new ArrayList<>();
-        for (Map.Entry<String, List<FundHolding>> entry : marketGroups.entrySet()) {
-            String market = entry.getKey();
-            List<FundHolding> holdings = entry.getValue();
-            List<List<String>> batches = splitIntoBatches(
-                    holdings.stream().map(FundHolding::getStockCode).collect(Collectors.toList()),
-                    BATCH_SIZE
-            );
-            for (List<String> batch : batches) {
-                CompletableFuture<Map<String, StockQuote>> future = CompletableFuture.supplyAsync(() -> {
-                    Map<String, StockQuote> result = new HashMap<>();
-                    try {
-                        result = fetchBatchQuotes(market, batch);
-                    } catch (Exception e) {
-                        log.error("获取批量报价失败，market: {}, codes: {}", market, batch, e);
-                        for (String code : batch) {
-                            StockQuote quote = new StockQuote();
-                            quote.setStockCode(code);
-                            quote.setSuccess(false);
-                            quote.setErrorMsg(e.getMessage());
-                            result.put(code, quote);
+        ExecutorService executor = createQuoteExecutor();
+        try {
+            List<CompletableFuture<Map<String, StockQuote>>> futures = new ArrayList<>();
+            for (Map.Entry<String, List<FundHolding>> entry : marketGroups.entrySet()) {
+                String market = entry.getKey();
+                List<FundHolding> holdings = entry.getValue();
+                List<List<String>> batches = splitIntoBatches(
+                        holdings.stream().map(FundHolding::getStockCode).collect(Collectors.toList()),
+                        BATCH_SIZE
+                );
+                for (List<String> batch : batches) {
+                    CompletableFuture<Map<String, StockQuote>> future = CompletableFuture.supplyAsync(() -> {
+                        Map<String, StockQuote> result = new HashMap<>();
+                        try {
+                            result = fetchBatchQuotes(market, batch);
+                        } catch (Exception e) {
+                            log.error("获取批量报价失败，market: {}, codes: {}", market, batch, e);
+                            for (String code : batch) {
+                                StockQuote quote = new StockQuote();
+                                quote.setStockCode(code);
+                                quote.setSuccess(false);
+                                quote.setErrorMsg(e.getMessage());
+                                result.put(code, quote);
+                            }
                         }
-                    }
-                    return result;
-                });
-                futures.add(future);
+                        return result;
+                    }, executor);
+                    futures.add(future);
+                }
             }
-        }
 
-        for (CompletableFuture<Map<String, StockQuote>> future : futures) {
-            try {
-                Map<String, StockQuote> result = future.get();
-                quoteMap.putAll(result);
-            } catch (Exception e) {
-                log.error("获取报价结果失败", e);
+            for (CompletableFuture<Map<String, StockQuote>> future : futures) {
+                try {
+                    Map<String, StockQuote> result = future.get();
+                    quoteMap.putAll(result);
+                } catch (Exception e) {
+                    log.error("获取报价结果失败", e);
+                }
             }
+        } finally {
+            executor.shutdown();
         }
         return quoteMap;
     }
@@ -705,5 +754,162 @@ public class FundServiceImpl implements FundService {
         quote.setChangePercent(item.getBigDecimal("chp"));
         quote.setSuccess(true);
         return quote;
+    }
+
+    /**
+     * 将去重后的股票代码按市场分组
+     */
+    private Map<String, List<String>> groupStockCodesByMarket(List<String> stockCodes) {
+        List<String> needQueryCodes = new ArrayList<>(stockCodes);
+        Map<String, String> marketMap = new HashMap<>();
+        if (!needQueryCodes.isEmpty()) {
+            LambdaQueryWrapper<StockInfo> wrapper = new LambdaQueryWrapper<>();
+            wrapper.in(StockInfo::getStockCode, needQueryCodes)
+                    .select(StockInfo::getStockCode, StockInfo::getMarket);
+            List<StockInfo> stockInfoList = stockInfoMapper.selectList(wrapper);
+            marketMap = stockInfoList.stream()
+                    .filter(s -> s.getMarket() != null)
+                    .collect(Collectors.toMap(StockInfo::getStockCode, StockInfo::getMarket, (a, b) -> a));
+        }
+
+        Map<String, List<String>> result = new HashMap<>();
+        for (String code : stockCodes) {
+            String market = marketMap.getOrDefault(code, inferMarketByStockCode(code));
+            result.computeIfAbsent(market.toUpperCase(), k -> new ArrayList<>()).add(code);
+        }
+        return result;
+    }
+
+    /**
+     * 根据按市场分组的股票代码，多线程批量拉取所有报价
+     */
+    private Map<String, StockQuote> fetchAllQuotesConcurrently(Map<String, List<String>> marketCodeGroups) {
+        Map<String, StockQuote> quoteMap = new HashMap<>();
+
+        int totalStocks = marketCodeGroups.values().stream().mapToInt(List::size).sum();
+        if (totalStocks <= BATCH_SIZE) {
+            for (Map.Entry<String, List<String>> entry : marketCodeGroups.entrySet()) {
+                try {
+                    Map<String, StockQuote> batchQuotes = fetchBatchQuotes(entry.getKey(), entry.getValue());
+                    quoteMap.putAll(batchQuotes);
+                } catch (Exception e) {
+                    log.error("获取报价失败，market: {}, codes: {}", entry.getKey(), entry.getValue(), e);
+                    for (String code : entry.getValue()) {
+                        StockQuote quote = new StockQuote();
+                        quote.setStockCode(code);
+                        quote.setSuccess(false);
+                        quote.setErrorMsg(e.getMessage());
+                        quoteMap.put(code, quote);
+                    }
+                }
+            }
+            return quoteMap;
+        }
+
+        ExecutorService executor = createQuoteExecutor();
+        try {
+            List<CompletableFuture<Map<String, StockQuote>>> futures = new ArrayList<>();
+            for (Map.Entry<String, List<String>> entry : marketCodeGroups.entrySet()) {
+                String market = entry.getKey();
+                List<List<String>> batches = splitIntoBatches(entry.getValue(), BATCH_SIZE);
+                for (List<String> batch : batches) {
+                    CompletableFuture<Map<String, StockQuote>> future = CompletableFuture.supplyAsync(() -> {
+                        Map<String, StockQuote> result = new HashMap<>();
+                        try {
+                            result = fetchBatchQuotes(market, batch);
+                        } catch (Exception e) {
+                            log.error("获取批量报价失败，market: {}, codes: {}", market, batch, e);
+                            for (String code : batch) {
+                                StockQuote quote = new StockQuote();
+                                quote.setStockCode(code);
+                                quote.setSuccess(false);
+                                quote.setErrorMsg(e.getMessage());
+                                result.put(code, quote);
+                            }
+                        }
+                        return result;
+                    }, executor);
+                    futures.add(future);
+                }
+            }
+
+            for (CompletableFuture<Map<String, StockQuote>> future : futures) {
+                try {
+                    quoteMap.putAll(future.get());
+                } catch (Exception e) {
+                    log.error("获取报价结果失败", e);
+                }
+            }
+        } finally {
+            executor.shutdown();
+        }
+        return quoteMap;
+    }
+
+    // ========== 批量刷新（定时任务） ==========
+
+    @Override
+    public void refreshAllFundValuation() {
+        List<FundConfig> funds = listAllFunds();
+        if (funds.isEmpty()) {
+            log.info("没有需要刷新估值的基金");
+            return;
+        }
+
+        // Step 1: 加载每个基金的持仓，并收集所有股票代码去重
+        Set<String> allStockCodes = new LinkedHashSet<>();
+        int totalHoldingCount = 0;
+        for (FundConfig fund : funds) {
+            List<FundHolding> holdings = fundHoldingMapper.selectHoldingsWithStockInfo(fund.getId());
+            fund.setHoldings(holdings);
+            for (FundHolding h : holdings) {
+                allStockCodes.add(h.getStockCode());
+            }
+            totalHoldingCount += holdings.size();
+        }
+
+        List<String> distinctCodes = new ArrayList<>(allStockCodes);
+        log.info("基金估值批量刷新: 共 {} 个基金, {} 只股票(去重前 {}), 分批拉取报价",
+                funds.size(), distinctCodes.size(), totalHoldingCount);
+
+        if (distinctCodes.isEmpty()) {
+            log.info("所有基金均无持仓，跳过报价拉取");
+            return;
+        }
+
+        // Step 2: 去重股票按市场分组，多线程批量拉取报价
+        Map<String, List<String>> marketCodeGroups = groupStockCodesByMarket(distinctCodes);
+        int batchCount = marketCodeGroups.values().stream()
+                .mapToInt(codes -> (codes.size() + BATCH_SIZE - 1) / BATCH_SIZE)
+                .sum();
+        log.info("按市场分组: {}, 共 {} 批次", marketCodeGroups.keySet(), batchCount);
+
+        Map<String, StockQuote> globalQuoteMap = fetchAllQuotesConcurrently(marketCodeGroups);
+        log.info("报价拉取完成, 获取 {} 只股票报价", globalQuoteMap.size());
+
+        // Step 3: 逐基金计算估值，缓存/持久化
+        boolean afterClose = LocalTime.now().isAfter(MARKET_CLOSE_TIME);
+        int successFundCount = 0;
+        int failFundCount = 0;
+
+        for (FundConfig fund : funds) {
+            try {
+                FundValuationResponse response = buildValuationResponse(fund, globalQuoteMap);
+                response.setCacheTime(System.currentTimeMillis());
+                String cacheKey = FUND_VALUATION_CACHE_KEY + fund.getId();
+                redisUtil.set(cacheKey, response, CACHE_EXPIRE_SECONDS);
+
+                if (afterClose) {
+                    saveValuationRecord(fund.getId(), response);
+                }
+                successFundCount++;
+                log.info("基金 {}({}) 估值完成, 涨跌幅: {}%",
+                        fund.getFundName(), fund.getId(), response.getEstimatedChangePercent());
+            } catch (Exception e) {
+                failFundCount++;
+                log.error("基金 {}({}) 估值失败", fund.getFundName(), fund.getId(), e);
+            }
+        }
+        log.info("基金估值批量刷新完成: 成功 {}, 失败 {}", successFundCount, failFundCount);
     }
 }

@@ -1,10 +1,12 @@
 package com.base.stock.controller;
 
+import com.base.common.exception.BusinessException;
 import com.base.common.result.Result;
 import com.base.stock.dto.FundConfigRequest;
 import com.base.stock.dto.FundValuationResponse;
 import com.base.stock.entity.FundConfig;
 import com.base.stock.service.FundService;
+import com.base.system.util.RedisUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +27,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FundController {
 
+    private static final String REFRESH_ALL_LOCK_KEY = "fund:refresh_all:lock";
+    private static final long REFRESH_ALL_COOLDOWN_SECONDS = 60;
+
     private final FundService fundService;
+    private final RedisUtil redisUtil;
 
     // ========== 所有用户接口 ==========
 
@@ -99,6 +105,21 @@ public class FundController {
     public Result<List<FundValuationResponse>> myWatchlistValuation() {
         List<FundValuationResponse> responses = fundService.getMyWatchlistValuation();
         return Result.success(responses);
+    }
+
+    /**
+     * 一键刷新所有基金估值（限制60秒内只能调用一次）
+     */
+    @ApiOperation("一键刷新所有基金估值")
+    @PreAuthorize("hasAuthority('stock:fund:refresh')")
+    @PostMapping("/refresh-all")
+    public Result<Void> refreshAll() {
+        if (Boolean.TRUE.equals(redisUtil.hasKey(REFRESH_ALL_LOCK_KEY))) {
+            throw new BusinessException("操作太频繁，请1分钟后再试");
+        }
+        redisUtil.set(REFRESH_ALL_LOCK_KEY, "1", REFRESH_ALL_COOLDOWN_SECONDS);
+        fundService.refreshAllFundValuation();
+        return Result.success();
     }
 
     // ========== 管理员接口 ==========

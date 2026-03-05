@@ -115,4 +115,10 @@ public interface FundService {
      * @return 基金估值列表（使用Redis缓存的估值数据）
      */
     List<FundValuationResponse> listFundsWithCachedValuation();
+
+    /**
+     * 批量刷新所有基金估值（定时任务调用）
+     * 先收集所有基金持仓股票去重，批量拉取报价，再逐个基金计算估值并缓存/持久化
+     */
+    void refreshAllFundValuation();
 }

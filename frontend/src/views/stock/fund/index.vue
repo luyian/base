@@ -6,6 +6,17 @@
         <el-form-item>
           <el-switch v-model="onlyWatchlist" active-text="仅自选" @change="fetchFundList" />
         </el-form-item>
+        <el-form-item v-if="hasPermission('stock:fund:refresh')">
+          <el-button
+            type="warning"
+            :icon="Refresh"
+            :loading="refreshAllLoading"
+            :disabled="refreshCooldown > 0"
+            @click="handleRefreshAll"
+          >
+            {{ refreshCooldown > 0 ? `一键刷新(${refreshCooldown}s)` : '一键刷新' }}
+          </el-button>
+        </el-form-item>
         <el-form-item v-if="hasPermission('stock:fund:add')">
           <el-button type="primary" :icon="Plus" @click="handleAdd">新建基金</el-button>
         </el-form-item>
@@ -247,10 +258,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Refresh, Edit, Delete, MoreFilled, Star, StarFilled } from '@element-plus/icons-vue'
-import { listFunds, getFundById, createFund, updateFund, deleteFund, getFundValuation, addWatchlist, removeWatchlist } from '@/api/fund'
+import { listFunds, getFundById, createFund, updateFund, deleteFund, getFundValuation, addWatchlist, removeWatchlist, refreshAllFundValuation } from '@/api/fund'
 import { listStocks } from '@/api/stock'
 import { useUserStore } from '@/store/user'
 
@@ -279,6 +290,26 @@ const loading = ref(false)
 const detailDialogVisible = ref(false)
 const currentFund = ref({})
 const valuationLoading = ref(false)
+
+// 一键刷新
+const refreshAllLoading = ref(false)
+const refreshCooldown = ref(0)
+let cooldownTimer = null
+
+const startCooldown = () => {
+  refreshCooldown.value = 60
+  cooldownTimer = setInterval(() => {
+    refreshCooldown.value--
+    if (refreshCooldown.value <= 0) {
+      clearInterval(cooldownTimer)
+      cooldownTimer = null
+    }
+  }, 1000)
+}
+
+onUnmounted(() => {
+  if (cooldownTimer) clearInterval(cooldownTimer)
+})
 
 // 编辑弹窗
 const editDialogVisible = ref(false)
@@ -412,6 +443,21 @@ const handleRefreshValuation = async () => {
   if (currentFund.value.fundId) {
     await fetchValuation(currentFund.value.fundId)
     ElMessage.success('估值刷新成功')
+  }
+}
+
+// 一键刷新所有基金估值
+const handleRefreshAll = async () => {
+  refreshAllLoading.value = true
+  try {
+    await refreshAllFundValuation()
+    ElMessage.success('所有基金估值刷新成功')
+    startCooldown()
+    await fetchFundList()
+  } catch (error) {
+    console.error('一键刷新失败', error)
+  } finally {
+    refreshAllLoading.value = false
   }
 }
 

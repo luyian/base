@@ -72,6 +72,17 @@ export function getFundValuation(id) {
     })
 }
 
+/**
+ * 一键刷新所有基金估值
+ */
+export function refreshAllFundValuation() {
+    return request({
+        url: '/stock/fund/refresh-all',
+        method: 'post',
+        timeout: VALUATION_TIMEOUT
+    })
+}
+
 // ==================== 自选管理 ====================
 
 /**

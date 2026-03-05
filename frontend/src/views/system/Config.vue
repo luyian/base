@@ -45,7 +45,7 @@
         style="margin-top: 20px"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="id" label="配置ID" width="80" />
+        <el-table-column type="index" label="序号" width="55" />
         <el-table-column prop="configKey" label="配置键" min-width="150" show-overflow-tooltip />
         <el-table-column prop="configValue" label="配置值" min-width="150" show-overflow-tooltip />
         <el-table-column prop="configName" label="配置名称" min-width="120" show-overflow-tooltip />

@@ -229,4 +229,16 @@ public class TokenManagerServiceImpl implements TokenManagerService {
 
         return availableTokens;
     }
+
+    @Override
+    public int deleteExpiredTokens() {
+        LambdaQueryWrapper<ApiToken> wrapper = new LambdaQueryWrapper<>();
+        wrapper.isNotNull(ApiToken::getExpireTime)
+                .lt(ApiToken::getExpireTime, LocalDateTime.now());
+        int count = apiTokenMapper.delete(wrapper);
+        if (count > 0) {
+            log.info("删除过期 Token 成功，数量: {}", count);
+        }
+        return count;
+    }
 }

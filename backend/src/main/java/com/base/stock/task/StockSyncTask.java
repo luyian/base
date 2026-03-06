@@ -31,4 +31,18 @@ public class StockSyncTask {
             log.error("定时任务执行失败：重置 Token 每日计数", e);
         }
     }
+
+    /**
+     * 每天 0:05 删除过期的 Token
+     */
+    @Scheduled(cron = "0 5 0 * * ?")
+    public void cleanExpiredTokens() {
+        log.info("开始执行定时任务：删除过期 Token");
+        try {
+            int count = tokenManagerService.deleteExpiredTokens();
+            log.info("定时任务执行完成：删除过期 Token，数量: {}", count);
+        } catch (Exception e) {
+            log.error("定时任务执行失败：删除过期 Token", e);
+        }
+    }
 }

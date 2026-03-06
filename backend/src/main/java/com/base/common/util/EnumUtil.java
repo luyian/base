@@ -1,6 +1,7 @@
 package com.base.common.util;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,7 +25,10 @@ public class EnumUtil {
                     try {
                         String code = (String) enumClass.getMethod("getCode").invoke(e);
                         String desc = (String) enumClass.getMethod("getDesc").invoke(e);
-                        return Map.of("value", code, "label", desc);
+                        Map<String, String> map = new HashMap<>();
+                        map.put("value", code);
+                        map.put("label", desc);
+                        return map;
                     } catch (Exception ex) {
                         return null;
                     }

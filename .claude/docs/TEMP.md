@@ -159,3 +159,19 @@
 - Nginx 托管静态文件 + 反向代理 `/api` → localhost:8080
 - 环境变量注入：DB_HOST/PORT/NAME/USER/PASSWORD、REDIS_HOST/PORT/PASSWORD
 - 独立 `docker` profile，不影响开发环境
+
+---
+
+## 消息中心完善（2026-03-06）
+
+### 手动触发推送前端入口
+- 后端添加 API：`GET /message/subscription/types` 获取订阅类型选项
+- 前端消息订阅页面添加"手动触发推送"按钮（需 `message:push:execute` 权限）
+- 弹框改为 Select 下拉选择框，动态加载订阅类型列表
+
+### 通用枚举工具类
+- 新增 `com.base.common.util.EnumUtil` 工具类
+- `getOptions(enumClass)`：获取所有枚举选项，用于前端 Select
+- `getDescByCode(enumClass, code)`：根据 code 获取 desc
+- `getEnumByCode(enumClass, code)`：根据 code 获取枚举实例
+- 扩展性：任何具有 `getCode()` 和 `getDesc()` 方法的枚举均可使用

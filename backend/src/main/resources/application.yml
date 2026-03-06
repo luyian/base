@@ -22,6 +22,12 @@ spring:
     serialization:
       write-dates-as-timestamps: false
 
+# 日志配置
+logging:
+  level:
+    root: info
+    com.base: debug
+
 # MyBatis Plus 配置
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
@@ -29,7 +35,6 @@ mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
     cache-enabled: false
-    # log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       id-type: auto

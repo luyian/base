@@ -3,6 +3,16 @@
     <el-card shadow="never">
       <template #header>
         <span>消息订阅管理</span>
+        <el-button
+          v-if="hasPushPermission"
+          type="primary"
+          size="small"
+          :loading="pushing"
+          @click="handleManualPush"
+          style="float: right"
+        >
+          手动触发推送
+        </el-button>
       </template>
 
       <el-row :gutter="20" v-loading="loading">
@@ -42,19 +52,50 @@
 
       <el-empty v-if="!loading && subscriptions.length === 0" description="暂无可用订阅" />
     </el-card>
+
+    <!-- 手动推送弹框 -->
+    <el-dialog v-model="dialogVisible" title="手动触发推送" width="400px">
+      <el-form label-width="100px">
+        <el-form-item label="订阅类型">
+          <el-select v-model="selectedSubType" placeholder="请选择订阅类型" style="width: 100%">
+            <el-option
+              v-for="item in subTypes"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="pushing" @click="confirmPush">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { listSubscriptions, toggleSubscription } from '@/api/subscription'
+import { listSubscriptions, toggleSubscription, manualPush, getSubscriptionTypes } from '@/api/subscription'
+import { useUserStore } from '@/store/user'
 
+const userStore = useUserStore()
 const subscriptions = ref([])
+const subTypes = ref([])
 const loading = ref(false)
+const pushing = ref(false)
+const dialogVisible = ref(false)
+const selectedSubType = ref('')
+
+const hasPushPermission = computed(() => {
+  return userStore.permissions?.includes('message:push:execute')
+})
 
 onMounted(() => {
   fetchSubscriptions()
+  fetchSubTypes()
 })
 
 const fetchSubscriptions = async () => {
@@ -70,6 +111,15 @@ const fetchSubscriptions = async () => {
   }
 }
 
+const fetchSubTypes = async () => {
+  try {
+    const res = await getSubscriptionTypes()
+    subTypes.value = res.data || []
+  } catch (error) {
+    console.error('获取订阅类型失败', error)
+  }
+}
+
 const handleToggle = async (sub, enabled) => {
   sub.toggling = true
   try {
@@ -81,6 +131,29 @@ const handleToggle = async (sub, enabled) => {
     sub.enabled = !enabled
   } finally {
     sub.toggling = false
+  }
+}
+
+const handleManualPush = async () => {
+  selectedSubType.value = ''
+  dialogVisible.value = true
+}
+
+const confirmPush = async () => {
+  if (!selectedSubType.value) {
+    ElMessage.warning('请选择订阅类型')
+    return
+  }
+  pushing.value = true
+  try {
+    await manualPush(selectedSubType.value)
+    ElMessage.success('推送已触发')
+    dialogVisible.value = false
+  } catch (error) {
+    console.error('手动推送失败', error)
+    ElMessage.error('推送失败')
+  } finally {
+    pushing.value = false
   }
 }
 </script>

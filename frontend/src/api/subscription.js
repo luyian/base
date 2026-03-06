@@ -11,6 +11,16 @@ export function listSubscriptions() {
 }
 
 /**
+ * 获取订阅类型选项（用于前端Select）
+ */
+export function getSubscriptionTypes() {
+    return request({
+        url: '/message/subscription/types',
+        method: 'get'
+    })
+}
+
+/**
  * 开启/关闭订阅
  */
 export function toggleSubscription(subType, channel, enabled) {

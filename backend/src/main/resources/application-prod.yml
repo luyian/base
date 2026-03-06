@@ -40,7 +40,7 @@ logging:
     name: logs/base-system-prod.log
     max-size: 50MB
     max-history: 90
-
+  timezone: GMT+8
 # JWT 配置
 jwt:
   secret: base-system-secret-key-prod-2026-01-12-change-this-in-production

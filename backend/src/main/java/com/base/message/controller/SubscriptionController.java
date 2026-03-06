@@ -1,6 +1,8 @@
 package com.base.message.controller;
 
 import com.base.common.result.Result;
+import com.base.common.util.EnumUtil;
+import com.base.message.constant.SubscriptionTypeEnum;
 import com.base.message.dto.SubscriptionResponse;
 import com.base.message.service.MessagePushService;
 import com.base.message.service.SubscriptionService;
@@ -11,6 +13,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 消息订阅控制器
@@ -34,6 +37,16 @@ public class SubscriptionController {
     public Result<List<SubscriptionResponse>> list() {
         List<SubscriptionResponse> subscriptions = subscriptionService.listMySubscriptions();
         return Result.success(subscriptions);
+    }
+
+    /**
+     * 获取订阅类型选项（用于前端Select）
+     */
+    @ApiOperation("获取订阅类型选项")
+    @GetMapping("/types")
+    public Result<List<Map<String, String>>> getTypes() {
+        List<Map<String, String>> types = EnumUtil.getOptions(SubscriptionTypeEnum.class);
+        return Result.success(types);
     }
 
     /**

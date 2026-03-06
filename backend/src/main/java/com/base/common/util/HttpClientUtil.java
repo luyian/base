@@ -21,7 +21,7 @@ public class HttpClientUtil {
     /**
      * 默认超时时间（毫秒）
      */
-    private static final int DEFAULT_TIMEOUT = 30000;
+    private static final int DEFAULT_TIMEOUT = 60000;
 
     /**
      * 默认重试次数

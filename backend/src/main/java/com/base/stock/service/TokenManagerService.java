@@ -124,4 +124,11 @@ public interface TokenManagerService {
      * @return 可用的 Token 列表
      */
     List<ApiToken> getAvailableTokens(String provider);
+
+    /**
+     * 删除已过期的 Token
+     *
+     * @return 删除的 Token 数量
+     */
+    int deleteExpiredTokens();
 }

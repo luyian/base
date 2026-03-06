@@ -44,6 +44,7 @@ logging:
     com.base: info
   file:
     name: /app/logs/base-system.log
+  timezone: GMT+8
 # 验证码配置
 captcha:
   enabled: true

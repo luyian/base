@@ -61,9 +61,9 @@ dump.rdb
 *.temp
 nul
 
-# 环境配置（如果包含敏感信息）
-# .env
-# application-*.yml
+# Claude AI 配置和输出
+.claude/
+AGENTS.md
 
 # 上传文件目录（根据实际情况调整）
 uploads/

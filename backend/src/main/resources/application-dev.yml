@@ -62,6 +62,7 @@ logging:
     name: logs/base-system-dev.log
     max-size: 10MB
     max-history: 30
+  timezone: GMT+8
 
 # JWT 配置
 jwt:

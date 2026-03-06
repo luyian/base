@@ -43,9 +43,9 @@ public class FundValuationContentBuilder implements ContentBuilder {
 
         for (FundValuationResponse v : valuations) {
             sb.append("【").append(v.getFundName()).append("】");
-            if (v.getFundCode() != null) {
-                sb.append(" (").append(v.getFundCode()).append(")");
-            }
+//            if (v.getFundCode() != null) {
+//                sb.append(" (").append(v.getFundCode()).append(")");
+//            }
             sb.append("\n");
 
             if (v.getEstimatedChangePercent() != null) {
@@ -56,30 +56,30 @@ public class FundValuationContentBuilder implements ContentBuilder {
             }
 
             if (v.getHoldingCount() != null) {
-                sb.append("持仓数量: ").append(v.getHoldingCount());
                 if (v.getSuccessCount() != null) {
-                    sb.append(" (成功获取: ").append(v.getSuccessCount()).append(")");
+                    sb.append(" 成功获取: ").append(v.getSuccessCount()).append("");
                 }
+                sb.append(" / ").append(v.getHoldingCount());
                 sb.append("\n");
             }
 
             // 显示前5只持仓明细
-            if (v.getQuotes() != null && !v.getQuotes().isEmpty()) {
-                int count = 0;
-                for (StockQuote quote : v.getQuotes()) {
-                    if (count >= 5) {
-                        sb.append("  ... 等共").append(v.getQuotes().size()).append("只\n");
-                        break;
-                    }
-                    if (quote.getSuccess() && quote.getChangePercent() != null) {
-                        String qSign = quote.getChangePercent().compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
-                        sb.append("  ").append(quote.getStockName() != null ? quote.getStockName() : quote.getStockCode())
-                                .append(": ").append(qSign).append(quote.getChangePercent()).append("%")
-                                .append(" (权重: ").append(quote.getWeight()).append("%)\n");
-                    }
-                    count++;
-                }
-            }
+//            if (v.getQuotes() != null && !v.getQuotes().isEmpty()) {
+//                int count = 0;
+//                for (StockQuote quote : v.getQuotes()) {
+//                    if (count >= 5) {
+//                        sb.append("  ... 等共").append(v.getQuotes().size()).append("只\n");
+//                        break;
+//                    }
+//                    if (quote.getSuccess() && quote.getChangePercent() != null) {
+//                        String qSign = quote.getChangePercent().compareTo(BigDecimal.ZERO) >= 0 ? "+" : "";
+//                        sb.append("  ").append(quote.getStockName() != null ? quote.getStockName() : quote.getStockCode())
+//                                .append(": ").append(qSign).append(quote.getChangePercent()).append("%")
+//                                .append(" (权重: ").append(quote.getWeight()).append("%)\n");
+//                    }
+//                    count++;
+//                }
+//            }
             sb.append("\n");
         }
 

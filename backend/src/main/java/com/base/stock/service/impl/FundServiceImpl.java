@@ -265,34 +265,124 @@ public class FundServiceImpl implements FundService {
             return Collections.emptyList();
         }
 
+        List<Long> fundIds = funds.stream().map(FundConfig::getId).collect(Collectors.toList());
+        boolean afterClose = LocalTime.now().isAfter(MARKET_CLOSE_TIME);
+
+        Map<Long, FundValuationResponse> dbValuationMap = Collections.emptyMap();
+        if (afterClose) {
+            List<FundValuationRecord> dbRecords = fundValuationRecordMapper.selectByFundIdsAndDate(fundIds, LocalDate.now());
+            if (!dbRecords.isEmpty()) {
+                dbValuationMap = new HashMap<>();
+                for (FundValuationRecord record : dbRecords) {
+                    FundValuationResponse response = convertDbRecordToResponse(record);
+                    dbValuationMap.put(record.getFundId(), response);
+                }
+            }
+        }
+
+        List<Long> needRefreshFundIds = new ArrayList<>();
+        Map<Long, FundValuationResponse> cachedValuationMap = new HashMap<>();
+
+        for (FundConfig fund : funds) {
+            if (afterClose && dbValuationMap.containsKey(fund.getId())) {
+                FundValuationResponse response = dbValuationMap.get(fund.getId());
+                response.setFundName(fund.getFundName());
+                response.setFundCode(fund.getFundCode());
+                cachedValuationMap.put(fund.getId(), response);
+            } else {
+                FundValuationResponse cached = getCachedValuation(fund.getId());
+                if (cached != null) {
+                    cached.setFundName(fund.getFundName());
+                    cached.setFundCode(fund.getFundCode());
+                    cachedValuationMap.put(fund.getId(), cached);
+                } else {
+                    needRefreshFundIds.add(fund.getId());
+                }
+            }
+        }
+
+        if (!needRefreshFundIds.isEmpty()) {
+            List<FundConfig> needRefreshFunds = funds.stream()
+                    .filter(f -> needRefreshFundIds.contains(f.getId()))
+                    .collect(Collectors.toList());
+            batchRefreshValuations(needRefreshFunds, cachedValuationMap, afterClose);
+        }
+
         List<FundValuationResponse> responses = new ArrayList<>();
         for (FundConfig fund : funds) {
+            FundValuationResponse response = cachedValuationMap.get(fund.getId());
+            if (response == null) {
+                response = new FundValuationResponse();
+                response.setFundId(fund.getId());
+                response.setFundName(fund.getFundName());
+                response.setFundCode(fund.getFundCode());
+            }
+            responses.add(response);
+        }
+        return responses;
+    }
+
+    /**
+     * 批量刷新估值
+     */
+    private void batchRefreshValuations(List<FundConfig> funds, Map<Long, FundValuationResponse> resultMap, boolean afterClose) {
+        if (funds.isEmpty()) {
+            return;
+        }
+
+        Set<String> allStockCodes = new LinkedHashSet<>();
+        for (FundConfig fund : funds) {
+            List<FundHolding> holdings = fundHoldingMapper.selectHoldingsWithStockInfo(fund.getId());
+            fund.setHoldings(holdings);
+            for (FundHolding h : holdings) {
+                allStockCodes.add(h.getStockCode());
+            }
+        }
+
+        List<String> distinctCodes = new ArrayList<>(allStockCodes);
+        if (distinctCodes.isEmpty()) {
+            return;
+        }
+
+        Map<String, List<String>> marketCodeGroups = groupStockCodesByMarket(distinctCodes);
+        Map<String, StockQuote> globalQuoteMap = fetchAllQuotesConcurrently(marketCodeGroups);
+
+        for (FundConfig fund : funds) {
             try {
-                // 查询持仓
-                List<FundHolding> holdings = fundHoldingMapper.selectHoldingsWithStockInfo(fund.getId());
-                fund.setHoldings(holdings);
-                FundValuationResponse response = calculateValuation(fund);
-                // 缓存
+                FundValuationResponse response = buildValuationResponse(fund, globalQuoteMap);
                 response.setCacheTime(System.currentTimeMillis());
                 String cacheKey = FUND_VALUATION_CACHE_KEY + fund.getId();
                 redisUtil.set(cacheKey, response, CACHE_EXPIRE_SECONDS);
-                // 15:30 之后持久化到数据库
-                if (LocalTime.now().isAfter(MARKET_CLOSE_TIME)) {
+
+                if (afterClose) {
                     saveValuationRecord(fund.getId(), response);
                 }
-                responses.add(response);
+                resultMap.put(fund.getId(), response);
             } catch (Exception e) {
-                log.error("获取基金估值失败，fundId: {}", fund.getId(), e);
-                FundValuationResponse errorResponse = new FundValuationResponse();
-                errorResponse.setFundId(fund.getId());
-                errorResponse.setFundName(fund.getFundName());
-                errorResponse.setFundCode(fund.getFundCode());
-                errorResponse.setAllSuccess(false);
-                errorResponse.setErrorMsg(e.getMessage());
-                responses.add(errorResponse);
+                log.error("基金 {}({}) 估值失败", fund.getFundName(), fund.getId(), e);
             }
         }
-        return responses;
+    }
+
+    /**
+     * 将数据库记录转换为响应对象
+     */
+    private FundValuationResponse convertDbRecordToResponse(FundValuationRecord record) {
+        FundValuationResponse response = new FundValuationResponse();
+        response.setFundId(record.getFundId());
+        response.setEstimatedChangePercent(record.getEstimatedChangePercent());
+        response.setHoldingCount(record.getHoldingCount());
+        response.setSuccessCount(record.getSuccessCount());
+        response.setFailCount(record.getFailCount());
+        response.setTotalWeight(record.getTotalWeight());
+        response.setAllSuccess(record.getFailCount() == null || record.getFailCount() == 0);
+        response.setCacheTime(record.getUpdateTime() != null
+                ? record.getUpdateTime().atZone(java.time.ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli()
+                : record.getCreateTime().atZone(java.time.ZoneId.of("Asia/Shanghai")).toInstant().toEpochMilli());
+        if (record.getQuotesJson() != null) {
+            response.setQuotes(JSON.parseArray(record.getQuotesJson(), StockQuote.class));
+        }
+        return response;
     }
 
     @Override

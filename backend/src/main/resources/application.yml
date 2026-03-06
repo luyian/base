@@ -85,5 +85,5 @@ file:
 stock:
   itick:
     base-url: https://api.itick.org
-    timeout: 30000
+    timeout: 60000
     retry: 3

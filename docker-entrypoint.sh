@@ -9,6 +9,7 @@ nginx
 # 启动 Java 应用（前台运行，保持容器存活）
 exec java \
     -Djava.security.egd=file:/dev/./urandom \
+    -Duser.timezone=GMT+8 \
     -Dspring.profiles.active=docker \
     -DDB_HOST=${DB_HOST:-119.45.176.101} \
     -DDB_PORT=${DB_PORT:-13306} \

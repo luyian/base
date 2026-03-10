@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.workflow.mapper.ProcessHistoryMapper">
+
+    <select id="selectByInstanceId" resultType="com.base.workflow.entity.ProcessHistory">
+        SELECT * FROM sys_process_history
+        WHERE instance_id = #{instanceId}
+        ORDER BY create_time
+    </select>
+
+</mapper>

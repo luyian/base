@@ -33,13 +33,38 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // 分割代码块
-        manualChunks: {
-          // Vue 相关库
-          'vue-vendor': ['vue', 'vue-router', 'pinia'],
-          // Element Plus
-          'element-plus': ['element-plus'],
-          // 工具库
-          'utils': ['axios', 'dayjs']
+        manualChunks(id) {
+          if (!id.includes('node_modules')) {
+            return
+          }
+          if (id.includes('element-plus')) {
+            return 'element-plus'
+          }
+          if (id.includes('@element-plus/icons-vue')) {
+            return 'element-plus-icons'
+          }
+          if (id.includes('echarts')) {
+            return 'echarts'
+          }
+          if (id.includes('jspdf')) {
+            return 'jspdf'
+          }
+          if (id.includes('vue-router')) {
+            return 'vue-router'
+          }
+          if (id.includes('pinia')) {
+            return 'pinia'
+          }
+          if (id.includes('vue')) {
+            return 'vue-vendor'
+          }
+          if (id.includes('axios')) {
+            return 'axios'
+          }
+          if (id.includes('dayjs')) {
+            return 'dayjs'
+          }
+          return 'vendor'
         },
         // 静态资源分类打包
         chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -61,6 +86,6 @@ export default defineConfig({
     // 启用源码映射（生产环境可关闭）
     sourcemap: false,
     // chunk 大小警告阈值
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1300
   }
 })

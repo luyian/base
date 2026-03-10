@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.base.workflow.mapper.ProcessTaskMapper">
+
+    <select id="selectPendingTasks" resultType="com.base.workflow.entity.ProcessTask">
+        SELECT t.*, i.process_name, i.title as instance_title
+        FROM sys_process_task t
+        LEFT JOIN sys_process_instance i ON t.instance_id = i.id
+        WHERE t.assignee = #{assignee}
+        AND t.status = 'PENDING'
+        ORDER BY t.create_time DESC
+    </select>
+
+    <select id="selectByInstanceId" resultType="com.base.workflow.entity.ProcessTask">
+        SELECT * FROM sys_process_task
+        WHERE instance_id = #{instanceId}
+        ORDER BY create_time
+    </select>
+
+    <select id="selectByInstanceIdAndNodeKey" resultType="com.base.workflow.entity.ProcessTask">
+        SELECT * FROM sys_process_task
+        WHERE instance_id = #{instanceId}
+        AND node_key = #{nodeKey}
+    </select>
+
+</mapper>

@@ -6,6 +6,7 @@ import com.base.common.exception.BusinessException;
 import com.base.common.feishu.config.FeishuConfig;
 import com.base.common.feishu.dto.FeishuBindRequest;
 import com.base.common.feishu.dto.FeishuSendMessageRequest;
+import com.base.common.feishu.dto.FeishuSendToUserRequest;
 import com.base.common.feishu.service.FeishuMessageService;
 import com.base.common.feishu.service.FeishuTokenService;
 import com.base.common.result.Result;
@@ -286,7 +287,7 @@ public class FeishuController {
     @ApiOperation("发送飞书消息给系统用户")
     public Result<String> sendMessageToUser(
             @PathVariable Long userId,
-            @Validated @RequestBody FeishuSendMessageRequest request) {
+            @Validated @RequestBody FeishuSendToUserRequest request) {
         String messageId = feishuMessageService.sendMessageToUser(userId, request.getMsgType(), request.getContent());
         return Result.success(messageId);
     }

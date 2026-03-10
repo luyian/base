@@ -112,6 +112,56 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <div class="feishu-float">
+      <el-button
+        class="feishu-float-btn"
+        type="primary"
+        circle
+        @click="toggleFeishuPanel"
+        aria-label="发送飞书消息"
+      >
+        <el-icon><ChatDotRound /></el-icon>
+      </el-button>
+
+      <div v-show="feishuPanelVisible" class="feishu-panel">
+        <div class="feishu-panel-header">
+          <span>发送消息</span>
+          <el-button text @click="feishuPanelVisible = false">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+        <div
+          class="feishu-panel-body"
+          :class="{ 'is-dragging': isDraggingFile }"
+          @dragenter.prevent="handleDragEnter"
+          @dragover.prevent="handleDragOver"
+          @dragleave.prevent="handleDragLeave"
+          @drop.prevent="handleDrop"
+          @paste="handlePaste"
+        >
+          <el-input
+            v-model="feishuMessage"
+            type="textarea"
+            :rows="4"
+            placeholder="输入消息内容，支持拖拽或粘贴文件..."
+          />
+          <div class="feishu-upload">
+            <el-tag v-if="selectedFile" type="success" size="small">
+              {{ selectedFileType === 'image' ? '图片' : '文件' }}
+            </el-tag>
+            <el-tag v-else type="info" size="small">文本</el-tag>
+            <span class="feishu-tip">支持拖拽/粘贴附件</span>
+          </div>
+        </div>
+        <div class="feishu-panel-footer">
+          <el-button size="small" @click="resetFeishuForm">清空</el-button>
+          <el-button size="small" type="primary" :loading="feishuSending" @click="sendFeishu">
+            发送
+          </el-button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -119,9 +169,10 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { HomeFilled, Setting, User, Expand, Fold, Menu, Document, Bell } from '@element-plus/icons-vue'
+import { HomeFilled, Setting, User, Expand, Fold, Menu, Document, Bell, ChatDotRound, Close } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import NoticeDropdown from '@/components/NoticeDropdown.vue'
+import { sendFeishuMessageToUser, uploadFeishuImage, uploadFeishuFile } from '@/api/feishu'
 
 const router = useRouter()
 const route = useRoute()
@@ -175,6 +226,14 @@ const activeMenu = computed(() => route.path)
 // 通知徽章引用
 const noticeBadgeRef = ref(null)
 
+const feishuPanelVisible = ref(false)
+const feishuMessage = ref('')
+const feishuSending = ref(false)
+const selectedFile = ref(null)
+const selectedFileType = ref('text')
+const fileList = ref([])
+const isDraggingFile = ref(false)
+
 // 切换侧边栏折叠状态
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value
@@ -204,6 +263,128 @@ const handleCommand = (command) => {
     }).catch(() => {})
   } else if (command === 'profile') {
     router.push('/profile')
+  }
+}
+
+const toggleFeishuPanel = () => {
+  feishuPanelVisible.value = !feishuPanelVisible.value
+}
+
+const resetFeishuForm = () => {
+  feishuMessage.value = ''
+  selectedFile.value = null
+  selectedFileType.value = 'text'
+  fileList.value = []
+  isDraggingFile.value = false
+}
+
+const handleFileChange = (file, files) => {
+  const latest = files && files.length ? files[files.length - 1] : null
+  if (!latest) {
+    selectedFile.value = null
+    selectedFileType.value = 'text'
+    fileList.value = []
+    return
+  }
+  selectedFile.value = latest.raw
+  selectedFileType.value = latest.raw && latest.raw.type && latest.raw.type.startsWith('image/') ? 'image' : 'file'
+  fileList.value = [latest]
+}
+
+const handleFileRemove = () => {
+  selectedFile.value = null
+  selectedFileType.value = 'text'
+  fileList.value = []
+}
+
+const applySelectedFile = (file) => {
+  if (!file) {
+    return
+  }
+  selectedFile.value = file
+  selectedFileType.value = file.type && file.type.startsWith('image/') ? 'image' : 'file'
+  fileList.value = [{ name: file.name, url: '', status: 'ready', raw: file }]
+}
+
+const handlePaste = (event) => {
+  const files = event.clipboardData ? event.clipboardData.files : null
+  if (files && files.length > 0) {
+    applySelectedFile(files[0])
+  }
+}
+
+const handleDragEnter = () => {
+  isDraggingFile.value = true
+}
+
+const handleDragOver = () => {
+  isDraggingFile.value = true
+}
+
+const handleDragLeave = () => {
+  isDraggingFile.value = false
+}
+
+const handleDrop = (event) => {
+  const files = event.dataTransfer ? event.dataTransfer.files : null
+  if (files && files.length > 0) {
+    applySelectedFile(files[0])
+  }
+  isDraggingFile.value = false
+}
+
+const getCurrentUserId = () => {
+  return userInfo.value?.id || userInfo.value?.userId || null
+}
+
+const sendFeishu = async () => {
+  const text = feishuMessage.value.trim()
+  if (!selectedFile.value && !text) {
+    ElMessage.warning('请输入消息内容或选择附件')
+    return
+  }
+  const userId = getCurrentUserId()
+  if (!userId) {
+    ElMessage.error('未获取到当前用户信息')
+    return
+  }
+  feishuSending.value = true
+  try {
+    if (selectedFile.value) {
+      if (selectedFileType.value === 'image') {
+        const res = await uploadFeishuImage(selectedFile.value)
+        const imageKey = res?.data?.imageKey
+        if (!imageKey) {
+          throw new Error('图片上传失败')
+        }
+        await sendFeishuMessageToUser(userId, {
+          msgType: 'image',
+          content: JSON.stringify({ image_key: imageKey })
+        })
+      } else {
+        const res = await uploadFeishuFile(selectedFile.value)
+        const fileKey = res?.data?.fileKey
+        if (!fileKey) {
+          throw new Error('文件上传失败')
+        }
+        await sendFeishuMessageToUser(userId, {
+          msgType: 'file',
+          content: JSON.stringify({ file_key: fileKey })
+        })
+      }
+    } else {
+      await sendFeishuMessageToUser(userId, {
+        msgType: 'text',
+        content: JSON.stringify({ text })
+      })
+    }
+    ElMessage.success('发送成功')
+    feishuPanelVisible.value = false
+    resetFeishuForm()
+  } catch (e) {
+    ElMessage.error(e.message || '发送失败')
+  } finally {
+    feishuSending.value = false
   }
 }
 </script>
@@ -316,6 +497,74 @@ const handleCommand = (command) => {
   padding: 20px;
 }
 
+.feishu-float {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.feishu-float-btn {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.feishu-panel {
+  width: 320px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+}
+
+.feishu-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f7f8fa;
+  border-bottom: 1px solid #eceef2;
+  font-weight: 600;
+}
+
+.feishu-panel-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feishu-panel-body.is-dragging {
+  border: 1px dashed #409eff;
+  background: #f0f7ff;
+  border-radius: 8px;
+}
+
+.feishu-upload {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+
+.feishu-panel-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-top: 1px solid #eceef2;
+}
+
+.feishu-tip {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 12px;
+}
+
 /* 移动端：侧栏抽屉 + 遮罩 */
 .sidebar-mask {
   position: fixed;
@@ -344,6 +593,15 @@ const handleCommand = (command) => {
 @media (max-width: 768px) {
   .layout-header {
     padding: 0 12px;
+  }
+
+  .feishu-float {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .feishu-panel {
+    width: 90vw;
   }
 }
 </style>

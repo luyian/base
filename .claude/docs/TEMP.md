@@ -14,7 +14,7 @@
 | 依赖 | LangChain4j + langchain4j-open-ai 0.31（Java 8） |
 | 配置来源 | 仅 DB 表 `sys_ai_config`，不再使用 yml |
 | 生效配置 | `is_active=1` 且 `status=1` 的一条；**直接查 DB**（Redis 用 Jackson 反序列化无法还原为实体，故未做缓存） |
-| 配置变更 | 编辑 / 删除 / 设为生效 后：`AiChatModelHolder.clearCache()`，下次对话用新配置 |
+| 配置变更 | 编辑 / 删除 / 设为生效 后：删除 Redis 键 `ai:config:active` + `AiChatModelHolder.clearCache()`，保证缓存与配置一致 |
 | 对话实现 | `AiConfigProvider` 取当前生效配置 → `AiChatModelHolder.getModel()` 得到 `ChatLanguageModel` → `generate(messages)` |
 
 ### 前端要点

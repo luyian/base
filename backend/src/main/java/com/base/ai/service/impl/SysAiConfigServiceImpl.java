@@ -11,6 +11,7 @@ import com.base.ai.mapper.SysAiConfigMapper;
 import com.base.ai.service.SysAiConfigService;
 import com.base.common.exception.BusinessException;
 import com.base.common.result.ResultCode;
+import com.base.system.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,8 +36,12 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
     private static final int DEFAULT_MAX_MESSAGE_LENGTH = 2000;
     private static final int DEFAULT_MAX_CONTEXT_LENGTH = 5000;
 
+    /** Redis 中“当前生效配置”的 key，配置变更时删除以保持一致性 */
+    private static final String REDIS_KEY_AI_CONFIG_ACTIVE = "ai:config:active";
+
     private final SysAiConfigMapper sysAiConfigMapper;
     private final AiChatModelHolder chatModelHolder;
+    private final RedisUtil redisUtil;
 
     @Override
     public Page<SysAiConfigResponse> page(int current, int size, String configName, Integer status) {
@@ -101,10 +106,11 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
         return e.getId();
     }
 
-    /** 修改配置后清除对话模型缓存，使下次请求使用新配置 */
+    /** 大模型配置变更后：删除 Redis 缓存 key，并清除内存中的对话模型缓存 */
     private void refreshAiConfigCache() {
+        redisUtil.del(REDIS_KEY_AI_CONFIG_ACTIVE);
         chatModelHolder.clearCache();
-        log.debug("大模型对话模型缓存已清除");
+        log.debug("大模型配置相关缓存已刷新（Redis + 对话模型）");
     }
 
     @Override

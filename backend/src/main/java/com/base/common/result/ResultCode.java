@@ -126,7 +126,17 @@ public enum ResultCode {
     /**
      * 内部服务器错误
      */
-    INTERNAL_SERVER_ERROR(500, "内部服务器错误");
+    INTERNAL_SERVER_ERROR(500, "内部服务器错误"),
+
+    /**
+     * AI 未配置或不可用
+     */
+    AI_NOT_CONFIGURED(503, "AI 未配置 baseURL 或 apiKey"),
+
+    /**
+     * AI 服务不可用
+     */
+    AI_SERVICE_UNAVAILABLE(503, "AI 服务暂时不可用");
 
     private final Integer code;
     private final String message;

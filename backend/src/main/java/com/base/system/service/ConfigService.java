@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.system.dto.config.ConfigQueryRequest;
 import com.base.system.dto.config.ConfigResponse;
 import com.base.system.dto.config.ConfigSaveRequest;
+import com.base.system.entity.Config;
 
 import java.util.List;
 
@@ -68,4 +69,22 @@ public interface ConfigService {
      * 刷新全局变量缓存
      */
     void refreshCache();
+
+    /**
+     * 根据配置键获取配置实体
+     *
+     * @param configKey 配置键
+     * @return 配置实体，不存在返回 null
+     */
+    Config getConfigByKey(String configKey);
+
+    /**
+     * 按配置键保存或更新配置值（用于大模型等按 key 覆盖）
+     *
+     * @param configKey   配置键
+     * @param configValue 配置值（可为长文本）
+     * @param configName  配置名称
+     * @param type        参数类型 string/number/boolean
+     */
+    void saveOrUpdateByKey(String configKey, String configValue, String configName, String type);
 }

@@ -191,4 +191,39 @@ public class ConfigServiceImpl implements ConfigService {
         }
         log.info("全局变量缓存已刷新");
     }
+
+    @Override
+    public Config getConfigByKey(String configKey) {
+        if (configKey == null || configKey.trim().isEmpty()) {
+            return null;
+        }
+        LambdaQueryWrapper<Config> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Config::getConfigKey, configKey);
+        return configMapper.selectOne(wrapper);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void saveOrUpdateByKey(String configKey, String configValue, String configName, String type) {
+        if (configKey == null || configKey.trim().isEmpty()) {
+            throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "配置键不能为空");
+        }
+        Config exist = configMapper.selectOne(
+                new LambdaQueryWrapper<Config>().eq(Config::getConfigKey, configKey));
+        if (exist != null) {
+            exist.setConfigValue(configValue != null ? configValue : "");
+            exist.setConfigName(configName != null ? configName : configKey);
+            exist.setType(type != null ? type : "string");
+            configMapper.updateById(exist);
+        } else {
+            Config config = new Config();
+            config.setConfigKey(configKey);
+            config.setConfigValue(configValue != null ? configValue : "");
+            config.setConfigName(configName != null ? configName : configKey);
+            config.setType(type != null ? type : "string");
+            config.setStatus(1);
+            configMapper.insert(config);
+        }
+        redisUtil.del(CONFIG_CACHE_PREFIX + configKey);
+    }
 }

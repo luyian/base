@@ -15,26 +15,44 @@ echo "=== 远程Docker构建脚本 ==="
 echo "仓库地址: $REPO_URL"
 echo "分支: $BRANCH"
 
-# 拉取代码
+# 拉取代码并进入项目根目录（根目录下应有 frontend/、backend/）
 if [ "$SKIP_GIT" = "skip" ]; then
     echo "跳过 git 操作，使用已有代码..."
+    if [ -f "frontend/package.json" ]; then
+        echo "当前目录即为项目根: $(pwd)"
+    elif [ -f "$PROJECT_DIR/frontend/package.json" ]; then
+        cd "$PROJECT_DIR"
+        echo "已进入项目目录: $(pwd)"
+    else
+        echo "错误: 找不到 frontend/package.json。"
+        echo "请在本脚本所在仓库的根目录执行，或先 cd 到克隆目录（例如 ./$PROJECT_DIR）。"
+        echo "当前目录: $(pwd)"
+        exit 1
+    fi
 elif [ -d "$PROJECT_DIR" ]; then
     echo "项目目录已存在，正在更新代码..."
-    cd $PROJECT_DIR
+    cd "$PROJECT_DIR"
     git fetch origin $BRANCH
     git reset --hard origin/$BRANCH
 else
     echo "克隆项目代码..."
-    git clone -b $BRANCH $REPO_URL $PROJECT_DIR
-    cd $PROJECT_DIR
+    git clone -b $BRANCH $REPO_URL "$PROJECT_DIR"
+    cd "$PROJECT_DIR"
 fi
 
 PROJECT_PATH=$(pwd)
+if [ ! -f "$PROJECT_PATH/frontend/package.json" ]; then
+    echo "错误: $PROJECT_PATH/frontend/package.json 不存在，无法构建前端。"
+    exit 1
+fi
 
 # 前端构建（使用 Node 容器 + 宿主机网络）
+# VITE_LOW_MEM=1：esbuild 压缩、跳过构建期 gzip，避免小内存机 OOM（SIGKILL）
 echo "=== 前端构建 ==="
 docker run --rm \
     --network=host \
+    -e VITE_LOW_MEM=1 \
+    -e NODE_OPTIONS="--max-old-space-size=2048" \
     -v "$PROJECT_PATH/frontend":/app \
     -w /app \
     node:20-alpine \

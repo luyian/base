@@ -3,16 +3,22 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 import compression from 'vite-plugin-compression'
 
+// Docker / 小内存机器构建时设置 VITE_LOW_MEM=1：esbuild 压缩 + 跳过构建期 gzip（Nginx 已开启 gzip）
+const lowMem = process.env.VITE_LOW_MEM === '1'
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
-    // Gzip 压缩
-    compression({
-      algorithm: 'gzip',
-      ext: '.gz',
-      threshold: 10240
-    })
+    ...(lowMem
+      ? []
+      : [
+          compression({
+            algorithm: 'gzip',
+            ext: '.gz',
+            threshold: 10240
+          })
+        ])
   ],
   resolve: {
     alias: {
@@ -49,15 +55,21 @@ export default defineConfig({
     },
     // 启用 CSS 代码分割
     cssCodeSplit: true,
-    // 构建后压缩方式
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        // 生产环境移除 console
-        drop_console: true,
-        drop_debugger: true
-      }
-    },
+    // terser 内存占用高；Docker/小内存务必 VITE_LOW_MEM=1 走 esbuild
+    minify: lowMem ? 'esbuild' : 'terser',
+    esbuild: lowMem
+      ? { drop: ['console', 'debugger'] }
+      : undefined,
+    ...(!lowMem
+      ? {
+          terserOptions: {
+            compress: {
+              drop_console: true,
+              drop_debugger: true
+            }
+          }
+        }
+      : {}),
     // 启用源码映射（生产环境可关闭）
     sourcemap: false,
     // chunk 大小警告阈值

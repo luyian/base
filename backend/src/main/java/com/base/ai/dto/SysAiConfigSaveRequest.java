@@ -25,7 +25,6 @@ public class SysAiConfigSaveRequest implements Serializable {
     @NotBlank(message = "API 基础地址不能为空")
     private String baseUrl;
 
-    @NotBlank(message = "API Key 不能为空")
     private String apiKey;
 
     private String model;

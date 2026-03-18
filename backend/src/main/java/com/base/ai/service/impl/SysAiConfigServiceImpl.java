@@ -81,14 +81,15 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
         if (e == null) {
             throw new BusinessException(ResultCode.DATA_NOT_FOUND);
         }
-        SysAiConfigResponse r = BeanUtil.copyProperties(e, SysAiConfigResponse.class);
-        r.setApiKey(e.getApiKey());
-        return r;
+        return toResponse(e);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long save(SysAiConfigSaveRequest request) {
+        if (request.getApiKey() == null || request.getApiKey().isEmpty()) {
+            throw new BusinessException("新增配置时 API Key 不能为空");
+        }
         SysAiConfig e = new SysAiConfig();
         e.setConfigName(request.getConfigName());
         e.setBaseUrl(request.getBaseUrl());
@@ -125,7 +126,9 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
         }
         e.setConfigName(request.getConfigName());
         e.setBaseUrl(request.getBaseUrl());
-        e.setApiKey(request.getApiKey());
+        if (request.getApiKey() != null && !request.getApiKey().isEmpty()) {
+            e.setApiKey(request.getApiKey());
+        }
         e.setModel(request.getModel());
         e.setTimeout(request.getTimeout() != null ? request.getTimeout() : DEFAULT_TIMEOUT);
         e.setRetry(request.getRetry() != null ? request.getRetry() : DEFAULT_RETRY);

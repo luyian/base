@@ -1,5 +1,25 @@
 # 代码修改记录
 
+## AI 模块 API Key 安全增强（2026-03-18）
+
+### 需求
+- 前端只能设置 API Key，不能查看具体值
+- 编辑时如不填 API Key 则保留原值
+
+### 修改内容
+
+| 文件 | 修改 |
+|------|------|
+| `SysAiConfigServiceImpl.java` | `getByIdForEdit` 改为返回脱敏值；`update` 方法新增 apiKey 空判断，保留原值；`save` 方法新增 apiKey 非空校验 |
+| `SysAiConfigSaveRequest.java` | 移除 apiKey 的 `@NotBlank` 验证（编辑时可选） |
+
+### 逻辑说明
+- 列表/详情查询：`toResponse()` 统一脱敏为 `sk-****abcd` 格式
+- 新增：apiKey 必填
+- 编辑：apiKey 可选，为空时保留原值，有值时更新
+
+---
+
 ## AI 模块（当前状态）
 
 ### 功能概述
@@ -31,3 +51,14 @@
 
 - 安全：需登录；配置页需 `system:ai-config:*`。
 - 异常：`AI_NOT_CONFIGURED` / `AI_SERVICE_UNAVAILABLE` 由 `GlobalExceptionHandler` 统一返回。
+
+## remote-git-build.sh（2026-03-18）
+
+- **问题**：`skip` 时未进入项目根目录，`PROJECT_PATH` 为当前 shell 目录；若在上级目录（如 `base-system`）执行，会把空目录挂到容器 `/app`，导致 `ENOENT package.json`。
+- **修改**：`skip` 时自动识别项目根（当前目录或 `./base` 下存在 `frontend/package.json`）；构建前校验 `frontend/package.json` 存在；`git clone`/`cd` 对 `PROJECT_DIR` 加引号。
+
+## 前端 Docker 构建 OOM（SIGKILL）（2026-03-18）
+
+- **原因**：小内存机上 `terser` + `vite-plugin-compression` 易导致进程被 OOM Killer 杀死。
+- **vite.config.js**：`VITE_LOW_MEM=1` 时使用 `esbuild` 压缩、跳过构建期 gzip；esbuild 下 `drop: console/debugger`。
+- **remote-git-build.sh**：前端容器注入 `VITE_LOW_MEM=1`、`NODE_OPTIONS=--max-old-space-size=2048`。

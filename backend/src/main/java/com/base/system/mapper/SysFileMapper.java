@@ -1,0 +1,12 @@
+package com.base.system.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.base.system.entity.SysFile;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * 文件 Mapper 接口
+ */
+@Mapper
+public interface SysFileMapper extends BaseMapper<SysFile> {
+}

@@ -113,9 +113,9 @@ const selectedIds = ref([])
 const fileGroups = ref([])
 
 // 上传相关
-const uploadUrl = computed(() => import.meta.env.VITE_BASE_URL + '/system/file/upload')
+const uploadUrl = computed(() => '/api' + '/system/file/upload')
 const uploadHeaders = computed(() => ({ Authorization: 'Bearer ' + (localStorage.getItem('token') || '') }))
-const uploadData = computed(() => ({ fileGroup: 'default', fileDesc: '' }))
+const uploadData = ref({ fileGroup: 'default', fileDesc: '' })
 
 // 预览相关
 const previewVisible = ref(false)

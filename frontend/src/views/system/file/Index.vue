@@ -98,7 +98,6 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageFiles, deleteFile, batchDeleteFiles, getFileGroups, getFileUrl } from '@/api/file'
-import { getToken } from '@/utils/auth'
 
 const queryForm = ref({
   pageNum: 1,
@@ -115,7 +114,7 @@ const fileGroups = ref([])
 
 // 上传相关
 const uploadUrl = computed(() => import.meta.env.VITE_BASE_URL + '/system/file/upload')
-const uploadHeaders = computed(() => ({ Authorization: 'Bearer ' + getToken() }))
+const uploadHeaders = computed(() => ({ Authorization: 'Bearer ' + (localStorage.getItem('token') || '') }))
 const uploadData = computed(() => ({ fileGroup: 'default', fileDesc: '' }))
 
 // 预览相关

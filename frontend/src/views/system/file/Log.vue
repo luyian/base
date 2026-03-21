@@ -44,7 +44,7 @@
         v-loading="loading"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="id" label="日志ID" width="80" />
+
         <el-table-column prop="fileName" label="文件名" min-width="200" show-overflow-tooltip />
         <el-table-column prop="operationTypeName" label="操作类型" width="100">
           <template #default="{ row }">

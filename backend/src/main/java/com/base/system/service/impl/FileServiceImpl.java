@@ -9,6 +9,7 @@ import com.base.system.mapper.SysFileLogMapper;
 import com.base.system.mapper.SysFileMapper;
 import com.base.system.service.FileService;
 import com.base.util.SecurityUtils;
+import com.base.system.util.IpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
@@ -40,15 +42,21 @@ public class FileServiceImpl implements FileService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public SysFile uploadFile(MultipartFile file, String fileDesc) {
-        return uploadFile(file, "default", fileDesc);
+    public SysFile uploadFile(MultipartFile file, String fileDesc, HttpServletRequest request) {
+        return uploadFile(file, "default", fileDesc, request);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public SysFile uploadFile(MultipartFile file, String fileGroup, String fileDesc) {
+    public SysFile uploadFile(MultipartFile file, String fileGroup, String fileDesc, HttpServletRequest request) {
         long startTime = System.currentTimeMillis();
         SysFileLog fileLog = new SysFileLog();
+        
+        // 获取IP和地址
+        String ip = IpUtils.getIpAddress(request);
+        String location = ""; // 需要IP解析库
+        fileLog.setIp(ip);
+        fileLog.setLocation(location);
         
         try {
             // 获取当前用户
@@ -178,9 +186,15 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public void downloadFile(Long id, HttpServletResponse response) {
+    public void downloadFile(Long id, HttpServletResponse response, HttpServletRequest request) {
         long startTime = System.currentTimeMillis();
         SysFileLog fileLog = new SysFileLog();
+
+        // 获取IP和地址
+        String ip = IpUtils.getIpAddress(request);
+        String location = ""; // 需要IP解析库
+        fileLog.setIp(ip);
+        fileLog.setLocation(location);
 
         try {
             SysFile sysFile = sysFileMapper.selectById(id);

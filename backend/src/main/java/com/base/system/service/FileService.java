@@ -6,6 +6,7 @@ import com.base.system.entity.SysFileLog;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**
@@ -16,12 +17,12 @@ public interface FileService {
     /**
      * 上传文件
      */
-    SysFile uploadFile(MultipartFile file, String fileDesc);
+    SysFile uploadFile(MultipartFile file, String fileDesc, HttpServletRequest request);
 
     /**
      * 上传文件（带分组）
      */
-    SysFile uploadFile(MultipartFile file, String fileGroup, String fileDesc);
+    SysFile uploadFile(MultipartFile file, String fileGroup, String fileDesc, HttpServletRequest request);
 
     /**
      * 根据ID获取文件信息
@@ -46,7 +47,7 @@ public interface FileService {
     /**
      * 下载文件
      */
-    void downloadFile(Long id, HttpServletResponse response);
+    void downloadFile(Long id, HttpServletResponse response, HttpServletRequest request);
 
     /**
      * 获取文件访问URL

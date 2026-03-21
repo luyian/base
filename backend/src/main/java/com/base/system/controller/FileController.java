@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,12 +38,13 @@ public class FileController {
     public Result<SysFile> uploadFile(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "fileGroup", required = false, defaultValue = "default") String fileGroup,
-            @RequestParam(value = "fileDesc", required = false) String fileDesc) {
+            @RequestParam(value = "fileDesc", required = false) String fileDesc,
+            HttpServletRequest request) {
         if (file.isEmpty()) {
             return Result.error("文件不能为空");
         }
         try {
-            SysFile sysFile = fileService.uploadFile(file, fileGroup, fileDesc);
+            SysFile sysFile = fileService.uploadFile(file, fileGroup, fileDesc, request);
             return Result.success(sysFile);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -102,8 +104,8 @@ public class FileController {
      */
     @ApiOperation("下载文件")
     @GetMapping("/download/{id}")
-    public void downloadFile(@PathVariable Long id, HttpServletResponse response) {
-        fileService.downloadFile(id, response);
+    public void downloadFile(@PathVariable Long id, HttpServletResponse response, HttpServletRequest request) {
+        fileService.downloadFile(id, response, request);
     }
 
     /**

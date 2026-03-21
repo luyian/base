@@ -49,7 +49,6 @@
         v-loading="loading"
       >
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="originalName" label="文件名" min-width="200" show-overflow-tooltip />
         <el-table-column prop="fileExt" label="扩展名" width="100" />
         <el-table-column prop="fileSize" label="大小" width="120">
@@ -240,11 +239,43 @@ async function handlePreview(row) {
 async function handleCopyUrl(row) {
   try {
     const res = await getFileUrl(row.id)
-    if (res.data && res.data.url) {
-      await navigator.clipboard.writeText(res.data.url)
-      ElMessage.success('URL已复制到剪贴板')
+    // 兼容不同返回格式
+    let url = ''
+    if (res.data) {
+      url = res.data.url || res.data
+    } else if (res.url) {
+      url = res.url
+    }
+    
+    if (url) {
+      // 使用最简单可靠的复制方式
+      const input = document.createElement('input')
+      input.value = url
+      input.style.position = 'fixed'
+      input.style.opacity = '0'
+      document.body.appendChild(input)
+      input.select()
+      input.setSelectionRange(0, input.value.length)
+      
+      let copied = false
+      try {
+        copied = document.execCommand('copy')
+      } catch (e) {
+        copied = false
+      }
+      
+      document.body.removeChild(input)
+      
+      if (copied) {
+        ElMessage.success('URL已复制到剪贴板')
+      } else {
+        ElMessage.error('复制失败，请手动复制: ' + url)
+      }
+    } else {
+      ElMessage.error('获取URL失败')
     }
   } catch (e) {
+    console.error('复制失败:', e)
     ElMessage.error('复制失败')
   }
 }

@@ -1,5 +1,57 @@
 # 代码修改记录
 
+## 基金实时估值报价源替换（2026-03-18）
+
+### 需求
+iTick API 不能使用，需要使用新的数据源获取股票实时报价。
+
+### 解决方案
+使用东方财富免费接口替换 iTick，同时保留 iTick 作为降级数据源。
+
+### 新增文件
+
+| 文件 | 说明 |
+|------|------|
+| `stock/client/QuoteProvider.java` | 报价提供者接口 |
+| `stock/client/impl/EastMoneyQuoteProvider.java` | 东方财富报价实现（主数据源） |
+| `stock/client/impl/ITickQuoteProvider.java` | iTick 报价实现（降级数据源，保留原逻辑） |
+| `stock/config/QuoteSourceConfig.java` | 报价数据源配置类 |
+| `stock/factory/QuoteProviderFactory.java` | 报价提供者工厂，支持降级 |
+
+### 修改文件
+
+| 文件 | 修改内容 |
+|------|----------|
+| `FundServiceImpl.java` | 使用 QuoteProvider 替换原有的 iTick 直接调用，支持降级逻辑 |
+| `application-dev.yml` | 添加 `stock.quote` 配置项 |
+
+### 配置说明
+
+```yaml
+stock:
+  quote:
+    source: eastmoney        # 主数据源：eastmoney / itick
+    fallback-enabled: true   # 是否启用降级
+    fallback-source: itick   # 降级数据源
+```
+
+### 架构设计
+
+```
+QuoteProvider (接口)
+    │
+    ├── EastMoneyQuoteProvider  (主数据源)
+    └── ITickQuoteProvider      (降级数据源，保留原有代码)
+              │
+              ▼
+       QuoteProviderFactory
+              │
+              ▼
+         FundServiceImpl
+```
+
+---
+
 ## AI 模块 API Key 安全增强（2026-03-18）
 
 ### 需求

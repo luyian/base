@@ -1,12 +1,8 @@
 package com.base.stock.service.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.base.common.util.HttpClientUtil;
 import com.base.common.util.SecurityUtils;
-import com.base.stock.config.ITickConfig;
-import com.base.stock.entity.ApiToken;
 import com.base.stock.entity.StockInfo;
 import com.base.stock.dto.FundConfigRequest;
 import com.base.stock.dto.FundValuationResponse;
@@ -15,13 +11,14 @@ import com.base.stock.entity.FundConfig;
 import com.base.stock.entity.FundHolding;
 import com.base.stock.entity.FundValuationRecord;
 import com.base.stock.entity.FundWatchlist;
+import com.base.stock.client.QuoteProvider;
+import com.base.stock.factory.QuoteProviderFactory;
 import com.base.stock.mapper.FundConfigMapper;
 import com.base.stock.mapper.FundHoldingMapper;
 import com.base.stock.mapper.FundValuationRecordMapper;
 import com.base.stock.mapper.FundWatchlistMapper;
 import com.base.stock.service.FundService;
 import com.base.stock.mapper.StockInfoMapper;
-import com.base.stock.service.TokenManagerService;
 import com.base.system.service.ConfigService;
 import com.base.system.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +46,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FundServiceImpl implements FundService {
 
-    private static final String PROVIDER = "itick";
     private static final int BATCH_SIZE = 3;
     /** 基金估值缓存Key前缀 */
     private static final String FUND_VALUATION_CACHE_KEY = "fund:valuation:";
@@ -63,10 +59,9 @@ public class FundServiceImpl implements FundService {
     private final FundWatchlistMapper fundWatchlistMapper;
     private final FundValuationRecordMapper fundValuationRecordMapper;
     private final StockInfoMapper stockInfoMapper;
-    private final TokenManagerService tokenManagerService;
-    private final ITickConfig iTickConfig;
     private final RedisUtil redisUtil;
     private final ConfigService configService;
+    private final QuoteProviderFactory quoteProviderFactory;
 
     // ========== 基金管理（管理员） ==========
 
@@ -760,90 +755,86 @@ public class FundServiceImpl implements FundService {
      * 获取批量报价
      */
     private Map<String, StockQuote> fetchBatchQuotes(String market, List<String> codes) {
-        Map<String, StockQuote> quotes = new HashMap<>();
-
-        String codesParam = String.join(",", codes);
-        String url = iTickConfig.getBaseUrl() + "/stock/quotes?region=" + market + "&codes=" + codesParam;
-
-        ApiToken token = tokenManagerService.getNextTokenEntity(PROVIDER);
-        Map<String, String> headers = new HashMap<>();
-        headers.put("accept", "application/json");
-        headers.put("Content-Type", "application/json");
-        headers.put("token", token.getTokenValue());
-
-        log.info("获取实时报价，market: {}, codes: {}, url: {}", market, codes, url);
+        log.info("获取实时报价，market: {}, codes: {}", market, codes);
 
         try {
-            String response = HttpClientUtil.getWithRetry(url, headers, iTickConfig.getRetry());
-            log.info("报价响应: {}", response);
-
-            JSONObject jsonResponse = JSON.parseObject(response);
-            int code = jsonResponse.getIntValue("code");
-
-            if (code == 0) {
-                JSONObject data = jsonResponse.getJSONObject("data");
-                if (data != null) {
-                    for (String stockCode : data.keySet()) {
-                        JSONObject item = data.getJSONObject(stockCode);
-                        StockQuote quote = parseQuote(item);
-                        if (quote != null) {
-                            quote.setStockCode(stockCode);
-                            quotes.put(stockCode, quote);
-                        }
-                    }
-                }
-                tokenManagerService.resetTokenFailure(token.getId());
-            } else {
-                log.error("获取报价失败，code: {}, msg: {}", code, jsonResponse.getString("msg"));
-                tokenManagerService.recordTokenFailure(token.getId());
-                for (String stockCode : codes) {
-                    StockQuote quote = new StockQuote();
-                    quote.setStockCode(stockCode);
+            // 使用 QuoteProviderFactory 获取报价
+            Map<String, StockQuote> quotes = quoteProviderFactory.getPrimaryProvider().getQuotes(codes);
+            
+            // 确保所有股票都有返回值
+            Map<String, StockQuote> result = new HashMap<>();
+            for (String code : codes) {
+                StockQuote quote = quotes.get(code);
+                if (quote == null) {
+                    quote = new StockQuote();
+                    quote.setStockCode(code);
+                    quote.setMarket(market);
                     quote.setSuccess(false);
-                    quote.setErrorMsg(jsonResponse.getString("msg"));
-                    quotes.put(stockCode, quote);
+                    quote.setErrorMsg("未获取到报价");
                 }
+                result.put(code, quote);
             }
+            
+            return result;
         } catch (Exception e) {
             log.error("获取报价异常，market: {}, codes: {}", market, codes, e);
-            tokenManagerService.recordTokenFailure(token.getId());
-            for (String stockCode : codes) {
+            
+            // 尝试使用降级数据源
+            if (tryFallback(market, codes)) {
+                try {
+                    Map<String, StockQuote> fallbackQuotes = quoteProviderFactory.getFallbackProvider().getQuotes(codes);
+                    Map<String, StockQuote> result = new HashMap<>();
+                    for (String code : codes) {
+                        StockQuote quote = fallbackQuotes.get(code);
+                        if (quote == null) {
+                            quote = new StockQuote();
+                            quote.setStockCode(code);
+                            quote.setMarket(market);
+                            quote.setSuccess(false);
+                            quote.setErrorMsg("降级数据源未获取到报价");
+                        }
+                        result.put(code, quote);
+                    }
+                    log.info("降级数据源报价获取成功");
+                    return result;
+                } catch (Exception fallbackEx) {
+                    log.error("降级数据源也失败", fallbackEx);
+                }
+            }
+            
+            // 返回失败报价
+            Map<String, StockQuote> errorQuotes = new HashMap<>();
+            for (String code : codes) {
                 StockQuote quote = new StockQuote();
-                quote.setStockCode(stockCode);
+                quote.setStockCode(code);
+                quote.setMarket(market);
                 quote.setSuccess(false);
                 quote.setErrorMsg(e.getMessage());
-                quotes.put(stockCode, quote);
+                errorQuotes.put(code, quote);
             }
+            return errorQuotes;
         }
-        return quotes;
     }
 
     /**
-     * 解析报价数据
+     * 尝试降级数据源
      */
-    private StockQuote parseQuote(JSONObject item) {
-        if (item == null) {
-            return null;
+    private boolean tryFallback(String market, List<String> codes) {
+        QuoteProvider fallbackProvider = quoteProviderFactory.getFallbackProvider();
+        if (fallbackProvider == null) {
+            return false;
         }
-        StockQuote quote = new StockQuote();
-
-        String symbol = item.getString("s");
-        if (symbol != null && symbol.contains(".")) {
-            String[] parts = symbol.split("\\.");
-            quote.setStockCode(parts[0]);
-            if (parts.length > 1) {
-                quote.setMarket(parts[1]);
+        
+        // 简单测试：获取一只股票的报价
+        try {
+            if (!codes.isEmpty()) {
+                fallbackProvider.getQuote(codes.get(0), market);
+                return true;
             }
-        } else {
-            quote.setStockCode(symbol);
+        } catch (Exception e) {
+            log.warn("降级数据源测试失败: {}", e.getMessage());
         }
-
-        quote.setPrice(item.getBigDecimal("ld"));
-        quote.setLastClose(item.getBigDecimal("p"));
-        quote.setChange(item.getBigDecimal("ch"));
-        quote.setChangePercent(item.getBigDecimal("chp"));
-        quote.setSuccess(true);
-        return quote;
+        return false;
     }
 
     /**

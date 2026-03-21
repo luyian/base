@@ -105,6 +105,14 @@ stock:
     batch-threshold: 100
     # 批量请求大小
     batch-size: 100
+  # 报价数据源配置
+  quote:
+    # 主数据源: eastmoney / itick
+    source: eastmoney
+    # 是否启用降级（iTick 已不使用，设为 false）
+    fallback-enabled: false
+    # 降级数据源
+    fallback-source: itick
 
 # OAuth 第三方登录配置
 # 飞书配置

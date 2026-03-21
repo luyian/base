@@ -107,12 +107,12 @@ stock:
     batch-size: 100
   # 报价数据源配置
   quote:
-    # 主数据源: eastmoney / itick
-    source: eastmoney
-    # 是否启用降级（iTick 已不使用，设为 false）
+    # 主数据源: eastmoney / itick / tencent
+    source: tencent
+    # 是否启用降级
     fallback-enabled: false
     # 降级数据源
-    fallback-source: itick
+    fallback-source: eastmoney
 
 # OAuth 第三方登录配置
 # 飞书配置

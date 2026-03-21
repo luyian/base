@@ -3,6 +3,7 @@ package com.base.stock.factory;
 import com.base.stock.client.QuoteProvider;
 import com.base.stock.client.impl.EastMoneyQuoteProvider;
 import com.base.stock.client.impl.ITickQuoteProvider;
+import com.base.stock.client.impl.TencentQuoteProvider;
 import com.base.stock.config.QuoteSourceConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +28,7 @@ public class QuoteProviderFactory {
     private final QuoteSourceConfig config;
     private final EastMoneyQuoteProvider eastMoneyQuoteProvider;
     private final ITickQuoteProvider itickQuoteProvider;
+    private final TencentQuoteProvider tencentQuoteProvider;
 
     private final Map<String, QuoteProvider> providerMap = new ConcurrentHashMap<>();
 
@@ -34,6 +36,7 @@ public class QuoteProviderFactory {
     public void init() {
         providerMap.put("eastmoney", eastMoneyQuoteProvider);
         providerMap.put("itick", itickQuoteProvider);
+        providerMap.put("tencent", tencentQuoteProvider);
         log.info("报价提供者工厂初始化完成，支持的数据源: {}", providerMap.keySet());
     }
 

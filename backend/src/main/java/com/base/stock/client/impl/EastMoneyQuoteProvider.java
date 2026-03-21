@@ -130,13 +130,17 @@ public class EastMoneyQuoteProvider implements QuoteProvider {
                 int dataCode = jsonResponse.getIntValue("dataCode");
 
                 if (dataCode == 0) {
-                    JSONArray data = jsonResponse.getJSONArray("data");
-                    if (data != null) {
-                        for (int i = 0; i < data.size(); i++) {
-                            JSONObject item = data.getJSONObject(i);
-                            StockQuote quote = parseQuote(item);
-                            if (quote != null && quote.getStockCode() != null) {
-                                result.put(quote.getStockCode(), quote);
+                    // 正确解析 data.diff 数组
+                    JSONObject dataObj = jsonResponse.getJSONObject("data");
+                    if (dataObj != null) {
+                        JSONArray diff = dataObj.getJSONArray("diff");
+                        if (diff != null) {
+                            for (int i = 0; i < diff.size(); i++) {
+                                JSONObject item = diff.getJSONObject(i);
+                                StockQuote quote = parseQuote(item);
+                                if (quote != null && quote.getStockCode() != null) {
+                                    result.put(quote.getStockCode(), quote);
+                                }
                             }
                         }
                     }

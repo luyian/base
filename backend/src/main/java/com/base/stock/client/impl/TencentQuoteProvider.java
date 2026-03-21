@@ -114,7 +114,7 @@ public class TencentQuoteProvider implements QuoteProvider {
 
         String url = BASE_URL + codesParam;
 
-        log.debug("腾讯财经报价接口: {}", url);
+        log.info("腾讯财经报价接口: {}", url);
 
         try {
             String response = HttpClientUtil.get(url, null, 10000);
@@ -123,6 +123,8 @@ public class TencentQuoteProvider implements QuoteProvider {
                 log.warn("腾讯财经接口返回空");
                 throw new RuntimeException("接口返回空");
             }
+            
+            log.info("腾讯财经原始响应: {}", response.substring(0, Math.min(200, response.length())));
 
             // 解析响应 - 腾讯返回格式: v_sh600000="data..."
             String[] lines = response.split(";");
@@ -141,12 +143,12 @@ public class TencentQuoteProvider implements QuoteProvider {
                     value = value.substring(1, value.length() - 1);
                 }
                 
-                // 提取股票代码: v_sh600000 -> 600000
+                // 提取股票代码: v_sh600000 -> 600000, v_sz000001 -> 000001
                 String stockCode = key;
                 if (stockCode.startsWith("v_sh")) {
-                    stockCode = stockCode.substring(3);
+                    stockCode = stockCode.substring(4);  // 去掉 "v_sh" 得到 "600000"
                 } else if (stockCode.startsWith("v_sz")) {
-                    stockCode = stockCode.substring(3);
+                    stockCode = stockCode.substring(4);  // 去掉 "v_sz" 得到 "000001"
                 } else {
                     continue;
                 }
@@ -158,7 +160,7 @@ public class TencentQuoteProvider implements QuoteProvider {
                 }
             }
 
-            log.debug("腾讯财经报价解析成功: {} 条", result.size());
+            log.info("腾讯财经报价解析成功: {} 条", result.size());
 
         } catch (Exception e) {
             log.error("腾讯财经接口调用异常: {}", e.getMessage());
@@ -190,12 +192,12 @@ public class TencentQuoteProvider implements QuoteProvider {
         }
 
         try {
-            // GBK 解码
-            String decoded = new String(data.getBytes(StandardCharsets.ISO_8859_1), StandardCharsets.UTF_8);
+            // 腾讯财经返回GBK编码，直接使用UTF-8解码（HttpClientUtil已处理编码）
+            String decoded = data;
             String[] fields = decoded.split("~");
             
             if (fields.length < 10) {
-                log.warn("腾讯财经数据格式错误: {}", decoded);
+                log.warn("腾讯财经数据格式错误: {}", decoded.substring(0, Math.min(100, decoded.length())));
                 return null;
             }
 
@@ -241,19 +243,18 @@ public class TencentQuoteProvider implements QuoteProvider {
                 }
             }
 
-            // 11: 涨跌额
-            if (fields.length > 11 && !fields[11].isEmpty()) {
+            // 31: 涨跌额, 32: 涨跌幅 (腾讯财经API的真实字段位置)
+            if (fields.length > 32 && !fields[32].isEmpty()) {
                 try {
-                    quote.setChange(new BigDecimal(fields[11]));
+                    quote.setChangePercent(new BigDecimal(fields[32]));
                 } catch (NumberFormatException e) {
                     // 忽略
                 }
             }
 
-            // 12: 涨跌幅
-            if (fields.length > 12 && !fields[12].isEmpty()) {
+            if (fields.length > 31 && !fields[31].isEmpty()) {
                 try {
-                    quote.setChangePercent(new BigDecimal(fields[12]));
+                    quote.setChange(new BigDecimal(fields[31]));
                 } catch (NumberFormatException e) {
                     // 忽略
                 }

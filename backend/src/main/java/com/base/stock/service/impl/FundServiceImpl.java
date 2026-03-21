@@ -574,6 +574,8 @@ public class FundServiceImpl implements FundService {
                     quote.setWeightedChangePercent(weightedChange);
                     totalWeightedChange = totalWeightedChange.add(weightedChange);
                     totalWeight = totalWeight.add(holding.getWeight());
+                    log.debug("股票 {} changePercent={} weight={} weightedChange={}", 
+                            holding.getStockCode(), quote.getChangePercent(), holding.getWeight(), weightedChange);
                     successCount++;
                 } else {
                     failCount++;
@@ -586,7 +588,16 @@ public class FundServiceImpl implements FundService {
         response.setSuccessCount(successCount);
         response.setFailCount(failCount);
         response.setTotalWeight(totalWeight);
-        response.setEstimatedChangePercent(totalWeightedChange.setScale(2, RoundingMode.HALF_UP));
+        
+        // 计算实际涨跌幅：直接使用加权变化（已归一化到100%权重）
+        // weightedChange = changePercent * weight / 100
+        // 例如：1% * 15% / 100 = 0.15
+        // 所有股票加权变化的总和即为基金涨跌幅
+        BigDecimal estimatedChangePercent = totalWeightedChange;
+        
+        log.info("基金估值计算: fundId={}, totalWeight={}, totalWeightedChange={}, estimatedChangePercent={}", 
+                fund.getId(), totalWeight, totalWeightedChange, estimatedChangePercent);
+        response.setEstimatedChangePercent(estimatedChangePercent);
         response.setAllSuccess(failCount == 0);
         return response;
     }

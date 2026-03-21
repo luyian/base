@@ -1,0 +1,45 @@
+<!--pages/index/index.wxml-->
+<view class="container">
+  <!-- Header -->
+  <view class="header">
+    <text class="header-title">基金估值</text>
+    <text class="header-subtitle">实时更新</text>
+  </view>
+
+  <!-- Loading -->
+  <view wx:if="{{loading}}" class="loading-area">
+    <view class="loading"></view>
+    <text>加载中...</text>
+  </view>
+
+  <!-- Fund List -->
+  <scroll-view wx:else scroll-y class="fund-list">
+    <view class="section-title">
+      <text>今日估值</text>
+      <text class="update-time">更新: {{lastUpdate}}</text>
+    </view>
+
+    <view class="fund-card" 
+          wx:for="{{funds}}" 
+          wx:key="id" 
+          bindtap="goToDetail" 
+          data-id="{{item.id}}">
+      <view class="fund-info">
+        <text class="fund-name">{{item.fundName}}</text>
+        <text class="fund-code">{{item.fundCode}}</text>
+      </view>
+      <view class="fund-change {{item.estimatedChangePercent > 0 ? 'positive' : (item.estimatedChangePercent < 0 ? 'negative' : '')}}">
+        <text class="change-value">{{item.estimatedChangePercent > 0 ? '+' : ''}}{{item.estimatedChangePercent || 0}}%</text>
+      </view>
+    </view>
+
+    <view wx:if="{{funds.length === 0}}" class="empty">
+      <text>暂无基金数据</text>
+    </view>
+  </scroll-view>
+
+  <!-- Refresh button -->
+  <view class="refresh-btn" bindtap="refreshData">
+    <text>刷新估值</text>
+  </view>
+</view>

@@ -1,0 +1,16 @@
+<!--pages/fund/fund.wxml-->
+<view class="container">
+  <view class="loading" wx:if="{{loading}}">加载中...</view>
+  
+  <view class="fund-list" wx:else>
+    <view class="fund-item" wx:for="{{funds}}" wx:key="id" bindtap="goToDetail" data-id="{{item.id}}">
+      <view class="fund-info">
+        <text class="name">{{item.fundName}}</text>
+        <text class="code">{{item.fundCode}}</text>
+      </view>
+      <view class="change {{item.estimatedChangePercent > 0 ? 'up' : 'down'}}">
+        <text>{{item.estimatedChangePercent > 0 ? '+' : ''}}{{item.estimatedChangePercent || 0}}%</text>
+      </view>
+    </view>
+  </view>
+</view>

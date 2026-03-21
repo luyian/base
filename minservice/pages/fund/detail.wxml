@@ -1,0 +1,32 @@
+<!--pages/fund/detail.wxml-->
+<view class="container">
+  <view class="loading" wx:if="{{loading}}">加载中...</view>
+  
+  <view wx:else>
+    <view class="fund-header">
+      <text class="name">{{fund.fundName}}</text>
+      <text class="code">{{fund.fundCode}}</text>
+      <view class="change {{fund.estimatedChangePercent > 0 ? 'up' : 'down'}}">
+        <text class="value">{{fund.estimatedChangePercent > 0 ? '+' : ''}}{{fund.estimatedChangePercent || 0}}%</text>
+      </view>
+    </view>
+    
+    <view class="section-title">持仓明细</view>
+    
+    <view class="holding-list">
+      <view class="holding-item" wx:for="{{holdings}}" wx:key="stockCode">
+        <view class="stock-info">
+          <text class="stock-name">{{item.stockName}}</text>
+          <text class="stock-code">{{item.stockCode}}</text>
+        </view>
+        <view class="stock-data">
+          <text class="price">{{item.price || '--'}}</text>
+          <text class="change {{item.changePercent > 0 ? 'up' : 'down'}}">
+            {{item.changePercent > 0 ? '+' : ''}}{{item.changePercent || 0}}%
+          </text>
+          <text class="weight">权重: {{item.weight || 0}}%</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

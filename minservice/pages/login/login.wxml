@@ -1,0 +1,22 @@
+<!--pages/login/login.wxml-->
+<view class="container">
+  <view class="logo-area">
+    <image class="logo" src="/assets/logo.png" mode="aspectFit"></image>
+    <text class="title">基金估值系统</text>
+    <text class="subtitle">实时掌握基金动态</text>
+  </view>
+  
+  <button class="login-btn" 
+          type="primary" 
+          bindtap="handleWxLogin" 
+          loading="{{loading}}">
+    {{loading ? '登录中...' : '微信授权登录'}}
+  </button>
+  
+  <view class="tips">
+    <text>登录即表示同意</text>
+    <text class="link">《用户协议》</text>
+    <text>和</text>
+    <text class="link">《隐私政策》</text>
+  </view>
+</view>

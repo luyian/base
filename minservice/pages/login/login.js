@@ -27,15 +27,17 @@ Page({
         if (res.code) {
           authApi.wxLogin(res.code)
             .then(data => {
+              // Save token
+              if (data.data && data.data.token) {
+                wx.setStorageSync('token', data.data.token);
+              }
               wx.showToast({
                 title: '登录成功',
                 icon: 'success'
               });
-              setTimeout(() => {
-                wx.switchTab({
-                  url: '/pages/index/index'
-                });
-              }, 1500);
+              wx.switchTab({
+                url: '/pages/index/index'
+              });
             })
             .catch(err => {
               wx.showToast({

@@ -16,6 +16,10 @@ const request = (options) => {
       },
       success: (res) => {
         if (res.data.code === 200) {
+          // Store token if present
+          if (res.data.data && res.data.data.token) {
+            wx.setStorageSync('token', res.data.data.token);
+          }
           resolve(res.data);
         } else if (res.data.code === 401) {
           // Token expired, redirect to login

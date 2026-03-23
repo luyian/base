@@ -362,6 +362,10 @@ async function loadServerStats() {
       }
     }
   } catch (e) {
+    // 权限不足时静默处理，不显示错误
+    if (e?.code === 403 || e?.message?.includes('Forbidden')) {
+      return
+    }
     console.error('获取服务器信息失败', e)
   }
 }
@@ -390,6 +394,11 @@ async function loadLoginLogs() {
       }))
     }
   } catch (e) {
+    // 权限不足时静默处理，不显示错误
+    if (e?.code === 403 || e?.message?.includes('Forbidden')) {
+      loginLoading.value = false
+      return
+    }
     console.error('获取登录日志失败', e)
   } finally {
     loginLoading.value = false

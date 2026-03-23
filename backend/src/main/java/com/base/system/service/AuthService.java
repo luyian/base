@@ -5,6 +5,7 @@ import com.base.system.dto.LoginRequest;
 import com.base.system.dto.LoginResponse;
 import com.base.system.dto.RouterVO;
 import com.base.system.dto.UserInfoResponse;
+import com.base.system.dto.WxLoginRequest;
 
 import java.util.List;
 
@@ -27,6 +28,14 @@ public interface AuthService {
      * @return 登录响应
      */
     LoginResponse login(LoginRequest request);
+
+    /**
+     * 微信小程序登录
+     *
+     * @param request 微信登录请求
+     * @return 登录响应
+     */
+    LoginResponse wxLogin(WxLoginRequest request);
 
     /**
      * 用户登出

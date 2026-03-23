@@ -109,4 +109,9 @@ oauth:
     client-id: your-github-client-id
     client-secret: your-github-client-secret
     redirect-uri: http://localhost:3000/oauth/callback
+  # 微信小程序登录配置
+  wechat:
+    enabled: true
+    app-id: wx6a9b4067248fa5e9
+    app-secret: YOUR_WECHAT_APP_SECRET
   default-role-id: 2

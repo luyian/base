@@ -6,6 +6,7 @@ import com.base.system.dto.LoginRequest;
 import com.base.system.dto.LoginResponse;
 import com.base.system.dto.RouterVO;
 import com.base.system.dto.UserInfoResponse;
+import com.base.system.dto.WxLoginRequest;
 import com.base.system.service.AuthService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -45,6 +46,16 @@ public class AuthController {
     @ApiOperation("用户登录")
     public Result<LoginResponse> login(@Validated @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
+        return Result.success(response);
+    }
+
+    /**
+     * 微信小程序登录
+     */
+    @PostMapping("/wx-login")
+    @ApiOperation("微信小程序登录")
+    public Result<LoginResponse> wxLogin(@Validated @RequestBody WxLoginRequest request) {
+        LoginResponse response = authService.wxLogin(request);
         return Result.success(response);
     }
 

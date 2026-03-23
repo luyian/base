@@ -2,19 +2,23 @@ package com.base.system.service.impl;
 
 import com.base.common.exception.BusinessException;
 import com.base.common.result.ResultCode;
+import com.base.common.util.HttpClientUtil;
 import com.base.system.dto.CaptchaResponse;
 import com.base.system.dto.LoginRequest;
 import com.base.system.dto.LoginResponse;
 import com.base.system.dto.RouterVO;
 import com.base.system.dto.UserInfoResponse;
+import com.base.system.dto.WxLoginRequest;
 import com.base.system.entity.Dept;
 import com.base.system.entity.Permission;
 import com.base.system.entity.Role;
 import com.base.system.entity.SysUser;
+import com.base.system.entity.UserOauth;
 import com.base.system.mapper.DeptMapper;
 import com.base.system.mapper.PermissionMapper;
 import com.base.system.mapper.RoleMapper;
 import com.base.system.mapper.SysUserMapper;
+import com.base.system.mapper.UserOauthMapper;
 import com.base.system.service.AuthService;
 import com.base.system.service.LoginLogService;
 import com.base.system.entity.LoginLog;
@@ -26,11 +30,15 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import com.base.util.CaptchaUtil;
 import com.base.util.SecurityUtils;
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -68,6 +76,27 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private LoginLogService loginLogService;
+
+    @Autowired
+    private UserOauthMapper userOauthMapper;
+
+    /**
+     * 微信小程序是否启用
+     */
+    @Value("${oauth.wechat.enabled:false}")
+    private Boolean wechatEnabled;
+
+    /**
+     * 微信小程序AppID
+     */
+    @Value("${oauth.wechat.app-id:}")
+    private String wechatAppId;
+
+    /**
+     * 微信小程序AppSecret
+     */
+    @Value("${oauth.wechat.app-secret:}")
+    private String wechatAppSecret;
 
     /**
      * 验证码是否启用
@@ -195,6 +224,116 @@ public class AuthServiceImpl implements AuthService {
         log.info("用户登录成功，username: {}, userId: {}", username, user.getId());
 
         return new LoginResponse(token, jwtExpiration);
+    }
+
+    @Override
+    public LoginResponse wxLogin(WxLoginRequest request) {
+        // 1. 检查微信登录是否启用
+        if (!Boolean.TRUE.equals(wechatEnabled)) {
+            throw new BusinessException(ResultCode.FUNCTION_DISABLED);
+        }
+
+        // 2. 调用微信API获取openid
+        String openid = getWechatOpenid(request.getCode());
+        if (openid == null) {
+            throw new BusinessException("微信登录失败：无效的code");
+        }
+
+        // 3. 查询是否已绑定用户
+        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
+        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
+        oauthWrapper.eq(UserOauth::getOauthId, openid);
+        UserOauth userOauth = userOauthMapper.selectOne(oauthWrapper);
+
+        SysUser user;
+        if (userOauth == null) {
+            // 4.1 新用户：自动创建账号
+            user = createWechatUser(openid, request);
+        } else {
+            // 4.2 老用户：查询绑定账号
+            user = userMapper.selectById(userOauth.getUserId());
+            if (user == null) {
+                // 账号已删除，重新创建
+                user = createWechatUser(openid, request);
+            }
+        }
+
+        // 5. 检查用户状态
+        if (user.getStatus() == 0) {
+            saveLoginLog(user.getUsername(), 0, "账号已被禁用");
+            throw new BusinessException(ResultCode.ACCOUNT_DISABLED);
+        }
+
+        // 6. 生成 Token
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+
+        // 7. 存储 Token 到 Redis
+        redisUtil.set(TOKEN_PREFIX + user.getId(), token, jwtExpiration, TimeUnit.MILLISECONDS);
+
+        // 8. 记录登录日志
+        saveLoginLog(user.getUsername(), 1, "微信登录成功");
+        log.info("微信用户登录成功，openid: {}, userId: {}", openid, user.getId());
+
+        return new LoginResponse(token, jwtExpiration);
+    }
+
+    /**
+     * 调用微信API获取openid
+     */
+    private String getWechatOpenid(String code) {
+        try {
+            String url = "https://api.weixin.qq.com/sns/jscode2session" +
+                    "?appid=" + wechatAppId +
+                    "&secret=" + wechatAppSecret +
+                    "&js_code=" + code +
+                    "&grant_type=authorization_code";
+
+            String response = HttpClientUtil.get(url, null);
+            JSONObject json = JSON.parseObject(response);
+
+            if (json.containsKey("openid")) {
+                return json.getString("openid");
+            }
+
+            log.error("微信登录失败：{}", response);
+            return null;
+        } catch (Exception e) {
+            log.error("调用微信API失败", e);
+            return null;
+        }
+    }
+
+    /**
+     * 创建微信用户
+     */
+    private SysUser createWechatUser(String openid, WxLoginRequest request) {
+        // 生成唯一用户名
+        String username = "wx_" + openid.substring(0, 16);
+
+        // 创建用户
+        SysUser user = new SysUser();
+        user.setUsername(username);
+        user.setNickname(request.getNickname() != null ? request.getNickname() : "微信用户");
+        user.setAvatar(request.getAvatarUrl());
+        user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+        user.setStatus(1);
+        user.setDelFlag(0);
+
+        userMapper.insert(user);
+
+        // 绑定第三方登录
+        UserOauth oauth = new UserOauth();
+        oauth.setUserId(user.getId());
+        oauth.setOauthType("wechat");
+        oauth.setOauthId(openid);
+        oauth.setOauthName(request.getNickname());
+        oauth.setOauthAvatar(request.getAvatarUrl());
+        oauth.setCreateTime(java.time.LocalDateTime.now());
+        userOauthMapper.insert(oauth);
+
+        log.info("创建微信用户成功，username: {}, openid: {}", username, openid);
+
+        return user;
     }
 
     @Override

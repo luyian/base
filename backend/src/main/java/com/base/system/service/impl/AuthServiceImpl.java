@@ -230,7 +230,7 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse wxLogin(WxLoginRequest request) {
         // 1. 检查微信登录是否启用
         if (!Boolean.TRUE.equals(wechatEnabled)) {
-            throw new BusinessException(ResultCode.FUNCTION_DISABLED);
+            throw new BusinessException(500, "微信登录未启用");
         }
 
         // 2. 调用微信API获取openid
@@ -317,7 +317,6 @@ public class AuthServiceImpl implements AuthService {
         user.setAvatar(request.getAvatarUrl());
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setStatus(1);
-        user.setDelFlag(0);
 
         userMapper.insert(user);
 

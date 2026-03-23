@@ -1,7 +1,7 @@
 {
   "miniprogramRoot": "./",
   "projectname": "minservice",
-  "appid": "YOUR_APPID_HERE",
+  "appid": "wx6a9b4067248fa5e9",
   "compileType": "miniprogram",
   "setting": {
     "urlCheck": false,

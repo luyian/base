@@ -27,9 +27,11 @@ Page({
         if (res.code) {
           authApi.wxLogin(res.code)
             .then(data => {
+              console.log('登录响应:', data);
               // Save token
               if (data.data && data.data.token) {
                 wx.setStorageSync('token', data.data.token);
+                console.log('Token已保存:', data.data.token);
               }
               wx.showToast({
                 title: '登录成功',

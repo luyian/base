@@ -29,9 +29,12 @@ Page({
             .then(data => {
               console.log('登录响应:', data);
               // Save token
+              const app = getApp();
               if (data.data && data.data.token) {
-                wx.setStorageSync('token', data.data.token);
-                console.log('Token已保存:', data.data.token);
+                const token = data.data.token;
+                wx.setStorageSync('token', token);
+                app.globalData.token = token;  // Update globalData
+                console.log('Token已保存:', token);
               }
               wx.showToast({
                 title: '登录成功',

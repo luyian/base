@@ -49,6 +49,11 @@ App({
 
   // Check if logged in
   isLoggedIn() {
-    return !!this.globalData.token;
+    // Check both storage and globalData
+    const token = wx.getStorageSync('token');
+    if (token && !this.globalData.token) {
+      this.globalData.token = token;
+    }
+    return !!this.globalData.token || !!wx.getStorageSync('token');
   }
 });

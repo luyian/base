@@ -21,6 +21,7 @@ const request = (options) => {
           // Store token if present
           if (res.data.data && res.data.data.token) {
             wx.setStorageSync('token', res.data.data.token);
+            app.globalData.token = res.data.data.token;  // Update globalData
           }
           resolve(res.data);
         } else if (res.data.code === 401) {

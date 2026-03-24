@@ -16,6 +16,13 @@ Page({
   },
 
   loadWatchlist() {
+    const token = wx.getStorageSync('token');
+    if (!token) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      wx.navigateTo({ url: '/pages/login/login' });
+      return;
+    }
+    
     this.setData({ loading: true });
     watchlistApi.getWatchlist()
       .then(res => {

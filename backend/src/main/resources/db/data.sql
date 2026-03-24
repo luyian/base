@@ -3936,6 +3936,7 @@ INDEX `idx_status`(`status` ASC) USING BTREE
 INSERT INTO `sys_role` VALUES (1, '超级管理员', 'SUPER_ADMIN', '拥有系统所有权限', 1, 1, 0, NULL, '2026-01-14 14:59:02', 'system', '2026-01-14 14:59:02', NULL, 0);
 INSERT INTO `sys_role` VALUES (2, '系统管理员', 'ADMIN', '拥有系统管理权限', 2, 1, 1, NULL, '2026-01-14 14:59:02', 'system', '2026-01-14 14:59:02', NULL, 0);
 INSERT INTO `sys_role` VALUES (3, '普通用户', 'USER', '普通用户权限', 4, 1, 2, NULL, '2026-01-14 14:59:02', 'system', '2026-01-14 14:59:02', NULL, 0);
+INSERT INTO `sys_role` VALUES (4, '小程序用户', 'MINI_SERVICE', '小程序用户权限', 5, 1, 3, NULL, '2026-01-14 14:59:02', 'system', '2026-01-14 14:59:02', NULL, 0);
 
 -- ----------------------------
 -- Table structure for sys_role_department

@@ -107,6 +107,9 @@ public class AuthServiceImpl implements AuthService {
      */
     @Value("${oauth.default-role-id:2}")
     private Long defaultRoleId;
+    @Value("${oauth.mini-service-role-id:4}")
+    private Long miniServiceRoleId;
+    private Long miniServiceRoleId;
 
     /**
      * 验证码是否启用
@@ -327,6 +330,9 @@ public class AuthServiceImpl implements AuthService {
         user.setAvatar(request.getAvatarUrl());
         user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         user.setStatus(1);
+        
+        // 分配小程序用户角色
+        Long roleId = miniServiceRoleId != null ? miniServiceRoleId : 4L;
 
         userMapper.insert(user);
 
@@ -334,7 +340,7 @@ public class AuthServiceImpl implements AuthService {
         if (defaultRoleId != null) {
             com.base.system.entity.UserRole userRole = new com.base.system.entity.UserRole();
             userRole.setUserId(user.getId());
-            userRole.setRoleId(defaultRoleId);
+            userRole.setRoleId(roleId);
             userRoleMapper.insert(userRole);
         }
 

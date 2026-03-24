@@ -114,4 +114,5 @@ oauth:
     enabled: true
     app-id: wx6a9b4067248fa5e9
     app-secret: 6260582938b30d7a58a7a3db35a05f6b
+  mini-service-role-id: 4
   default-role-id: 2

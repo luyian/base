@@ -76,8 +76,12 @@ export:
     queue-capacity: 100
     thread-name-prefix: export-
 
-# 股票同步配置
+# 股票报价数据源配置
 stock:
+  quote:
+    source: tencent
+    fallback-enabled: false
+  # 股票同步配置
   sync:
     # 每个线程需要的Token数量
     tokens-per-thread: 6

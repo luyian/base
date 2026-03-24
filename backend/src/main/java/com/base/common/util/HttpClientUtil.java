@@ -34,6 +34,11 @@ public class HttpClientUtil {
     private static final int RETRY_INTERVAL = 1000;
 
     /**
+     * 默认 User-Agent
+     */
+    private static final String DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+    /**
      * GET 请求，返回字符串
      *
      * @param url     请求地址
@@ -55,7 +60,8 @@ public class HttpClientUtil {
     public static String get(String url, Map<String, String> headers, int timeout) {
         try {
             HttpRequest request = HttpUtil.createGet(url)
-                    .timeout(timeout);
+                    .timeout(timeout)
+                    .header("User-Agent", DEFAULT_USER_AGENT);
             if (headers != null && !headers.isEmpty()) {
                 request.addHeaders(headers);
             }
@@ -125,7 +131,8 @@ public class HttpClientUtil {
         try {
             HttpRequest request = HttpUtil.createPost(url)
                     .timeout(timeout)
-                    .contentType("application/json");
+                    .contentType("application/json")
+                    .header("User-Agent", DEFAULT_USER_AGENT);
             if (headers != null && !headers.isEmpty()) {
                 request.addHeaders(headers);
             }

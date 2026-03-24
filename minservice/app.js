@@ -3,7 +3,7 @@ App({
   globalData: {
     userInfo: null,
     token: null,
-    baseUrl: 'https://119.45.176.101/api'
+    baseUrl: 'http://119.45.176.101/api'  // 测试用HTTP，生产环境需要HTTPS + SSL证书
   },
 
   onLaunch() {

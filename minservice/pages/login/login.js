@@ -25,9 +25,10 @@ Page({
     wx.login({
       success: (res) => {
         if (res.code) {
+          console.log('wx.login code:', res.code);
           authApi.wxLogin(res.code)
             .then(data => {
-              console.log('登录响应:', data);
+              console.log('登录响应成功:', data);
               // Save token
               const app = getApp();
               if (data.data && data.data.token) {
@@ -45,6 +46,7 @@ Page({
               });
             })
             .catch(err => {
+              console.log('登录失败:', err);
               wx.showToast({
                 title: err.message || '登录失败',
                 icon: 'none'

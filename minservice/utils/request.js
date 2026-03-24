@@ -40,6 +40,7 @@ const request = (options) => {
         }
       },
       fail: (err) => {
+        console.log('请求失败:', err);
         wx.showToast({
           title: '网络请求失败',
           icon: 'none'

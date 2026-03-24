@@ -26,7 +26,10 @@ Page({
     
     fundApi.getFundList()
       .then(res => {
-        const funds = res.data || [];
+        const funds = (res.data || []).map(fund => ({
+          ...fund,
+          estimatedChangePercent: parseFloat(fund.estimatedChangePercent || 0).toFixed(2)
+        }));
         // Sort by change percent
         funds.sort((a, b) => {
           const aChange = parseFloat(a.estimatedChangePercent) || 0;

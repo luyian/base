@@ -29,7 +29,7 @@
         <text class="fund-code">{{item.fundCode}}</text>
       </view>
       <view class="fund-change {{item.estimatedChangePercent > 0 ? 'positive' : (item.estimatedChangePercent < 0 ? 'negative' : '')}}">
-        <text class="change-value">{{item.estimatedChangePercent > 0 ? '+' : ''}}{{item.estimatedChangePercent || 0}}%</text>
+        <text class="change-value">{{item.estimatedChangePercent > 0 ? '+' : ''}}{{item.estimatedChangePercent}}%</text>
       </view>
     </view>
 

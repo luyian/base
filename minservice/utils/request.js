@@ -4,6 +4,7 @@ const app = getApp();
 const request = (options) => {
   return new Promise((resolve, reject) => {
     const token = wx.getStorageSync('token');
+    console.log('请求URL:', options.url, 'Token:', token ? token.substring(0, 20) + '...' : '无');
     
     wx.request({
       url: app.globalData.baseUrl + options.url,
@@ -15,6 +16,7 @@ const request = (options) => {
         ...options.header
       },
       success: (res) => {
+        console.log('响应:', res.statusCode, res.data);
         if (res.data.code === 200) {
           // Store token if present
           if (res.data.data && res.data.data.token) {

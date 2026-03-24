@@ -109,7 +109,6 @@ public class AuthServiceImpl implements AuthService {
     private Long defaultRoleId;
     @Value("${oauth.mini-service-role-id:4}")
     private Long miniServiceRoleId;
-    private Long miniServiceRoleId;
 
     /**
      * 验证码是否启用

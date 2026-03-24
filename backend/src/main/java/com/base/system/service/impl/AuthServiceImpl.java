@@ -19,6 +19,7 @@ import com.base.system.mapper.PermissionMapper;
 import com.base.system.mapper.RoleMapper;
 import com.base.system.mapper.SysUserMapper;
 import com.base.system.mapper.UserOauthMapper;
+import com.base.system.mapper.UserRoleMapper;
 import com.base.system.service.AuthService;
 import com.base.system.service.LoginLogService;
 import com.base.system.entity.LoginLog;
@@ -80,6 +81,9 @@ public class AuthServiceImpl implements AuthService {
     @Autowired
     private UserOauthMapper userOauthMapper;
 
+    @Autowired
+    private UserRoleMapper userRoleMapper;
+
     /**
      * 微信小程序是否启用
      */
@@ -97,6 +101,12 @@ public class AuthServiceImpl implements AuthService {
      */
     @Value("${oauth.wechat.app-secret:}")
     private String wechatAppSecret;
+
+    /**
+     * 默认角色ID
+     */
+    @Value("${oauth.default-role-id:2}")
+    private Long defaultRoleId;
 
     /**
      * 验证码是否启用
@@ -319,6 +329,14 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus(1);
 
         userMapper.insert(user);
+
+        // 分配默认角色
+        if (defaultRoleId != null) {
+            com.base.system.entity.UserRole userRole = new com.base.system.entity.UserRole();
+            userRole.setUserId(user.getId());
+            userRole.setRoleId(defaultRoleId);
+            userRoleMapper.insert(userRole);
+        }
 
         // 绑定第三方登录
         UserOauth oauth = new UserOauth();

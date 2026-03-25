@@ -12,11 +12,21 @@ Page({
     this.loadFunds();
   },
 
+  onShow() {
+    if (getApp().isLoggedIn()) {
+      this.loadFunds();
+    }
+  },
+
   loadFunds() {
     this.setData({ loading: true });
     fundApi.getFundList()
       .then(res => {
-        this.setData({ funds: res.data || [], loading: false });
+        const funds = (res.data || []).map(fund => ({
+          ...fund,
+          estimatedChangePercent: parseFloat(fund.estimatedChangePercent || 0).toFixed(2)
+        }));
+        this.setData({ funds: funds, loading: false });
       })
       .catch(() => this.setData({ loading: false }));
   },
@@ -24,5 +34,41 @@ Page({
   goToDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/pages/fund/detail?id=${id}` });
+  },
+
+  // Toggle watchlist
+  toggleWatchlist(e) {
+    const fund = e.currentTarget.dataset.fund;
+    const that = this;
+    
+    if (fund.inWatchlist) {
+      // Remove from watchlist
+      wx.showModal({
+        title: '提示',
+        content: `确定取消关注「${fund.fundName}」？`,
+        success(res) {
+          if (res.confirm) {
+            fundApi.removeFromWatchlist(fund.id)
+              .then(() => {
+                wx.showToast({ title: '已取消关注', icon: 'success' });
+                that.loadFunds();
+              })
+              .catch(err => {
+                wx.showToast({ title: '操作失败', icon: 'none' });
+              });
+          }
+        }
+      });
+    } else {
+      // Add to watchlist
+      fundApi.addToWatchlist(fund.id)
+        .then(() => {
+          wx.showToast({ title: '已添加到自选', icon: 'success' });
+          that.loadFunds();
+        })
+        .catch(err => {
+          wx.showToast({ title: '操作失败', icon: 'none' });
+        });
+    }
   }
 });

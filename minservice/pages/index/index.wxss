@@ -56,9 +56,28 @@
   color: #666;
 }
 
-.update-time {
-  font-size: 22rpx;
-  color: #999;
+.section-title .more {
+  color: #409eff;
+  font-size: 24rpx;
+}
+
+.watchlist {
+  margin-bottom: 10rpx;
+}
+
+.watchlist-card {
+  border-left: 6rpx solid #ffb100;
+}
+
+.fund-name-row {
+  display: flex;
+  align-items: center;
+}
+
+.star {
+  color: #ffb100;
+  font-size: 28rpx;
+  margin-left: 10rpx;
 }
 
 .fund-card {

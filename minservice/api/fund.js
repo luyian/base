@@ -15,5 +15,19 @@ module.exports = {
   refreshAllValuations: () => request.post('/stock/fund/refresh-all'),
   
   // Refresh single fund valuation
-  refreshValuation: (fundId) => request.post(`/stock/fund/refresh/${fundId}`)
+  refreshValuation: (fundId) => request.post(`/stock/fund/refresh/${fundId}`),
+  
+  // ========== Fund Watchlist APIs ==========
+  
+  // Get my watchlist
+  getMyWatchlist: () => request.get('/stock/fund/watchlist/list'),
+  
+  // Get watchlist valuations
+  getWatchlistValuation: () => request.get('/stock/fund/watchlist/valuation'),
+  
+  // Add fund to watchlist
+  addToWatchlist: (fundId) => request.post(`/stock/fund/watchlist/${fundId}`),
+  
+  // Remove fund from watchlist
+  removeFromWatchlist: (fundId) => request.delete(`/stock/fund/watchlist/${fundId}`)
 };

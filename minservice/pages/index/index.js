@@ -3,6 +3,7 @@ const fundApi = require('../../api/fund');
 
 Page({
   data: {
+    watchlist: [],
     funds: [],
     loading: true,
     refreshing: false,
@@ -10,26 +11,37 @@ Page({
   },
 
   onLoad() {
-    this.loadFunds();
+    this.loadData();
   },
 
   onShow() {
     // Refresh data when page shows
     if (getApp().isLoggedIn()) {
-      this.loadFunds();
+      this.loadData();
     }
   },
 
-  // Load fund list
-  loadFunds() {
+  // Load all data: watchlist first, then all funds
+  loadData() {
     this.setData({ loading: true });
     
-    fundApi.getFundList()
-      .then(res => {
-        const funds = (res.data || []).map(fund => ({
+    // Load watchlist and all funds in parallel
+    Promise.all([
+      fundApi.getWatchlistValuation(),
+      fundApi.getFundList()
+    ])
+      .then(([watchlistRes, fundsRes]) => {
+        const watchlist = (watchlistRes.data || []).map(fund => ({
           ...fund,
           estimatedChangePercent: parseFloat(fund.estimatedChangePercent || 0).toFixed(2)
         }));
+        
+        const funds = (fundsRes.data || []).map(fund => ({
+          ...fund,
+          estimatedChangePercent: parseFloat(fund.estimatedChangePercent || 0).toFixed(2),
+          inWatchlist: !!fund.inWatchlist
+        }));
+        
         // Sort by change percent
         funds.sort((a, b) => {
           const aChange = parseFloat(a.estimatedChangePercent) || 0;
@@ -38,6 +50,7 @@ Page({
         });
         
         this.setData({
+          watchlist,
           funds,
           loading: false,
           lastUpdate: new Date().toLocaleString()
@@ -59,7 +72,7 @@ Page({
     
     fundApi.refreshAllValuations()
       .then(() => {
-        return this.loadFunds();
+        return this.loadData();
       })
       .finally(() => {
         this.setData({ refreshing: false });
@@ -79,6 +92,13 @@ Page({
   goToFundList() {
     wx.switchTab({
       url: '/pages/fund/fund'
+    });
+  },
+
+  // Go to watchlist page
+  goToWatchlist() {
+    wx.switchTab({
+      url: '/pages/watchlist/watchlist'
     });
   },
 

@@ -12,8 +12,30 @@
     <text>加载中...</text>
   </view>
 
-  <!-- Fund List -->
   <scroll-view wx:else scroll-y class="fund-list">
+    <!-- Watchlist Section -->
+    <view class="section-title" wx:if="{{watchlist.length > 0}}">
+      <text>我的自选</text>
+      <text class="more" bindtap="goToWatchlist">查看全部 ></text>
+    </view>
+
+    <view class="watchlist" wx:if="{{watchlist.length > 0}}">
+      <view class="fund-card watchlist-card" 
+            wx:for="{{watchlist}}" 
+            wx:key="id" 
+            bindtap="goToDetail" 
+            data-id="{{item.id}}">
+        <view class="fund-info">
+          <text class="fund-name">{{item.fundName}}</text>
+          <text class="fund-code">{{item.fundCode}}</text>
+        </view>
+        <view class="fund-change {{item.estimatedChangePercent > 0 ? 'positive' : (item.estimatedChangePercent < 0 ? 'negative' : '')}}">
+          <text class="change-value">{{item.estimatedChangePercent > 0 ? '+' : ''}}{{item.estimatedChangePercent}}%</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- All Funds Section -->
     <view class="section-title">
       <text>今日估值</text>
       <text class="update-time">更新: {{lastUpdate}}</text>
@@ -25,7 +47,10 @@
           bindtap="goToDetail" 
           data-id="{{item.id}}">
       <view class="fund-info">
-        <text class="fund-name">{{item.fundName}}</text>
+        <view class="fund-name-row">
+          <text class="fund-name">{{item.fundName}}</text>
+          <text class="star" wx:if="{{item.inWatchlist}}">★</text>
+        </view>
         <text class="fund-code">{{item.fundCode}}</text>
       </view>
       <view class="fund-change {{item.estimatedChangePercent > 0 ? 'positive' : (item.estimatedChangePercent < 0 ? 'negative' : '')}}">

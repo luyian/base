@@ -33,11 +33,13 @@ Page({
       .then(([watchlistRes, fundsRes]) => {
         const watchlist = (watchlistRes.data || []).map(fund => ({
           ...fund,
+          id: fund.fundId || fund.id,
           estimatedChangePercent: parseFloat(fund.estimatedChangePercent || 0).toFixed(2)
         }));
         
         const funds = (fundsRes.data || []).map(fund => ({
           ...fund,
+          id: fund.fundId || fund.id, // 确保 id 字段存在
           estimatedChangePercent: parseFloat(fund.estimatedChangePercent || 0).toFixed(2),
           inWatchlist: !!fund.inWatchlist
         }));

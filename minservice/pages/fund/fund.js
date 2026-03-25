@@ -40,6 +40,12 @@ Page({
   toggleWatchlist(e) {
     const fund = e.currentTarget.dataset.fund;
     const that = this;
+    const fundId = fund.id || fund.fundId; // 支持 id 或 fundId
+    
+    if (!fundId) {
+      wx.showToast({ title: '基金ID获取失败', icon: 'none' });
+      return;
+    }
     
     if (fund.inWatchlist) {
       // Remove from watchlist
@@ -48,7 +54,7 @@ Page({
         content: `确定取消关注「${fund.fundName}」？`,
         success(res) {
           if (res.confirm) {
-            fundApi.removeFromWatchlist(fund.id)
+            fundApi.removeFromWatchlist(fundId)
               .then(() => {
                 wx.showToast({ title: '已取消关注', icon: 'success' });
                 that.loadFunds();
@@ -61,7 +67,7 @@ Page({
       });
     } else {
       // Add to watchlist
-      fundApi.addToWatchlist(fund.id)
+      fundApi.addToWatchlist(fundId)
         .then(() => {
           wx.showToast({ title: '已添加到自选', icon: 'success' });
           that.loadFunds();

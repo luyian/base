@@ -161,7 +161,7 @@
 
     <!-- 第四行：日志和通知 -->
     <el-row :gutter="20" class="dashboard-row">
-      <el-col :xs="24" :lg="12">
+      <el-col :xs="24" :lg="12" v-if="hasLoginLogPermission">
         <el-card class="log-card" shadow="hover">
           <template #header>
             <div class="table-header">
@@ -243,7 +243,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick, markRaw } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, markRaw, computed } from 'vue'
+import { useUserStore } from '@/store/user'
 import { 
   User, UserFilled, Lock, OfficeBuilding, ChatDotRound, DocumentCopy, 
   WarningFilled, Promotion, Service, TrendCharts, PieChart, Clock, 
@@ -378,13 +379,17 @@ function getProgressColor(percentage) {
 }
 
 // 登录日志
+const userStore = useUserStore()
 const recentLogins = ref([])
 const loginLoading = ref(false)
+// 根据权限控制显示登录记录（log:login:list）
+const hasLoginLogPermission = computed(() => userStore.hasPermission('log:login:list'))
 
 async function loadLoginLogs() {
+  if (!hasLoginLogPermission.value) return
   loginLoading.value = true
   try {
-    const res = await pageLoginLogs({ page: 1, pageSize: 10 })
+    const res = await pageLoginLogs({ page: 1, pageSize: 3 })
     if (res.code === 200) {
       recentLogins.value = (res.data?.records || []).map(item => ({
         username: item.username || item.createBy || '-',
@@ -394,11 +399,6 @@ async function loadLoginLogs() {
       }))
     }
   } catch (e) {
-    // 权限不足时静默处理，不显示错误
-    if (e?.code === 403 || e?.message?.includes('Forbidden')) {
-      loginLoading.value = false
-      return
-    }
     console.error('获取登录日志失败', e)
   } finally {
     loginLoading.value = false

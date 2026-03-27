@@ -1,10 +1,10 @@
-# 后台管理系统
+# Base 管理系统
 
-一个基于 Spring Boot + Vue 3 的现代化后台管理系统，提供完整的用户权限管理、系统监控、日志管理等功能。
+一个基于 Spring Boot + Vue 3 的现代化企业级管理系统。
 
 ## 项目简介
 
-本项目是一个功能完善的企业级后台管理系统，采用前后端分离架构，提供了完整的 RBAC 权限管理、数据权限控制、系统监控等功能。
+本项目是一个功能完善的企业级后台管理系统，采用前后端分离架构，提供了完整的 RBAC 权限管理、数据权限控制、系统监控、股票数据分析、消息推送等功能。
 
 ### 主要特性
 
@@ -14,9 +14,12 @@
 - 📝 **操作日志**：基于 AOP 的操作日志记录，自动记录用户操作行为
 - 🔔 **通知公告**：支持系统通知和公告发布，实时未读提醒
 - 📈 **系统监控**：实时监控服务器状态、JVM 信息、Redis 缓存等
-- 📉 **股票数据分析**：支持股票数据拉取、K线图展示、自选股票管理
+- 📉 **股票数据分析**：支持股票数据同步、K线图展示、自选股票、基金估值、智能推荐
+- 🗂️ **知识库管理**：支持知识库、文档、目录、标签管理
+- 💬 **消息推送**：支持消息订阅、多种推送渠道（飞书、钉钉、邮件）
 - 🗺️ **行政区划管理**：支持省市区街道四级行政区划数据管理
 - 🎨 **现代化 UI**：基于 Element Plus 的美观界面
+- 🤖 **AI 大模型集成**：支持配置多个 AI 提供商（通义千问、MiniMax、智谱等）
 - 🚀 **高性能**：Redis 缓存、MyBatis Plus 优化、前端懒加载
 
 ## 技术栈
@@ -51,44 +54,63 @@
 ## 项目结构
 
 ```
-
 base/
 ├── backend/                    # 后端项目
-│   ├── src/
-│   │   ├── main/
-│   │   │   ├── java/
-│   │   │   │   └── com/base/
-│   │   │   │       ├── common/        # 公共模块
-│   │   │   │       │   ├── annotation/    # 注解
-│   │   │   │       │   ├── aspect/        # 切面
-│   │   │   │       │   ├── config/        # 配置类
-│   │   │   │       │   ├── enums/         # 枚举
-│   │   │   │       │   ├── exception/     # 异常处理
-│   │   │   │       │   ├── interceptor/   # 拦截器
-│   │   │   │       │   └── util/          # 工具类
-│   │   │   │       ├── system/        # 系统模块
-│   │   │   │       │   ├── controller/    # 控制器
-│   │   │   │       │   ├── dto/           # 数据传输对象
-│   │   │   │       │   ├── entity/        # 实体类
-│   │   │   │       │   ├── mapper/        # 数据访问层
-│   │   │   │       │   └── service/       # 业务逻辑层
-│   │   │   │       └── stock/         # 股票模块
-│   │   │   │           ├── client/        # API 客户端
-│   │   │   │           ├── config/        # 配置类
-│   │   │   │           ├── controller/    # 控制器
-│   │   │   │           ├── entity/        # 实体类
-│   │   │   │           ├── factory/       # 数据工厂
-│   │   │   │           ├── mapper/        # 数据访问层
-│   │   │   │           ├── service/       # 业务逻辑层
-│   │   │   │           └── task/          # 定时任务
-│   │   │   └── resources/
-│   │   │       ├── mapper/            # MyBatis XML
-│   │   │       ├── db/                # 数据库脚本
-│   │   │       └── application.yml    # 配置文件
-│   │   └── test/                      # 测试代码
-│   └── pom.xml                        # Maven 配置
+│   ├── src/main/
+│   │   ├── java/com/base/
+│   │   │   ├── ai/            # AI 大模型模块
+│   │   │   │   ├── config/
+│   │   │   │   ├── controller/
+│   │   │   │   ├── service/
+│   │   │   │   └── dto/
+│   │   │   ├── common/        # 公共模块
+│   │   │   │   ├── annotation/
+│   │   │   │   ├── aspect/
+│   │   │   │   ├── config/
+│   │   │   │   ├── enums/
+│   │   │   │   ├── exception/
+│   │   │   │   ├── interceptor/
+│   │   │   │   └── util/
+│   │   │   ├── config/        # 配置模块
+│   │   │   ├── entity/        # 实体基类
+│   │   │   ├── message/       # 消息推送模块
+│   │   │   │   ├── channel/
+│   │   │   │   ├── content/
+│   │   │   │   ├── controller/
+│   │   │   │   ├── dto/
+│   │   │   │   ├── entity/
+│   │   │   │   ├── service/
+│   │   │   │   └── task/
+│   │   │   ├── security/      # 安全模块
+│   │   │   ├── stock/         # 股票分析模块
+│   │   │   │   ├── client/
+│   │   │   │   ├── config/
+│   │   │   │   ├── controller/
+│   │   │   │   ├── dto/
+│   │   │   │   ├── engine/
+│   │   │   │   ├── entity/
+│   │   │   │   ├── factory/
+│   │   │   │   ├── http/
+│   │   │   │   ├── mapper/
+│   │   │   │   ├── service/
+│   │   │   │   ├── strategy/
+│   │   │   │   └── task/
+│   │   │   ├── system/        # 系统管理模块
+│   │   │   │   ├── controller/
+│   │   │   │   ├── dto/
+│   │   │   │   ├── entity/
+│   │   │   │   ├── mapper/
+│   │   │   │   └── service/
+│   │   │   └── util/          # 工具类
+│   │   └── resources/
+│   │       ├── mapper/        # MyBatis XML
+│   │       ├── db/            # 数据库脚本
+│   │       │   ├── tables.sql # 表结构
+│   │       │   └── data.sql   # 初始数据
+│   │       └── application*.yml  # 配置文件
+│   └── pom.xml                # Maven 配置
 │
-├── frontend/                   # 前端项目
+├── frontend/                  # 前端项目
 │   ├── src/
 │   │   ├── api/               # API 接口
 │   │   ├── assets/            # 静态资源
@@ -99,19 +121,19 @@ base/
 │   │   ├── store/             # 状态管理
 │   │   ├── utils/             # 工具函数
 │   │   ├── views/             # 页面组件
-│   │   │   ├── system/        # 系统管理页面
-│   │   │   ├── monitor/       # 系统监控页面
-│   │   │   ├── stock/         # 股票管理页面
-│   │   │   └── profile/       # 个人中心页面
-│   │   ├── App.vue            # 根组件
-│   │   └── main.js            # 入口文件
-│   ├── index.html             # HTML 模板
-│   ├── package.json           # 依赖配置
-│   └── vite.config.js         # Vite 配置
+│   │   │   ├── Dashboard.vue  # 首页
+│   │   │   ├── Login.vue      # 登录页
+│   │   │   ├── system/        # 系统管理
+│   │   │   ├── monitor/       # 系统监控
+│   │   │   ├── stock/         # 股票管理
+│   │   │   ├── message/       # 消息中心
+│   │   │   ├── profile/       # 个人中心
+│   │   │   └── Knowledge*.vue # 知识库
+│   │   ├── App.vue
+│   │   └── main.js
+│   └── package.json
 │
-└── docs/                       # 文档目录
-    ├── 部署文档.md             # 部署文档
-    └── 使用手册.md             # 使用手册
+└── docs/                      # 文档目录
 ```
 
 ## 功能模块
@@ -125,14 +147,31 @@ base/
 - **枚举管理**：系统枚举值的管理、Redis 缓存
 - **全局变量**：系统参数配置、Redis 缓存
 - **行政区划**：省市区街道四级行政区划数据管理
+- **导出配置**：数据导出配置管理
+- **大模型配置**：AI 大模型接口配置（支持多条，选择生效）
 
 ### 股票数据分析
 
 - **股票列表**：股票基础信息查询、市场筛选
 - **K线图展示**：基于 ECharts 的 K 线图、MA 均线、成交量
-- **自选股票**：自选股票管理、批量同步 K 线数据
+- **自选股票**：自选股票管理
 - **Token 管理**：API Token 轮询管理、使用统计
-- **映射配置**：数据字段映射配置、可视化编辑
+- **映射配置**：数据字段映射配置
+- **股票推荐**：基于多规则评分的智能推荐
+- **规则配置**：推荐规则配置管理
+- **基金估值**：基金持仓估值计算与追踪
+- **同步失败记录**：数据同步失败重试管理
+
+### 知识库管理
+
+- **知识库管理**：知识库的增删改查
+- **文档管理**：Markdown 文档管理、目录组织
+- **标签管理**：文档标签管理
+
+### 消息中心
+
+- **消息订阅**：用户消息订阅管理
+- **推送渠道**：支持飞书、钉钉、邮件等推送渠道
 
 ### 系统监控
 
@@ -143,6 +182,7 @@ base/
 
 - **操作日志**：记录用户的所有操作行为
 - **登录日志**：记录用户的登录信息
+- **文件日志**：记录文件操作日志
 
 ### 通知公告
 
@@ -155,6 +195,12 @@ base/
 - **基本信息**：修改个人信息
 - **修改密码**：修改登录密码
 - **头像上传**：上传个人头像
+- **第三方登录绑定**：绑定飞书、微信等第三方账号
+
+### 第三方登录
+
+- **飞书登录**：支持飞书 OAuth2 登录
+- **微信小程序登录**：支持微信小程序登录
 
 ## 快速开始
 
@@ -162,7 +208,7 @@ base/
 
 - JDK 8+
 - Maven 3.6+
-- MySQL 8.0+
+- MySQL 8.0+ (端口 13306)
 - Redis 6.0+
 - Node.js 16+
 
@@ -171,36 +217,26 @@ base/
 1. **创建数据库**
 
 ```sql
-CREATE DATABASE base DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE base_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 2. **导入数据**
 
-执行 `backend/src/main/resources/schema.sql` 和 `data.sql` 文件
+```bash
+mysql -h127.0.0.1 -P13306 -uroot -p base_system < backend/src/main/resources/db/tables.sql
+mysql -h127.0.0.1 -P13306 -uroot -p base_system < backend/src/main/resources/db/data.sql
+```
 
 3. **修改配置**
 
-编辑 `backend/src/main/resources/application.yml`，修改数据库和 Redis 连接信息：
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/base?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: your_password
-
-  redis:
-    host: localhost
-    port: 6379
-    password: your_password
-```
+编辑 `backend/src/main/resources/application-dev.yml`，修改数据库和 Redis 连接信息
 
 4. **启动后端**
 
 ```bash
 cd backend
-mvn clean install
-mvn spring-boot:run
+mvn clean package -DskipTests
+java -jar target/base-system-1.0.0.jar --spring.profiles.active=dev
 ```
 
 后端服务将在 `http://localhost:8080` 启动
@@ -242,109 +278,79 @@ npm run build
 ### 权限控制
 
 系统采用 RBAC（基于角色的访问控制）模型：
-
 - **菜单权限**：控制用户可以访问哪些菜单
 - **按钮权限**：控制用户可以执行哪些操作
 - **数据权限**：控制用户可以查看哪些数据
 
-数据权限支持以下范围：
-- 全部数据权限
-- 本部门及以下数据权限
-- 本部门数据权限
-- 仅本人数据权限
-- 自定义数据权限
+### 股票推荐引擎
 
-### 动态路由
+采用多规则评分引擎，支持：
+- 技术面分析（均线多头、MACD 金叉、成交量放大等）
+- 基本面分析（市盈率、市净率、涨幅等）
+- 动态评分规则配置
+- 可视化规则权重配置
 
-前端路由根据用户权限动态生成：
+### AI 大模型集成
 
-1. 用户登录后，从后端获取菜单权限
-2. 前端根据菜单数据动态生成路由
-3. 使用 `router.addRoute()` 动态添加路由
-4. 侧边栏菜单根据权限动态渲染
-
-### 操作日志
-
-使用 AOP 切面自动记录操作日志：
-
-```java
-@OperationLog(module = "用户管理", operation = npublic Result<Void> addUser(@RequestBody UserSaveRequest request) {
-    // 业务逻辑
-}
-```
-
-### 数据权限
-
-使用注解和 MyBatis 拦截器实现数据权限：
-
-```java
-@DataScope(deptAlias = "u", userAlias = "u")
-public IPage<UserResponse> pageUsers(UserQueryRequest request) {
-    // 业务逻辑
-}
-```
-
-## 开发指南
-
-### 后端开发
-
-1. **创建实体类**：继承 `BaseEntity`
-2. **创建 Mapper 接口**：继承 `BaseMapper<T>`
-3. **创建 Service 接口和实现类**
-4. **创建 Controller**：使用 `@RestController` 注解
-5. **添加权限注解**：使用 `@PreAuthorize` 控制接口权限
-6. **添加操作日志**：使用 `@OperationLog` 记录操作
-
-### 前端开发
-
-1. **创建 API 接口**：在 `src/api/` 目录下创建
-2. **创建页面rc/views/` 目录下创建
-3. **配置路由**：在 `src/router/index.js` 中配置（如果是固定路由）
-4. **使用状态管理**：在 `src/store/` 目录下创建 store
+支持配置多个 AI 提供商：
+- 阿里云通义千问
+- 移动云 MiniMax
+- 联通云 MiniMax
+- 智谱 GLM
+- 可扩展支持更多提供商
 
 ## 部署说明
 
-详细部署文档请参考：[部署文档](docs/deploy.md)
+详细部署文档请参考：[部署文档](docs/部署文档.md)
 
-### 生产环境配置
+### 生产环境部署
 
 1. **后端配置**
-
-- 修改 `application-prod.yml` 配置文件
-- 配置生产环境的数据库和 Redis
-- 配置文件上传路径
-- 配置 JWT 密钥
+   - 修改 `application-prod.yml` 配置文件
+   - 配置生产环境的数据库和 Redis
+   - 配置文件上传路径 `/data/upload/`
+   - 配置 JWT 密钥
 
 2. **前端配置**
-
-- 修改 `.env.production` 配置文件
-- 配置生产环境的 API 地址
-- 执行 `npm run build` 构建生产版本
+   - 修改 `.env.production` 配置文件
+   - 配置生产环境的 API 地址
+   - 执行 `npm run build` 构建生产版本
 
 3. **部署方式**
+   - **后端**：打包成 JAR 文件，使用 `java -jar` 运行
+   - **前端**：将 `dist` 目录部署到 Nginx
 
-- **后端**：打包成 JAR 文件，使用 `java -jar` 运行
-- **前端**：将 `dist` 目录部署到 Nginx
+## 访问地址
 
-## 常见问题
-
-### 1. 登录后提示 401 未授权
-
-检查 JWT Token 是否正确配置，确保前端请求头中包含 `Authorization` 字段。
-
-### 2. 菜单不显示
-
-检查用户是否分配了角色，角色是否分配了菜单权限。
-
-### 3. 数据权限不生效
-
-检查方法是否添加了 `@DataScope` 注解，确保 MyBatis 拦截器已注册。
-
-### 4. Redis 连接失败
-
-检查 Redis 服务是否启动，配置文件中的连接信息是否正确。
+| 服务 | 地址 |
+|------|------|
+| 前端 | http://119.45.176.101 |
+| API 文档 | http://119.45.176.101/doc.html |
 
 ## 更新日志
+
+### v1.2.0 (2026-03-27)
+
+- ✨ 新增知识库管理模块
+  - 知识库 CRUD
+  - Markdown 文档管理
+  - 目录树管理
+  - 标签管理
+- ✨ 新增消息推送模块
+  - 消息订阅管理
+  - 多渠道支持（飞书、钉钉、邮件）
+- ✨ 新增文件管理模块
+  - 文件上传、下载、预览
+  - 文件操作日志
+- ✨ 新增大模型配置模块
+  - 多 AI 提供商支持
+  - 动态切换生效配置
+- ✨ 新增导出配置模块
+  - 可视化导出配置
+  - 字段映射与脱敏
+  - 异步导出任务
+- 🐛 优化股票推荐引擎性能
+- 🐛 修复多处已知问题
 
 ### v1.1.0 (2026-01-29)
 
@@ -385,10 +391,6 @@ public IPage<UserResponse> pageUsers(UserQueryRequest request) {
 
 本项目采用 MIT 协议开源。
 
-## 联系方式
-
-如有问题或建议，请提交 Issue 或联系开发团队。
-
 ---
 
-**注意**：本项目仅供学习交于商业用途。
+**注意**：本项目仅供学习交流，不可用于商业用途。

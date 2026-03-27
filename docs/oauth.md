@@ -1,222 +1,175 @@
-# GitHub OAuth 第三方登录说明文档
+# 第三方登录配置
 
 ## 功能概述
 
-系统支持通过 GitHub 账号进行第三方登录。首次使用 GitHub 登录时，用户可以选择"创建新账号"或"绑定已有账号"。已绑定的用户再次使用 GitHub 登录时将直接进入系统。
+系统支持多种第三方平台登录，目前支持的登录方式包括：
 
-## 配置步骤
+- **飞书登录**：通过飞书 OAuth2.0 授权登录
+- **微信小程序登录**：通过微信小程序wx.login授权登录
+- **GitHub 登录**：（配置存在，未启用）
 
-### 1. 创建 GitHub OAuth App
+## 飞书登录配置
 
-1. 登录 GitHub，进入 **Settings → Developer settings → OAuth Apps → New OAuth App**
-   - 直接访问：https://github.com/settings/developers
-2. 填写以下信息：
-   - **Application name**：自定义应用名称，如 `Base System`
-   - **Homepage URL**：`http://localhost:3000`
-   - **Authorization callback URL**：`http://localhost:3000/oauth/callback`
-3. 点击 **Register application** 创建应用
-4. 创建完成后记录 **Client ID**，点击 **Generate a new client secret** 生成并记录 **Client Secret**
+### 1. 创建飞书企业自建应用
 
-### 2. 初始化数据库
+1. 登录飞书开放平台：https://open.feishu.cn/app
+2. 点击 **创建企业自建应用**，填写应用名称和描述
+3. 进入应用详情，记录 **App ID** 和 **App Secret**
+4. 在 **权限管理** 中添加以下权限：
+   - `contact:user.base:readonly` — 获取用户基本信息
+   - `contact:user.id:readonly` — 获取用户 user_id
+5. 在 **重定向URL** 中添加：`http://119.45.176.101/oauth/callback?platform=feishu`
+6. 发布应用版本，等待管理员审批通过
 
-执行 SQL 脚本创建第三方登录绑定表：
+### 2. 修改后端配置
 
-```sql
--- 文件路径：backend/src/main/resources/db/oauth_schema.sql
-source backend/src/main/resources/db/oauth_schema.sql
+编辑 `backend/src/main/resources/application-prod.yml`：
+
+```yaml
+feishu:
+  enabled: true
+  app-id: your-feishu-app-id
+  app-secret: your-feishu-app-secret
+  base-url: https://open.feishu.cn/open-apis
+  redirect-uri: http://119.45.176.101/oauth/callback?platform=feishu
+
+oauth:
+  enabled: true
+  default-role-id: 2  # 新用户默认角色ID
+  mini-service-role-id: 4  # 小程序用户默认角色ID
+  wechat:
+    enabled: true
+    app-id: your-wechat-app-id
+    app-secret: your-wechat-app-secret
 ```
 
-### 3. 修改后端配置
+## 微信小程序登录配置
 
-编辑 `backend/src/main/resources/application-dev.yml`，填入 GitHub OAuth App 的凭证：
+### 1. 登录微信公众平台
+
+1. 登录 https://mp.weixin.qq.com/
+2. 进入 **开发管理 → 开发设置**
+3. 记录 **AppID** 和 **AppSecret**
+4. 设置 **服务器域名**：request 合法域名添加 `https://api.weixin.qq.com`
+5. 设置 **授权回调域**：在登录配置页面设置
+
+### 2. 修改后端配置
+
+编辑 `backend/src/main/resources/application-prod.yml`：
 
 ```yaml
 oauth:
-  github:
-    client-id: 你的Client ID
-    client-secret: 你的Client Secret
-    redirect-uri: http://localhost:3000/oauth/callback
-  default-role-id: 2  # 新用户默认角色ID
+  wechat:
+    enabled: true
+    app-id: your-wechat-app-id
+    app-secret: your-wechat-app-secret
 ```
 
-### 4. 启动服务
+## GitHub 登录配置（未启用）
 
-分别启动后端和前端服务，在登录页面即可看到 GitHub 登录按钮。
+如需启用 GitHub 登录，编辑配置：
+
+```yaml
+oauth:
+  enabled: true
+  github:
+    client-id: your-github-client-id
+    client-secret: your-github-client-secret
+    redirect-uri: http://localhost:3000/oauth/callback
+```
 
 ## 使用流程
 
-### 登录流程
+### 飞书/微信登录流程
 
 ```
-用户点击 "GitHub 登录" 按钮
+用户点击第三方登录按钮
     ↓
-跳转到 GitHub 授权页面
+跳转第三方平台授权页面
     ↓
-用户在 GitHub 上确认授权
+用户确认授权
     ↓
-GitHub 回调到前端 /oauth/callback 页面
+第三方回调带 code 到前端
     ↓
-前端携带 code + state 调用后端接口
+前端调用后端 /auth/oauth/xxx/callback 接口
     ↓
-┌─ 已绑定账号 → 直接生成 JWT Token → 进入系统
+┌─ 已绑定账号 → 直接登录，返回 Token
 └─ 未绑定账号 → 跳转绑定页面
-                    ├─ 创建新账号：一键创建并登录
-                    └─ 绑定已有账号：输入用户名密码验证后绑定
+                ├─ 创建新账号：一键创建并登录
+                └─ 绑定已有账号：输入用户名密码验证后绑定
 ```
 
 ### 个人中心管理
 
-登录后在 **个人中心 → 第三方账号** 标签页中可以：
+登录后在 **个人中心 → 第三方账号** 标签页可以：
 - 查看已绑定的第三方账号
 - 解绑已绑定的第三方账号
 - 绑定新的第三方账号
 
 ## API 接口
 
-### 无需认证的接口（/auth/oauth）
+### 认证接口（无需认证）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| GET | `/auth/oauth/enabled` | 查询第三方登录是否启用 |
 | GET | `/auth/oauth/github/url` | 获取 GitHub 授权地址 |
 | POST | `/auth/oauth/github/callback` | GitHub 回调处理 |
 | POST | `/auth/oauth/bindNew` | 创建新账号并绑定 |
 | POST | `/auth/oauth/bindExist` | 绑定已有账号 |
 
-### 需要认证的接口（/system/oauth）
+### 用户接口（需要认证）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | GET | `/system/oauth/bindList` | 查询当前用户绑定列表 |
 | DELETE | `/system/oauth/unbind/{oauthType}` | 解绑第三方账号 |
 
-### 请求/响应示例
+### 飞书接口
 
-**获取授权地址**
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/system/feishu/bind` | 绑定飞书账号 |
+| DELETE | `/system/feishu/unbind` | 解绑飞书账号 |
+| GET | `/system/feishu/bindInfo` | 查询当前用户飞书绑定信息 |
+| POST | `/system/feishu/send` | 发送消息（指定 receiveId） |
+| POST | `/system/feishu/send/user/{userId}` | 发送消息给系统用户 |
 
-```
-GET /api/auth/oauth/github/url
+## 数据库表
 
-响应：
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": "https://github.com/login/oauth/authorize?client_id=xxx&redirect_uri=xxx&scope=read:user user:email&state=xxx"
-}
-```
-
-**回调处理**
-
-```
-POST /api/auth/oauth/github/callback
-{
-  "code": "GitHub返回的授权码",
-  "state": "GitHub返回的state参数"
-}
-
-响应（已绑定）：
-{
-  "code": 200,
-  "data": {
-    "token": "jwt-token",
-    "expiresIn": 7200000,
-    "needBind": false
-  }
-}
-
-响应（未绑定）：
-{
-  "code": 200,
-  "data": {
-    "oauthToken": "临时绑定凭证",
-    "needBind": true,
-    "oauthName": "GitHub用户名",
-    "oauthAvatar": "GitHub头像URL"
-  }
-}
-```
-
-**创建新账号并绑定**
-
-```
-POST /api/auth/oauth/bindNew
-{
-  "oauthToken": "临时绑定凭证"
-}
-```
-
-**绑定已有账号**
-
-```
-POST /api/auth/oauth/bindExist
-{
-  "oauthToken": "临时绑定凭证",
-  "username": "已有账号用户名",
-  "password": "已有账号密码"
-}
-```
-
-## 数据库表结构
+第三方账号绑定存储在 `sys_user_oauth` 表：
 
 ```sql
 CREATE TABLE sys_user_oauth (
-  id bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  id bigint NOT NULL AUTO_INCREMENT,
   user_id bigint NOT NULL COMMENT '系统用户ID',
-  oauth_type varchar(20) NOT NULL COMMENT '第三方平台类型（github/wechat/gitee）',
+  oauth_type varchar(20) NOT NULL COMMENT '第三方平台类型（github/wechat/feishu）',
   oauth_id varchar(100) NOT NULL COMMENT '第三方平台用户唯一标识',
   oauth_name varchar(100) DEFAULT NULL COMMENT '第三方平台用户名',
   oauth_avatar varchar(500) DEFAULT NULL COMMENT '第三方平台头像',
   oauth_email varchar(200) DEFAULT NULL COMMENT '第三方平台邮箱',
   access_token varchar(500) DEFAULT NULL COMMENT 'access_token',
-  create_time datetime DEFAULT CURRENT_TIMESTAMP COMMENT '绑定时间',
-  update_time datEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  create_time datetime DEFAULT CURRENT_TIMESTAMP,
+  update_time datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
-  UNIQUE INDEX uk_oauth (oauth_type, oauth_id),
-  INDEX idx_user_id (user_id)
+  UNIQUE KEY uk_oauth (oauth_type, oauth_id),
+  KEY idx_user_id (user_id)
 ) COMMENT='用户第三方登录绑定表';
 ```
 
-## 安全机制
+## 常见问题
 
-| 机制 | 说明 |
-|------|------|
-| state 防 CSRF | 后端生成随机 state 存入 Redis（3分钟过期），回调时校验并删除 |
-| oauthToken 临时凭证 | 存入 Redis（5分钟过期），绑定成功后立即删除 |
-| client-secret 保护 | 仅存在后端配置文件，不暴露给前端 |
-| 密码验证 | 绑定已有账号时需验证用户名和密码 |
+### 1. 第三方登录失败
 
-## 扩展其他平台
+- 检查对应平台的 AppID 和 AppSecret 是否正确
+- 检查回调 URL 是否配置正确
+- 检查平台应用是否已发布
 
-当前架构预留了扩展点，新增其他平台（如 Gitee、微信）只需：
+### 2. 绑定提示"用户已存在"
 
-1. `application-dev.yml` 中添加对应平台的配置（`oauth.gitee.*`）
-2. `OauthServiceImpl` 中添加对应平台的 token 交换和用户信息获取方法
-3. `OauthController` 中添加对应平台的接口
-4. 前端登录页添加对应平台的按钮
-5. `sys_user.oauth_type` 字段已支持多平台区分
+该第三方账号已绑定到其他系统账号，需要先解绑后再重新绑定。
 
-## 文件清单
+### 3. 微信小程序登录失败
 
-### 后端
-
-| 文件 | 说明 |
-|------|------|
-| `backend/src/main/resources/db/oauth_schema.sql` | 数据库表结构 |
-| `backend/src/main/java/com/base/config/OauthConfig.java` | OAuth 配置属性类 |
-| `backend/src/main/java/com/base/system/entity/UserOauth.java` | 第三方绑定实体 |
-| `backend/src/main/java/com/base/system/mapper/UserOauthMapper.java` | Mapper 接口 |
-| `backend/src/main/java/com/base/system/dto/oauth/*.java` | 5个 DTO 类 |
-| `backend/src/main/java/com/base/system/service/OauthService.java` | 服务接口 |
-| `backend/src/main/java/com/base/system/service/impl/OauthServiceImpl.java` | 服务实现 |
-| `backend/src/maom/base/system/controller/OauthController.java` | OAuth 控制器 |
-| `backend/src/main/java/com/base/system/controller/UserOauthController.java` | 账号管理控制器 |
-
-### 前端
-
-| 文件 | 说明 |
-|------|------|
-| `frontend/src/api/oauth.js` | OAuth API 封装 |
-| `frontend/src/views/OauthCallback.vue` | 回调中转页 |
-| `frontend/src/views/OauthBind.vue` | 绑定选择页 |
-| `frontend/src/views/Login.vue` | 登录页（添加 GitHub 按钮） |
-| `frontend/src/router/index.js` | 路由配置（添加 OAuth 路由） |
-| `frontend/src/views/profile/Index.vue` | 个人中心（添加第三方账号管理） |
+- 检查 AppID 和 AppSecret 是否正确
+- 检查前端 code 是否在有效期内（5分钟）

@@ -1,41 +1,54 @@
 <!--pages/login/login.wxml-->
 <view class="container">
+  <!-- Decorative circles -->
+  <view class="circle circle-1"></view>
+  <view class="circle circle-2"></view>
+  <view class="circle circle-3"></view>
+  
   <view class="header">
-    <image class="logo" src="/assets/logo.png" mode="aspectFit"/>
+    <view class="logo-container">
+      <view class="logo-icon">
+        <text class="logo-text">B</text>
+      </view>
+    </view>
     <text class="title">Base基金估值</text>
     <text class="subtitle">专业的基金估值分析平台</text>
   </view>
 
   <!-- Tab Switcher -->
   <view class="tab-bar">
-    <view class="tab {{activeTab==='wechat' ? 'active' : ''}}" bindtap="switchTab" data-tab="wechat">微信登录</view>
     <view class="tab {{activeTab==='password' ? 'active' : ''}}" bindtap="switchTab" data-tab="password">账号登录</view>
-  </view>
-
-  <!-- WeChat Login -->
-  <view class="login-form" wx:if="{{activeTab === 'wechat'}}">
-    <view class="tip">微信登录需要先绑定账号</view>
-    <button class="login-btn primary" bindtap="handleWxLogin" loading="{{loading}}">
-      <text wx:if="{{!loading}}">微信一键登录</text>
-      <text wx:else>登录中...</text>
-    </button>
+    <view class="tab {{activeTab==='wechat' ? 'active' : ''}}" bindtap="switchTab" data-tab="wechat">微信登录</view>
   </view>
 
   <!-- Password Login -->
   <view class="login-form" wx:if="{{activeTab === 'password'}}">
     <view class="input-group">
+      <view class="input-icon">👤</view>
       <input class="input" placeholder="请输入用户名" value="{{username}}" bindinput="onUsernameInput" />
     </view>
     <view class="input-group">
+      <view class="input-icon">🔒</view>
       <input class="input password" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
     </view>
     <button class="login-btn primary" bindtap="handlePasswordLogin" loading="{{loading}}">
-      <text wx:if="{{!loading}}">登录</text>
+      <text wx:if="{{!loading}}">登 录</text>
       <text wx:else>登录中...</text>
     </button>
     <view class="register-link" bindtap="goToRegister">
       <text>还没有账号？立即注册</text>
     </view>
+  </view>
+
+  <!-- WeChat Login -->
+  <view class="login-form" wx:if="{{activeTab === 'wechat'}}">
+    <view class="wechat-tip">
+      <text>使用微信登录前，请先在「账号登录」页面注册账号并绑定微信</text>
+    </view>
+    <button class="login-btn wechat" bindtap="handleWxLogin" loading="{{loading}}">
+      <text wx:if="{{!loading}}">💬 微信一键登录</text>
+      <text wx:else>登录中...</text>
+    </button>
   </view>
 
   <!-- WeChat Bind Modal -->
@@ -46,9 +59,11 @@
         <view class="tip">请绑定已有账号或创建新账号</view>
         
         <view class="input-group">
+          <view class="input-icon">👤</view>
           <input class="input" placeholder="用户名（可选）" value="{{bindUsername}}" bindinput="onBindUsernameInput" />
         </view>
         <view class="input-group">
+          <view class="input-icon">🔒</view>
           <input class="input password" type="password" placeholder="密码（可选）" value="{{bindPassword}}" bindinput="onBindPasswordInput" />
         </view>
         

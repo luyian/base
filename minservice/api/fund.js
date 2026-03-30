@@ -5,8 +5,20 @@ module.exports = {
   // Get fund list
   getFundList: () => request.get('/stock/fund/list'),
   
+  // Get fund detail (config only)
+  getFundById: (fundId) => request.get(`/stock/fund/${fundId}`),
+  
   // Get fund detail with holdings (include valuation with quotes)
   getFundDetail: (fundId) => request.get(`/stock/fund/${fundId}/valuation`),
+  
+  // Create fund (admin)
+  createFund: (data) => request.post('/stock/fund', data),
+  
+  // Update fund (admin)
+  updateFund: (fundId, data) => request.put(`/stock/fund/${fundId}`, data),
+  
+  // Delete fund (admin)
+  deleteFund: (fundId) => request.delete(`/stock/fund/${fundId}`),
   
   // Get latest valuation
   getLatestValuation: (fundId, tradeDate) => request.get(`/stock/fund/valuation/${fundId}`, { tradeDate }),

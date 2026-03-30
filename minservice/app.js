@@ -55,5 +55,17 @@ App({
       this.globalData.token = token;
     }
     return !!this.globalData.token || !!wx.getStorageSync('token');
+  },
+
+  // Check if user is admin (has fund management permission)
+  isAdmin() {
+    const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo');
+    if (!userInfo) return false;
+    const permissions = userInfo.permissions || [];
+    return permissions.some(p => 
+      p === 'stock:fund:add' || 
+      p === 'stock:fund:edit' || 
+      p === 'stock:fund:delete'
+    );
   }
 });

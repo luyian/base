@@ -1,19 +1,22 @@
 // pages/fund/fund.js
 const fundApi = require('../../api/fund');
+const app = getApp();
 
 Page({
   data: {
     funds: [],
     loading: true,
-    activeTab: 'all'
+    activeTab: 'all',
+    isAdmin: false
   },
 
   onLoad() {
-    this.loadFunds();
+    this.setData({ isAdmin: app.isAdmin() });
   },
 
   onShow() {
-    if (getApp().isLoggedIn()) {
+    if (app.isLoggedIn()) {
+      this.setData({ isAdmin: app.isAdmin() });
       this.loadFunds();
     }
   },
@@ -34,6 +37,19 @@ Page({
   goToDetail(e) {
     const id = e.currentTarget.dataset.id;
     wx.navigateTo({ url: `/pages/fund/detail?id=${id}` });
+  },
+
+  goToStock() {
+    wx.navigateTo({ url: '/pages/stock/stock' });
+  },
+
+  goToCreate() {
+    wx.navigateTo({ url: '/pages/fund/edit' });
+  },
+
+  goToEdit(e) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: `/pages/fund/edit?id=${id}` });
   },
 
   // Toggle watchlist

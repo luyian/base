@@ -1,5 +1,15 @@
 <!--pages/fund/fund.wxml-->
 <view class="container">
+  <!-- Action Bar -->
+  <view class="action-bar">
+    <view class="action-btn" bindtap="goToStock">
+      <text>📊 股票列表</text>
+    </view>
+    <view class="action-btn primary" bindtap="goToCreate" wx:if="{{isAdmin}}">
+      <text>+ 创建基金</text>
+    </view>
+  </view>
+
   <view class="loading" wx:if="{{loading}}">加载中...</view>
   
   <view class="fund-list" wx:else>
@@ -13,8 +23,13 @@
           <text>{{item.estimatedChangePercent > 0 ? '+' : ''}}{{item.estimatedChangePercent || 0}}%</text>
         </view>
       </view>
-      <view class="watchlist-btn" bindtap="toggleWatchlist" data-fund="{{item}}">
-        <text class="{{item.inWatchlist ? 'added' : ''}}">{{item.inWatchlist ? '★ 已添加' : '+ 添加自选'}}</text>
+      <view class="fund-actions">
+        <view class="watchlist-btn" bindtap="toggleWatchlist" data-fund="{{item}}">
+          <text class="{{item.inWatchlist ? 'added' : ''}}">{{item.inWatchlist ? '★' : '☆'}}</text>
+        </view>
+        <view class="edit-btn" wx:if="{{isAdmin}}" bindtap="goToEdit" data-id="{{item.id}}">
+          <text>编辑</text>
+        </view>
       </view>
     </view>
   </view>

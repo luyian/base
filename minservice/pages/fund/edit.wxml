@@ -1,0 +1,65 @@
+<!--pages/fund/edit.wxml-->
+<view class="container">
+  <view class="form">
+    <!-- Fund Name -->
+    <view class="form-item">
+      <text class="label">基金名称 *</text>
+      <input class="input" value="{{form.fundName}}" placeholder="请输入基金名称" bindinput="onNameChange" />
+    </view>
+
+    <!-- Fund Code -->
+    <view class="form-item">
+      <text class="label">基金代码</text>
+      <input class="input" value="{{form.fundCode}}" placeholder="请输入基金代码（可选）" bindinput="onCodeChange" />
+    </view>
+
+    <!-- Description -->
+    <view class="form-item">
+      <text class="label">描述</text>
+      <textarea class="textarea" value="{{form.description}}" placeholder="请输入描述（可选）" bindinput="onDescChange" />
+    </view>
+
+    <!-- Holdings -->
+    <view class="form-item">
+      <text class="label">持仓配置 *</text>
+      <view class="holdings-list">
+        <view class="holding-item" wx:for="{{form.holdings}}" wx:key="index">
+          <view class="stock-input">
+            <input class="input" 
+              value="{{item.stockName || item.stockCode}}" 
+              placeholder="搜索股票" 
+              bindinput="onStockSearch"
+              data-index="{{index}}"
+            />
+            <view class="stock-suggestions" wx:if="{{stockOptions.length > 0 && index === currentFocus}}">
+              <view class="suggestion-item" 
+                wx:for="{{stockOptions}}" 
+                wx:for-item="stock"
+                wx:key="stockCode"
+                bindtap="onStockSelect"
+                data-index="{{index}}">
+                {{stock.stockCode}} - {{stock.stockName}}
+              </view>
+            </view>
+          </view>
+          <view class="weight-input">
+            <input class="input" 
+              type="digit" 
+              value="{{item.weight}}" 
+              placeholder="权重%" 
+              bindinput="onWeightChange"
+              data-index="{{index}}" />
+            <text class="percent">%</text>
+          </view>
+          <view class="remove-btn" bindtap="removeHolding" data-index="{{index}}">✕</view>
+        </view>
+        <view class="add-btn" bindtap="addHolding">+ 添加持仓</view>
+      </view>
+    </view>
+
+    <!-- Submit -->
+    <button class="submit-btn" bindtap="submit" loading="{{submitting}}">
+      {{isEdit ? '保存修改' : '创建基金'}}
+    </button>
+  </view>
+</view>

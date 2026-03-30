@@ -11,14 +11,15 @@
   ],
   "window": {
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#409eff",
-    "navigationBarTitleText": "基金估值",
-    "navigationBarTextStyle": "white"
+    "navigationBarBackgroundColor": "#1a1a2e",
+    "navigationBarTitleText": "Base基金估值",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#1a1a2e"
   },
   "tabBar": {
-    "color": "#999999",
-    "selectedColor": "#409eff",
-    "backgroundColor": "#ffffff",
+    "color": "rgba(255,255,255,0.6)",
+    "selectedColor": "#667eea",
+    "backgroundColor": "#16213e",
     "borderStyle": "black",
     "list": [
       {

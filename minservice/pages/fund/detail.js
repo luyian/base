@@ -17,7 +17,7 @@ Page({
     fundApi.getFundDetail(fundId)
       .then(res => {
         this.setData({
-          fund: res.data.fundConfig,
+          fund: res.data,
           holdings: res.data.quotes || [],
           loading: false
         });

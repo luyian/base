@@ -5,8 +5,8 @@ module.exports = {
   // Get fund list
   getFundList: () => request.get('/stock/fund/list'),
   
-  // Get fund detail with holdings
-  getFundDetail: (fundId) => request.get(`/stock/fund/${fundId}`),
+  // Get fund detail with holdings (include valuation with quotes)
+  getFundDetail: (fundId) => request.get(`/stock/fund/${fundId}/valuation`),
   
   // Get latest valuation
   getLatestValuation: (fundId, tradeDate) => request.get(`/stock/fund/valuation/${fundId}`, { tradeDate }),

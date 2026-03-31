@@ -2,6 +2,9 @@
 const request = require('../utils/request');
 
 module.exports = {
+  // Get captcha
+  getCaptcha: () => request.get('/auth/captcha'),
+  
   // Account password login
   login: (data) => request.post('/auth/login', data),
   

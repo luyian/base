@@ -171,3 +171,11 @@
   color: #667eea;
   font-size: 28rpx;
 }
+/* Captcha */
+.captcha-img {
+  width: 180rpx;
+  height: 70rpx;
+  border-radius: 8rpx;
+  margin-left: 16rpx;
+  background: #fff;
+}

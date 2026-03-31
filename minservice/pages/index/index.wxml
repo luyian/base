@@ -24,7 +24,7 @@
             wx:for="{{watchlist}}" 
             wx:key="id" 
             bindtap="goToDetail" 
-            data-id="{{item.id}}">
+            data-id="{{item.fundId}}">
         <view class="fund-info">
           <text class="fund-name">{{item.fundName}}</text>
           <text class="fund-code">{{item.fundCode}}</text>
@@ -45,7 +45,7 @@
           wx:for="{{funds}}" 
           wx:key="id" 
           bindtap="goToDetail" 
-          data-id="{{item.id}}">
+          data-id="{{item.fundId}}">
       <view class="fund-info">
         <view class="fund-name-row">
           <text class="fund-name">{{item.fundName}}</text>

@@ -86,6 +86,26 @@ public class User extends BaseEntity implements UserDetails {
     private String remark;
 
     /**
+     * 微信OpenID
+     */
+    private String wxOpenid;
+
+    /**
+     * 微信UnionID
+     */
+    private String wxUnionid;
+
+    /**
+     * 微信昵称
+     */
+    private String wxNickname;
+
+    /**
+     * 微信头像
+     */
+    private String wxAvatar;
+
+    /**
      * 角色列表（非数据库字段）
      */
     private transient List<Role> roles;

@@ -34,6 +34,11 @@ public interface AuthService {
     LoginResponse bindWechat(WxBindRequest request);
 
     /**
+     * 绑定当前账号的微信（已登录用户）
+     */
+    void bindWechatForCurrentUser(String code);
+
+    /**
      * 用户登出
      */
     void logout();

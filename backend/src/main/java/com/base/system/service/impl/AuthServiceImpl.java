@@ -403,6 +403,50 @@ public class AuthServiceImpl implements AuthService {
         return new LoginResponse(token, jwtExpiration);
     }
 
+    @Override
+    public void bindWechatForCurrentUser(String code) {
+        // 从SecurityUtils获取当前登录用户
+        Long userId = SecurityUtils.getCurrentUserId();
+        
+        // 调用微信API获取openid
+        String openid = getWechatOpenid(code);
+        if (openid == null) {
+            throw new BusinessException("微信绑定失败：无效的code");
+        }
+
+        // 检查微信是否已被绑定
+        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
+        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
+        oauthWrapper.eq(UserOauth::getOauthId, openid);
+        UserOauth existOauth = userOauthMapper.selectOne(oauthWrapper);
+        if (existOauth != null) {
+            if (existOauth.getUserId().equals(userId)) {
+                // 已经是当前用户绑定的
+                return;
+            }
+            throw new BusinessException("该微信已被其他账号绑定");
+        }
+
+        // 检查当前用户是否已绑定微信
+        oauthWrapper = new LambdaQueryWrapper<>();
+        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
+        oauthWrapper.eq(UserOauth::getUserId, userId);
+        existOauth = userOauthMapper.selectOne(oauthWrapper);
+        if (existOauth != null) {
+            throw new BusinessException("您已绑定微信，无法重复绑定");
+        }
+
+        // 绑定微信到当前用户
+        UserOauth oauth = new UserOauth();
+        oauth.setUserId(userId);
+        oauth.setOauthType("wechat");
+        oauth.setOauthId(openid);
+        oauth.setCreateTime(java.time.LocalDateTime.now());
+        userOauthMapper.insert(oauth);
+
+        log.info("用户 {} 绑定微信成功，openid: {}", userId, openid);
+    }
+
     /**
      * 调用微信API获取openid
      */

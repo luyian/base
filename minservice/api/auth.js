@@ -17,6 +17,9 @@ module.exports = {
   // WeChat bind (bind existing account or create new)
   bindWechat: (data) => request.post('/auth/wx-bind', data),
   
+  // Bind WeChat for currently logged in user
+  bindCurrentUserWechat: (code) => request.post('/auth/bind-wx', { code }),
+  
   // Get user info
   getUserInfo: () => request.get('/auth/info'),
   

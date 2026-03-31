@@ -75,6 +75,16 @@ public class AuthController {
     }
 
     /**
+     * 绑定当前账号的微信（已登录用户）
+     */
+    @PostMapping("/bind-wx")
+    @ApiOperation("绑定当前账号的微信")
+    public Result<Void> bindCurrentUserWechat(@Validated @RequestBody WxBindRequest request) {
+        authService.bindWechatForCurrentUser(request.getCode());
+        return Result.success();
+    }
+
+    /**
      * 用户登出
      */
     @PostMapping("/logout")

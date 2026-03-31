@@ -6,8 +6,10 @@ import com.base.common.util.HttpClientUtil;
 import com.base.system.dto.CaptchaResponse;
 import com.base.system.dto.LoginRequest;
 import com.base.system.dto.LoginResponse;
+import com.base.system.dto.RegisterRequest;
 import com.base.system.dto.RouterVO;
 import com.base.system.dto.UserInfoResponse;
+import com.base.system.dto.WxBindRequest;
 import com.base.system.dto.WxLoginRequest;
 import com.base.system.entity.Dept;
 import com.base.system.entity.Permission;
@@ -259,14 +261,15 @@ public class AuthServiceImpl implements AuthService {
 
         SysUser user;
         if (userOauth == null) {
-            // 4.1 新用户：自动创建账号
-            user = createWechatUser(openid, request);
+            // 4.1 新用户：返回特定状态码，让小程序跳转到绑定页面
+            // 这里我们抛出一个特殊异常，前端可以根据这个判断需要绑定
+            throw new BusinessException(401, "NEED_BIND");
         } else {
             // 4.2 老用户：查询绑定账号
             user = userMapper.selectById(userOauth.getUserId());
             if (user == null) {
-                // 账号已删除，重新创建
-                user = createWechatUser(openid, request);
+                // 账号已删除，抛出需要绑定的错误
+                throw new BusinessException(401, "NEED_BIND");
             }
         }
 
@@ -285,6 +288,117 @@ public class AuthServiceImpl implements AuthService {
         // 8. 记录登录日志
         saveLoginLog(user.getUsername(), 1, "微信登录成功");
         log.info("微信用户登录成功，openid: {}, userId: {}", openid, user.getId());
+
+        return new LoginResponse(token, jwtExpiration);
+    }
+
+    @Override
+    public LoginResponse register(RegisterRequest request) {
+        // 1. 检查用户名是否已存在
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUser::getUsername, request.getUsername());
+        SysUser existUser = userMapper.selectOne(wrapper);
+        if (existUser != null) {
+            throw new BusinessException("用户名已存在");
+        }
+
+        // 2. 创建用户
+        SysUser user = new SysUser();
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setNickname(request.getNickname());
+        user.setPhone(request.getPhone());
+        user.setStatus(1);
+        
+        userMapper.insert(user);
+
+        // 3. 分配默认角色
+        if (defaultRoleId != null) {
+            com.base.system.entity.UserRole userRole = new com.base.system.entity.UserRole();
+            userRole.setUserId(user.getId());
+            userRole.setRoleId(defaultRoleId);
+            userRoleMapper.insert(userRole);
+        }
+
+        log.info("用户注册成功，username: {}", request.getUsername());
+
+        // 4. 生成 Token
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        redisUtil.set(TOKEN_PREFIX + user.getId(), token, jwtExpiration, TimeUnit.MILLISECONDS);
+
+        return new LoginResponse(token, jwtExpiration);
+    }
+
+    @Override
+    public LoginResponse bindWechat(WxBindRequest request) {
+        // 1. 调用微信API获取openid
+        String openid = getWechatOpenid(request.getCode());
+        if (openid == null) {
+            throw new BusinessException("微信绑定失败：无效的code");
+        }
+
+        // 2. 检查微信是否已被绑定
+        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
+        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
+        oauthWrapper.eq(UserOauth::getOauthId, openid);
+        UserOauth existOauth = userOauthMapper.selectOne(oauthWrapper);
+        if (existOauth != null) {
+            throw new BusinessException("该微信已被绑定");
+        }
+
+        SysUser user;
+        
+        // 3. 如果提供了用户名和密码，先验证账号密码登录
+        if (StringUtils.hasText(request.getUsername()) && StringUtils.hasText(request.getPassword())) {
+            // 账号密码登录验证
+            LambdaQueryWrapper<SysUser> userWrapper = new LambdaQueryWrapper<>();
+            userWrapper.eq(SysUser::getUsername, request.getUsername());
+            user = userMapper.selectOne(userWrapper);
+            
+            if (user == null) {
+                throw new BusinessException("用户不存在");
+            }
+            
+            if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new BusinessException("密码错误");
+            }
+            
+            if (user.getStatus() == 0) {
+                throw new BusinessException("账号已被禁用");
+            }
+        } else {
+            // 没有提供账号密码，创建新用户
+            String username = "wx_" + openid.substring(0, 16);
+            user = new SysUser();
+            user.setUsername(username);
+            user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            user.setNickname("微信用户");
+            user.setStatus(1);
+            userMapper.insert(user);
+            
+            // 分配小程序角色
+            Long roleId = miniServiceRoleId != null ? miniServiceRoleId : 4L;
+            if (defaultRoleId != null) {
+                com.base.system.entity.UserRole userRole = new com.base.system.entity.UserRole();
+                userRole.setUserId(user.getId());
+                userRole.setRoleId(roleId);
+                userRoleMapper.insert(userRole);
+            }
+        }
+
+        // 4. 绑定微信
+        UserOauth oauth = new UserOauth();
+        oauth.setUserId(user.getId());
+        oauth.setOauthType("wechat");
+        oauth.setOauthId(openid);
+        oauth.setCreateTime(java.time.LocalDateTime.now());
+        userOauthMapper.insert(oauth);
+
+        log.info("微信绑定成功，userId: {}, openid: {}", user.getId(), openid);
+
+        // 5. 生成 Token
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        redisUtil.set(TOKEN_PREFIX + user.getId(), token, jwtExpiration, TimeUnit.MILLISECONDS);
 
         return new LoginResponse(token, jwtExpiration);
     }

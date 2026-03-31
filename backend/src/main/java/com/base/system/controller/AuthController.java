@@ -1,12 +1,7 @@
 package com.base.system.controller;
 
 import com.base.common.result.Result;
-import com.base.system.dto.CaptchaResponse;
-import com.base.system.dto.LoginRequest;
-import com.base.system.dto.LoginResponse;
-import com.base.system.dto.RouterVO;
-import com.base.system.dto.UserInfoResponse;
-import com.base.system.dto.WxLoginRequest;
+import com.base.system.dto.*;
 import com.base.system.service.AuthService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -56,6 +51,26 @@ public class AuthController {
     @ApiOperation("微信小程序登录")
     public Result<LoginResponse> wxLogin(@Validated @RequestBody WxLoginRequest request) {
         LoginResponse response = authService.wxLogin(request);
+        return Result.success(response);
+    }
+
+    /**
+     * 用户注册
+     */
+    @PostMapping("/register")
+    @ApiOperation("用户注册")
+    public Result<LoginResponse> register(@Validated @RequestBody RegisterRequest request) {
+        LoginResponse response = authService.register(request);
+        return Result.success(response);
+    }
+
+    /**
+     * 微信绑定（已有账号绑定或创建新账号）
+     */
+    @PostMapping("/wx-bind")
+    @ApiOperation("微信绑定")
+    public Result<LoginResponse> bindWechat(@Validated @RequestBody WxBindRequest request) {
+        LoginResponse response = authService.bindWechat(request);
         return Result.success(response);
     }
 

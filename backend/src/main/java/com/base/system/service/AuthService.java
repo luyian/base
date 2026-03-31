@@ -1,12 +1,6 @@
 package com.base.system.service;
 
-import com.base.system.dto.CaptchaResponse;
-import com.base.system.dto.LoginRequest;
-import com.base.system.dto.LoginResponse;
-import com.base.system.dto.RouterVO;
-import com.base.system.dto.UserInfoResponse;
-import com.base.system.dto.WxLoginRequest;
-
+import com.base.system.dto.*;
 import java.util.List;
 
 /**
@@ -16,26 +10,28 @@ public interface AuthService {
 
     /**
      * 生成验证码
-     *
-     * @return 验证码响应
      */
     CaptchaResponse generateCaptcha();
 
     /**
-     * 用户登录
-     *
-     * @param request 登录请求
-     * @return 登录响应
+     * 用户登录（账号密码）
      */
     LoginResponse login(LoginRequest request);
 
     /**
      * 微信小程序登录
-     *
-     * @param request 微信登录请求
-     * @return 登录响应
      */
     LoginResponse wxLogin(WxLoginRequest request);
+
+    /**
+     * 用户注册
+     */
+    LoginResponse register(RegisterRequest request);
+
+    /**
+     * 微信绑定（已有账号，绑定微信）
+     */
+    LoginResponse bindWechat(WxBindRequest request);
 
     /**
      * 用户登出
@@ -44,23 +40,16 @@ public interface AuthService {
 
     /**
      * 刷新 Token
-     *
-     * @param token 旧 Token
-     * @return 新 Token
      */
     String refreshToken(String token);
 
     /**
      * 获取当前用户信息
-     *
-     * @return 用户信息
      */
     UserInfoResponse getUserInfo();
 
     /**
      * 获取当前用户的路由菜单
-     *
-     * @return 路由菜单列表
      */
     List<RouterVO> getRouters();
 }

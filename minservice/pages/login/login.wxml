@@ -31,6 +31,12 @@
       <view class="input-icon">🔒</view>
       <input class="input password" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
     </view>
+    <!-- Captcha -->
+    <view class="input-group" wx:if="{{captchaEnabled}}">
+      <view class="input-icon">🔢</view>
+      <input class="input" placeholder="请输入验证码" value="{{captcha}}" bindinput="onCaptchaInput" style="width: 280rpx;" />
+      <image class="captcha-img" src="{{captchaImage}}" mode="aspectFit" bindtap="refreshCaptcha"></image>
+    </view>
     <button class="login-btn primary" bindtap="handlePasswordLogin" loading="{{loading}}">
       <text wx:if="{{!loading}}">登 录</text>
       <text wx:else>登录中...</text>

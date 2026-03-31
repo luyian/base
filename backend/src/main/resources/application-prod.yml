@@ -99,7 +99,7 @@ stock:
 # OAuth 第三方登录配置
 # 飞书配置
 feishu:
-  enabled: true
+  enabled: false
   app-id: cli_a906a4c972f99bcc
   app-secret: x7RQFPRqzVKNnurLmrq5CgXESbDItgmM
   base-url: https://open.feishu.cn/open-apis
@@ -115,7 +115,7 @@ oauth:
     redirect-uri: http://localhost:3000/oauth/callback
   # 微信小程序登录配置
   wechat:
-    enabled: true
+    enabled: false
     app-id: wx6a9b4067248fa5e9
     app-secret: 6260582938b30d7a58a7a3db35a05f6b
   mini-service-role-id: 4

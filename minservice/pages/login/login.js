@@ -7,6 +7,10 @@ Page({
     loading: false,
     username: '',
     password: '',
+    captchaEnabled: false,
+    captchaKey: '',
+    captchaImage: '',
+    captcha: '',
     showBindModal: false,
     binding: false,
     wxCode: '',
@@ -19,6 +23,25 @@ Page({
     if (token) {
       wx.switchTab({ url: '/pages/index/index' });
     }
+    // Check and load captcha
+    this.loadCaptcha();
+  },
+
+  // Load captcha
+  loadCaptcha() {
+    authApi.getCaptcha().then(res => {
+      if (res.data && res.data.enabled) {
+        this.setData({
+          captchaEnabled: true,
+          captchaKey: res.data.captchaKey,
+          captchaImage: res.data.captchaImage
+        });
+      } else {
+        this.setData({ captchaEnabled: false });
+      }
+    }).catch(() => {
+      this.setData({ captchaEnabled: false });
+    });
   },
 
   switchTab(e) {
@@ -33,6 +56,15 @@ Page({
     this.setData({ password: e.detail.value });
   },
 
+  onCaptchaInput(e) {
+    this.setData({ captcha: e.detail.value });
+  },
+
+  // Refresh captcha
+  refreshCaptcha() {
+    this.loadCaptcha();
+  },
+
   onBindUsernameInput(e) {
     this.setData({ bindUsername: e.detail.value });
   },
@@ -43,7 +75,7 @@ Page({
 
   // 账号密码登录
   handlePasswordLogin() {
-    const { username, password } = this.data;
+    const { username, password, captchaEnabled, captchaKey, captcha } = this.data;
     if (!username) {
       wx.showToast({ title: '请输入用户名', icon: 'none' });
       return;
@@ -52,60 +84,72 @@ Page({
       wx.showToast({ title: '请输入密码', icon: 'none' });
       return;
     }
+    if (captchaEnabled && !captcha) {
+      wx.showToast({ title: '请输入验证码', icon: 'none' });
+      return;
+    }
 
     this.setData({ loading: true });
-    authApi.login({ username, password })
+    
+    const loginData = { username, password };
+    if (captchaEnabled && captchaKey && captcha) {
+      loginData.captchaKey = captchaKey;
+      loginData.captcha = captcha;
+    }
+    
+    authApi.login(loginData)
       .then(res => {
         const token = res.data.token;
         wx.setStorageSync('token', token);
-        wx.setStorageSync('userInfo', res.data.user);
         wx.showToast({ title: '登录成功', icon: 'success' });
-        wx.switchTab({ url: '/pages/index/index' });
+        setTimeout(() => {
+          wx.switchTab({ url: '/pages/index/index' });
+        }, 1000);
       })
       .catch(err => {
-        wx.showToast({ title: err.message || '登录失败', icon: 'none' });
+        console.error('Login error:', err);
+        // If captcha error, refresh captcha
+        if (this.data.captchaEnabled) {
+          this.refreshCaptcha();
+        }
       })
       .finally(() => {
         this.setData({ loading: false });
       });
   },
 
-  // 微信登录
+  // ... rest of the file
   handleWxLogin() {
-    if (this.data.loading) return;
-    
-    this.setData({ loading: true });
-    
+    const that = this;
     wx.login({
-      success: (res) => {
-        if (res.code) {
-          this.setData({ wxCode: res.code });
-          authApi.wxLogin(res.code)
-            .then(data => {
-              const token = data.data.token;
+      success(res) {
+        that.setData({ loading: true });
+        authApi.wxLogin(res.code)
+          .then(res => {
+            if (res.data && res.data.needBind) {
+              that.setData({ 
+                wxCode: res.code,
+                showBindModal: true 
+              });
+            } else {
+              const token = res.data.token;
               wx.setStorageSync('token', token);
-              wx.setStorageSync('userInfo', data.data.user);
               wx.showToast({ title: '登录成功', icon: 'success' });
-              wx.switchTab({ url: '/pages/index/index' });
-            })
-            .catch(err => {
-              if (err.code === 401 && err.message === 'NEED_BIND') {
-                this.setData({ showBindModal: true });
-              } else {
-                wx.showToast({ title: err.message || '登录失败', icon: 'none' });
-              }
-            })
-            .finally(() => {
-              this.setData({ loading: false });
-            });
-        } else {
-          wx.showToast({ title: '获取code失败', icon: 'none' });
-          this.setData({ loading: false });
-        }
+              setTimeout(() => {
+                wx.switchTab({ url: '/pages/index/index' });
+              }, 1000);
+            }
+          })
+          .catch(err => {
+            console.error('WeChat login error:', err);
+            wx.showToast({ title: '微信登录失败', icon: 'none' });
+          })
+          .finally(() => {
+            that.setData({ loading: false });
+          });
       },
-      fail: () => {
-        wx.showToast({ title: '登录失败', icon: 'none' });
-        this.setData({ loading: false });
+      fail() {
+        wx.showToast({ title: '微信登录失败', icon: 'none' });
       }
     });
   },
@@ -114,11 +158,22 @@ Page({
     this.setData({ showBindModal: false });
   },
 
+  onBindUsernameInput(e) {
+    this.setData({ bindUsername: e.detail.value });
+  },
+
+  onBindPasswordInput(e) {
+    this.setData({ bindPassword: e.detail.value });
+  },
+
   confirmBind() {
     const { wxCode, bindUsername, bindPassword } = this.data;
-    
+    if (!bindUsername && !bindPassword) {
+      wx.showToast({ title: '请输入用户名或密码', icon: 'none' });
+      return;
+    }
+
     this.setData({ binding: true });
-    
     authApi.bindWechat({
       code: wxCode,
       username: bindUsername,
@@ -127,13 +182,15 @@ Page({
       .then(res => {
         const token = res.data.token;
         wx.setStorageSync('token', token);
-        wx.setStorageSync('userInfo', res.data.user);
         wx.showToast({ title: '绑定成功', icon: 'success' });
         this.setData({ showBindModal: false });
-        wx.switchTab({ url: '/pages/index/index' });
+        setTimeout(() => {
+          wx.switchTab({ url: '/pages/index/index' });
+        }, 1000);
       })
       .catch(err => {
-        wx.showToast({ title: err.message || '绑定失败', icon: 'none' });
+        console.error('Bind error:', err);
+        wx.showToast({ title: '绑定失败', icon: 'none' });
       })
       .finally(() => {
         this.setData({ binding: false });

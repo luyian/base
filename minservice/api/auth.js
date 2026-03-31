@@ -20,6 +20,9 @@ module.exports = {
   // Bind WeChat for currently logged in user
   bindCurrentUserWechat: (code) => request.post('/auth/bind-wx', { code }),
   
+  // Unbind WeChat for currently logged in user
+  unbindCurrentUserWechat: () => request.delete('/auth/unbind-wx'),
+  
   // Get user info
   getUserInfo: () => request.get('/auth/info'),
   

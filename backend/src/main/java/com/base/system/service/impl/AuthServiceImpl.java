@@ -447,6 +447,26 @@ public class AuthServiceImpl implements AuthService {
         log.info("用户 {} 绑定微信成功，openid: {}", userId, openid);
     }
 
+    @Override
+    public void unbindWechatForCurrentUser() {
+        Long userId = SecurityUtils.getCurrentUserId();
+        
+        // 检查当前用户是否已绑定微信
+        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
+        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
+        oauthWrapper.eq(UserOauth::getUserId, userId);
+        UserOauth existOauth = userOauthMapper.selectOne(oauthWrapper);
+        
+        if (existOauth == null) {
+            throw new BusinessException("您未绑定微信");
+        }
+
+        // 删除绑定记录
+        userOauthMapper.deleteById(existOauth.getId());
+        
+        log.info("用户 {} 解绑微信成功", userId);
+    }
+
     /**
      * 调用微信API获取openid
      */

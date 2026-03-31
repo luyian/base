@@ -23,17 +23,15 @@ Page({
     this.setData({ userInfo });
   },
 
-  // Bind WeChat - now just gets code and binds directly
+  // Bind WeChat
   bindWechat() {
     const that = this;
     wx.login({
       success(res) {
         that.setData({ binding: true });
-        // Use the simple bind API - no need for username/password
         authApi.bindCurrentUserWechat(res.code)
           .then(() => {
             wx.showToast({ title: '绑定成功', icon: 'success' });
-            // Refresh user info
             return authApi.getUserInfo();
           })
           .then(res => {
@@ -52,6 +50,34 @@ Page({
       },
       fail() {
         wx.showToast({ title: '获取微信授权失败', icon: 'none' });
+      }
+    });
+  },
+
+  // Unbind WeChat
+  unbindWechat() {
+    const that = this;
+    wx.showModal({
+      title: '确认解绑',
+      content: '确定要解绑微信吗？解绑后将无法使用微信一键登录',
+      success: (res) => {
+        if (res.confirm) {
+          authApi.unbindCurrentUserWechat()
+            .then(() => {
+              wx.showToast({ title: '解绑成功', icon: 'success' });
+              return authApi.getUserInfo();
+            })
+            .then(res => {
+              if (res.data) {
+                wx.setStorageSync('userInfo', res.data);
+                that.setData({ userInfo: res.data });
+              }
+            })
+            .catch(err => {
+              console.error('Unbind error:', err);
+              wx.showToast({ title: err.data?.message || '解绑失败', icon: 'none' });
+            });
+        }
       }
     });
   },

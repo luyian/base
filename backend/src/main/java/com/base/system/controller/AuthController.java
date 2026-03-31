@@ -85,6 +85,16 @@ public class AuthController {
     }
 
     /**
+     * 解绑当前账号的微信
+     */
+    @DeleteMapping("/unbind-wx")
+    @ApiOperation("解绑当前账号的微信")
+    public Result<Void> unbindCurrentUserWechat() {
+        authService.unbindWechatForCurrentUser();
+        return Result.success();
+    }
+
+    /**
      * 用户登出
      */
     @PostMapping("/logout")

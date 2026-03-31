@@ -60,7 +60,6 @@ Page({
     this.setData({ captcha: e.detail.value });
   },
 
-  // Refresh captcha
   refreshCaptcha() {
     this.loadCaptcha();
   },
@@ -101,14 +100,39 @@ Page({
       .then(res => {
         const token = res.data.token;
         wx.setStorageSync('token', token);
-        wx.showToast({ title: '登录成功', icon: 'success' });
-        setTimeout(() => {
-          wx.switchTab({ url: '/pages/index/index' });
-        }, 1000);
+        
+        // Get user info to check if WeChat is bound
+        return authApi.getUserInfo();
+      })
+      .then(userRes => {
+        wx.setStorageSync('userInfo', userRes.data);
+        
+        // Check if user has bound WeChat
+        const userInfo = userRes.data;
+        if (!userInfo.wxOpenid) {
+          // Show bind WeChat popup
+          wx.showModal({
+            title: '绑定微信',
+            content: '您还未绑定微信，是否立即绑定？绑定后可使用微信一键登录',
+            confirmText: '绑定',
+            cancelText: '跳过',
+            success: (modalRes) => {
+              if (modalRes.confirm) {
+                this.bindWechat();
+              } else {
+                wx.switchTab({ url: '/pages/index/index' });
+              }
+            }
+          });
+        } else {
+          wx.showToast({ title: '登录成功', icon: 'success' });
+          setTimeout(() => {
+            wx.switchTab({ url: '/pages/index/index' });
+          }, 1000);
+        }
       })
       .catch(err => {
         console.error('Login error:', err);
-        // If captcha error, refresh captcha
         if (this.data.captchaEnabled) {
           this.refreshCaptcha();
         }
@@ -118,7 +142,36 @@ Page({
       });
   },
 
-  // ... rest of the file
+  // Bind WeChat for current user
+  bindWechat() {
+    const that = this;
+    wx.login({
+      success(res) {
+        that.setData({ binding: true, wxCode: res.code });
+        authApi.bindCurrentUserWechat(res.code)
+          .then(() => {
+            wx.showToast({ title: '绑定成功', icon: 'success' });
+            return authApi.getUserInfo();
+          })
+          .then(res => {
+            wx.setStorageSync('userInfo', res.data);
+          })
+          .catch(err => {
+            console.error('Bind error:', err);
+            wx.showToast({ title: err.data?.message || '绑定失败', icon: 'none' });
+          })
+          .finally(() => {
+            that.setData({ binding: false });
+            wx.switchTab({ url: '/pages/index/index' });
+          });
+      },
+      fail() {
+        wx.showToast({ title: '获取微信授权失败', icon: 'none' });
+        wx.switchTab({ url: '/pages/index/index' });
+      }
+    });
+  },
+
   handleWxLogin() {
     const that = this;
     wx.login({
@@ -156,14 +209,6 @@ Page({
 
   closeBindModal() {
     this.setData({ showBindModal: false });
-  },
-
-  onBindUsernameInput(e) {
-    this.setData({ bindUsername: e.detail.value });
-  },
-
-  onBindPasswordInput(e) {
-    this.setData({ bindPassword: e.detail.value });
   },
 
   confirmBind() {

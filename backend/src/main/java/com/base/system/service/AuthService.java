@@ -39,6 +39,11 @@ public interface AuthService {
     void bindWechatForCurrentUser(String code);
 
     /**
+     * 解绑当前账号的微信
+     */
+    void unbindWechatForCurrentUser();
+
+    /**
      * 用户登出
      */
     void logout();

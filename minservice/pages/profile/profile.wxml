@@ -15,9 +15,9 @@
       <text>绑定微信</text>
       <text class="arrow">></text>
     </view>
-    <view class="menu-item" wx:else>
-      <text>已绑定微信</text>
-      <text class="value">✓</text>
+    <view class="menu-item" bindtap="unbindWechat" wx:else>
+      <text>解绑微信</text>
+      <text class="arrow">></text>
     </view>
     <view class="menu-item">
       <text>通知设置</text>

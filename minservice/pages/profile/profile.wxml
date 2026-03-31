@@ -11,6 +11,14 @@
 
   <!-- Menu -->
   <view class="menu-list">
+    <view class="menu-item" bindtap="bindWechat" wx:if="{{!userInfo.wxOpenid}}">
+      <text>绑定微信</text>
+      <text class="arrow">></text>
+    </view>
+    <view class="menu-item" wx:else>
+      <text>已绑定微信</text>
+      <text class="value">✓</text>
+    </view>
     <view class="menu-item">
       <text>通知设置</text>
       <text class="arrow">></text>
@@ -24,5 +32,28 @@
   <!-- Logout -->
   <view class="logout-btn" bindtap="logout">
     <text>退出登录</text>
+  </view>
+</view>
+<!-- Bind WeChat Modal -->
+<view class="modal-mask" wx:if="{{showBindModal}}">
+  <view class="modal">
+    <view class="modal-title">绑定微信</view>
+    <view class="modal-content">
+      <view class="tip">请输入当前账号的用户名和密码进行绑定</view>
+      
+      <view class="input-group">
+        <view class="input-icon">👤</view>
+        <input class="input" placeholder="用户名" value="{{bindUsername}}" bindinput="onBindUsernameInput" />
+      </view>
+      <view class="input-group">
+        <view class="input-icon">🔒</view>
+        <input class="input password" type="password" placeholder="密码" value="{{bindPassword}}" bindinput="onBindPasswordInput" />
+      </view>
+      
+      <view class="modal-btns">
+        <button class="btn cancel" bindtap="closeBindModal">取消</button>
+        <button class="btn confirm" bindtap="confirmBind" loading="{{binding}}">确认绑定</button>
+      </view>
+    </view>
   </view>
 </view>

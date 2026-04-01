@@ -162,8 +162,8 @@ page {
   transition: all 0.2s ease;
 }
 
-.fund-change.positive { background: var(--success-light); color: var(--success); }
-.fund-change.negative { background: var(--danger-light); color: var(--danger); }
+.fund-change.positive { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
+.fund-change.negative { background: rgba(16, 185, 129, 0.1); color: #10B981; }
 .fund-change.zero { background: var(--bg); color: var(--text-tertiary); }
 
 .empty { text-align: center; padding: 120rpx 40rpx; color: var(--text-tertiary); font-size: 28rpx; }

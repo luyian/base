@@ -35,7 +35,7 @@ public class UserSaveRequest {
     private String email;
 
     @ApiModelProperty(value = "手机号")
-    @Pattern(regexp = "^1[3-9]\\d{9}$", message = "手机号格式不正确")
+    @Pattern(regexp = "^$|^1[3-9]\\d{9}$", message = "手机号格式不正确")
     private String phone;
 
     @ApiModelProperty(value = "性别（0-女，1-男，2-未知）")

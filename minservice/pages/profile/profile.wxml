@@ -1,5 +1,5 @@
 <!--pages/profile/profile.wxml-->
-<view class="container">
+<view class="container {{themeClass}}">
   <!-- User Info -->
   <view class="user-header">
     <view class="avatar">

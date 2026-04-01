@@ -8,17 +8,17 @@ Page({
     showBindModal: false,
     binding: false,
     wxCode: '',
-    themeClass: ''
+    isDarkTheme: false
   },
 
   onLoad() {
     this.loadUserInfo();
-    this.applyTheme();
+    this.checkTheme();
   },
 
   onShow() {
     this.loadUserInfo();
-    this.applyTheme();
+    this.checkTheme();
   },
 
   loadUserInfo() {
@@ -31,20 +31,20 @@ Page({
   },
 
   // 检查当前主题
-  applyTheme() {
+  checkTheme() {
     const theme = app.getTheme();
-    this.setData({ themeClass: theme === 'dark' ? 'dark-theme' : '' });
+    this.setData({ isDarkTheme: theme === 'dark' });
   },
 
   // 页面样式设置（供 app.js 调用）
   setTheme(theme) {
-    this.setData({ themeClass: theme === 'dark' ? 'dark-theme' : '' });
+    this.setData({ isDarkTheme: theme === 'dark' });
   },
 
   // 切换主题
   toggleTheme() {
     const newTheme = app.toggleTheme();
-    this.setData({ themeClass: newTheme === 'dark' ? 'dark-theme' : '' });
+    this.setData({ isDarkTheme: newTheme === 'dark' });
     wx.showToast({
       title: newTheme === 'dark' ? '已切换到深色模式' : '已切换到亮色模式',
       icon: 'success'

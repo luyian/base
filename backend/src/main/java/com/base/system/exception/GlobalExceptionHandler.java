@@ -113,6 +113,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 数据库唯一约束冲突异常
+     */
+    @ExceptionHandler(java.sql.SQLIntegrityConstraintViolationException.class)
+    public Result<Void> handleSQLIntegrityConstraintViolationException(java.sql.SQLIntegrityConstraintViolationException e) {
+        String message = e.getMessage();
+        if (message != null && message.contains("Duplicate entry")) {
+            // 提取重复的键名
+            if (message.contains("uk_username")) {
+                return Result.error(ResultCode.INTERNAL_SERVER_ERROR.getCode(), "用户名已存在");
+            } else if (message.contains("uk_phone")) {
+                return Result.error(ResultCode.INTERNAL_SERVER_ERROR.getCode(), "手机号已被注册");
+            } else if (message.contains("uk_email")) {
+                return Result.error(ResultCode.INTERNAL_SERVER_ERROR.getCode(), "邮箱已被注册");
+            }
+        }
+        log.error("数据库唯一约束冲突", e);
+        return Result.error(ResultCode.INTERNAL_SERVER_ERROR.getCode(), "数据已存在，请勿重复添加");
+    }
+
+    /**
      * 其他异常
      */
     @ExceptionHandler(Exception.class)

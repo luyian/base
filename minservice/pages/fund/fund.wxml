@@ -26,17 +26,15 @@
           <text class="value">{{item.estimatedChangePercent > 0 ? '+' : ''}}{{item.estimatedChangePercent || 0}}%</text>
         </view>
       </view>
-      <view class="fund-actions" wx:if="{{isAdmin}}">
-        <view class="action-btn-small" bindtap="goToEdit" data-id="{{item.fundId}}">
-          <text>编辑</text>
-        </view>
-        <view class="action-btn-small delete" bindtap="deleteFund" data-fund="{{item}}">
-          <text>删除</text>
-        </view>
-      </view>
-      <view class="fund-actions" wx:else>
+      <view class="fund-actions">
         <view class="watchlist-btn" bindtap="toggleWatchlist" data-fund="{{item}}">
           <text class="{{item.inWatchlist ? 'added' : ''}}">{{item.inWatchlist ? '★' : '☆'}}</text>
+        </view>
+        <view class="action-btn-small" wx:if="{{isAdmin}}" bindtap="goToEdit" data-id="{{item.fundId}}">
+          <text>编辑</text>
+        </view>
+        <view class="action-btn-small delete" wx:if="{{isAdmin}}" bindtap="deleteFund" data-fund="{{item}}">
+          <text>删除</text>
         </view>
       </view>
     </view>

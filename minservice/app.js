@@ -20,12 +20,17 @@ App({
     const savedTheme = wx.getStorageSync('theme');
     if (savedTheme) {
       this.globalData.theme = savedTheme;
-      this.setTheme(savedTheme);
+    } else {
+      // 默认保存为亮色主题
+      wx.setStorageSync('theme', 'light');
+      this.globalData.theme = 'light';
     }
+    // 初始化时同步导航栏和TabBar颜色
+    this._syncNavigationBarColor();
   },
 
-  onShow() {
-    // 每次 app 显示时同步导航栏和 TabBar 颜色
+  // 同步导航栏和TabBar颜色（内部方法）
+  _syncNavigationBarColor() {
     const theme = this.globalData.theme || 'light';
     const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
     const navTextStyle = theme === 'dark' ? 'white' : 'black';
@@ -45,6 +50,11 @@ App({
       backgroundColor: tabBgColor,
       borderColor: tabBorderColor
     });
+  },
+
+  onShow() {
+    // 每次 app 显示时同步导航栏和 TabBar 颜色
+    this._syncNavigationBarColor();
   },
 
   // 切换主题

@@ -125,5 +125,4 @@ App({
       p === 'stock:fund:delete'
     );
   }
-
-};
+});

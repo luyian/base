@@ -31,7 +31,6 @@ Page({
   setTheme(theme) {
     this.applyTheme();
   },
-  },
 
   loadWatchlist() {
     const token = wx.getStorageSync('token');

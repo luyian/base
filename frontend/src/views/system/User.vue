@@ -130,7 +130,14 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="部门" prop="deptId">
-          <el-input v-model="form.deptId" placeholder="请输入部门ID" />
+          <el-select v-model="form.deptId" placeholder="请选择部门" clearable style="width: 100%">
+            <el-option
+              v-for="dept in deptList"
+              :key="dept.id"
+              :label="dept.name"
+              :value="dept.id"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">

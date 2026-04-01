@@ -60,24 +60,13 @@
   <!-- WeChat Bind Modal -->
   <view class="modal-mask" wx:if="{{showBindModal}}">
     <view class="modal">
-      <view class="modal-title">绑定账号</view>
+      <view class="modal-title">绑定微信</view>
       <view class="modal-content">
-        <view class="tip">请绑定已有账号或创建新账号</view>
-        
-        <view class="input-group">
-          <view class="input-icon">👤</view>
-          <input class="input" placeholder="用户名（可选）" value="{{bindUsername}}" bindinput="onBindUsernameInput" />
-        </view>
-        <view class="input-group">
-          <view class="input-icon">🔒</view>
-          <input class="input password" type="password" placeholder="密码（可选）" value="{{bindPassword}}" bindinput="onBindPasswordInput" />
-        </view>
-        
-        <view class="tip-small">不填写则创建新账号</view>
+        <view class="tip">是否将微信绑定到当前账号？绑定后可直接用微信登录</view>
         
         <view class="modal-btns">
           <button class="btn cancel" bindtap="closeBindModal">取消</button>
-          <button class="btn confirm" bindtap="confirmBind" loading="{{binding}}">确认</button>
+          <button class="btn confirm" bindtap="confirmBind" loading="{{binding}}">确认绑定</button>
         </view>
       </view>
     </view>

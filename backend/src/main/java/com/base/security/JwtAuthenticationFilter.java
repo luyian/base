@@ -2,6 +2,7 @@ package com.base.security;
 
 import com.base.system.util.JwtUtil;
 import com.base.system.util.RedisUtil;
+import com.base.common.util.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -46,11 +47,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             // 1. 从请求头中获取 Token
             String token = getTokenFromRequest(request);
+            log.info("收到请求: {}, Token: {}", request.getRequestURI(), token != null ? "有" : "无");
 
             // 2. 验证 Token
             if (StringUtils.hasText(token)) {
                 // 从 Token 中获取用户名
                 String username = jwtUtil.getUsernameFromToken(token);
+                log.info("从Token解析用户名: {}", username);
 
                 if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     // 加载用户详情
@@ -75,7 +78,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             // 设置到 SecurityContext
                             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                            log.debug("JWT 认证成功，username: {}", username);
+                            // 设置当前用户信息到ThreadLocal
+                            SecurityUtils.setCurrentUserId(userId);
+                            SecurityUtils.setCurrentUsername(username);
+
+                            log.info("JWT 认证成功，username: {}, userId: {}", username, userId);
                         } else {
                             log.warn("Token 已失效或被替换，username: {}", username);
                         }
@@ -86,6 +93,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         } catch (Exception e) {
             log.error("JWT 认证失败", e);
+        } finally {
+            // 清理 ThreadLocal
+            SecurityUtils.clear();
         }
 
         // 继续过滤器链

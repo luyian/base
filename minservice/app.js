@@ -3,12 +3,11 @@ App({
   globalData: {
     userInfo: null,
     token: null,
-    baseUrl: 'http://119.45.176.101/api',  // 测试用HTTP，生产环境需要HTTPS + SSL证书
-    theme: 'light'  // 默认亮色主题
+    baseUrl: 'http://119.45.176.101/api',
+    theme: 'light'
   },
 
   onLaunch() {
-    // Check if user is logged in
     const token = wx.getStorageSync('token');
     const userInfo = wx.getStorageSync('userInfo');
     if (token) {
@@ -16,118 +15,97 @@ App({
       this.globalData.userInfo = userInfo;
     }
     
-    // Load saved theme preference
     const savedTheme = wx.getStorageSync('theme');
     if (savedTheme) {
       this.globalData.theme = savedTheme;
     } else {
-      // 默认保存为亮色主题
       wx.setStorageSync('theme', 'light');
       this.globalData.theme = 'light';
     }
-    // 初始化时同步导航栏和TabBar颜色
-    this._syncNavigationBarColor();
+    
+    // 延迟一点执行，确保app完全初始化
+    setTimeout(() => {
+      this._syncNavigationBarColor();
+    }, 100);
   },
 
-  // 同步导航栏和TabBar颜色（内部方法）
+  // 同步主题颜色
   _syncNavigationBarColor() {
-    const theme = this.globalData.theme || 'light';
-    const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
-    const navTextStyle = theme === 'dark' ? 'white' : 'black';
-    wx.setNavigationBarColor({
-      frontColor: navTextStyle,
-      backgroundColor: navBgColor,
-      animation: { duration: 0 }
-    });
-    
-    const tabBgColor = theme === 'dark' ? '#1E293B' : '#FFFFFF';
-    const tabBorderColor = theme === 'dark' ? '#334155' : '#E2E8F0';
-    const tabTextColor = theme === 'dark' ? '#94A3B8' : '#94A3B8';
-    const tabSelectedColor = theme === 'dark' ? '#60A5FA' : '#3B82F6';
-    wx.setTabBarStyle({
-      color: tabTextColor,
-      selectedColor: tabSelectedColor,
-      backgroundColor: tabBgColor,
-      borderColor: tabBorderColor
-    });
+    try {
+      const theme = this.globalData.theme || 'light';
+      console.log('[Theme] 同步主题:', theme);
+      
+      // 导航栏
+      const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
+      const navTextStyle = theme === 'dark' ? 'white' : 'black';
+      wx.setNavigationBarColor({
+        frontColor: navTextStyle,
+        backgroundColor: navBgColor,
+        animation: { duration: 0 }
+      });
+      console.log('[Theme] 导航栏:', navBgColor, navTextStyle);
+      
+      // TabBar
+      const tabBgColor = theme === 'dark' ? '#1E293B' : '#FFFFFF';
+      const tabBorderColor = theme === 'dark' ? '#334155' : '#E2E8F0';
+      const tabTextColor = theme === 'dark' ? '#94A3B8' : '#94A3B8';
+      const tabSelectedColor = theme === 'dark' ? '#60A5FA' : '#3B82F6';
+      wx.setTabBarStyle({
+        color: tabTextColor,
+        selectedColor: tabSelectedColor,
+        backgroundColor: tabBgColor,
+        borderColor: tabBorderColor
+      });
+      
+      // 页面背景
+      const bgColor = theme === 'dark' ? '#0F172A' : '#F5F7FA';
+      wx.setBackgroundColor({
+        backgroundColor: bgColor,
+        backgroundColorTop: bgColor,
+        backgroundColorBottom: bgColor
+      });
+      
+      console.log('[Theme] 同步完成');
+    } catch (e) {
+      console.error('[Theme] 同步失败:', e);
+    }
   },
 
   onShow() {
-    // 每次 app 显示时同步导航栏和 TabBar 颜色
     this._syncNavigationBarColor();
   },
 
-  // 切换主题
   setTheme(theme) {
     this.globalData.theme = theme;
     wx.setStorageSync('theme', theme);
-    
-    // 同步导航栏和TabBar颜色
     this._syncNavigationBarColor();
     
-    // 设置页面栈中所有页面的样式
     const pages = getCurrentPages();
     pages.forEach(page => {
       if (page && page.setTheme) {
         page.setTheme(theme);
       }
     });
-    
-    // 触发主题切换事件
-    wx.eventCenter && wx.eventCenter.trigger('themeChange', theme);
   },
 
-  // 切换到亮色主题
-  setLightTheme() {
-    this.setTheme('light');
-  },
-
-  // 切换到暗色主题
-  setDarkTheme() {
-    this.setTheme('dark');
-  },
-
-  // 切换主题（toggle）
   toggleTheme() {
-    const newTheme = this.globalData.theme === 'light' ? 'dark' : 'light';
+    const newTheme = this.globalData.theme === 'dark' ? 'light' : 'dark';
     this.setTheme(newTheme);
     return newTheme;
   },
 
-  // 获取当前主题
   getTheme() {
-    return this.globalData.theme;
+    return this.globalData.theme || 'light';
   },
 
-  // 判断是否为暗色主题
-  isDarkTheme() {
-    return this.globalData.theme === 'dark';
+  isLoggedIn() {
+    return !!this.globalData.token;
   },
 
-  // Login method
-  login(code) {
-    return new Promise((resolve, reject) => {
-      wx.request({
-        url: `${this.globalData.baseUrl}/auth/login`,
-        method: 'POST',
-        data: { code },
-        success: (res) => {
-          if (res.data.code === 200) {
-            this.globalData.token = res.data.data.token;
-            this.globalData.userInfo = res.data.data.user;
-            wx.setStorageSync('token', res.data.data.token);
-            wx.setStorageSync('userInfo', res.data.data.user);
-            resolve(res.data);
-          } else {
-            reject(res.data);
-          }
-        },
-        fail: reject
-      });
-    });
+  isAdmin() {
+    return this.globalData.userInfo && this.globalData.userInfo.role === 'ADMIN';
   },
 
-  // Logout method
   logout() {
     this.globalData.token = null;
     this.globalData.userInfo = null;
@@ -135,30 +113,28 @@ App({
     wx.removeStorageSync('userInfo');
   },
 
-  // Check if logged in
-  isLoggedIn() {
-    // Check both storage and globalData
-    const token = wx.getStorageSync('token');
-    if (token && !this.globalData.token) {
-      this.globalData.token = token;
-    }
-    return !!this.globalData.token || !!wx.getStorageSync('token');
-  },
-
-  // Check if user is admin (has fund management permission)
-  // Check if user is admin (has fund management permission or SUPER_ADMIN role)
-  isAdmin() {
-    const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo');
-    if (!userInfo) return false;
-    // Check roles first
-    const roles = userInfo.roles || [];
-    if (roles.includes('SUPER_ADMIN')) return true;
-    // Check permissions
-    const permissions = userInfo.permissions || [];
-    return permissions.some(p => 
-      p === 'stock:fund:add' || 
-      p === 'stock:fund:edit' || 
-      p === 'stock:fund:delete'
-    );
+  login(code) {
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: `${this.globalData.baseUrl}/auth/login`,
+        method: 'POST',
+        data: { code },
+        header: { 'Content-Type': 'application/json' },
+        success: (res) => {
+          if (res.data.code === 200) {
+            const token = res.data.data.token;
+            const userInfo = res.data.data.user;
+            this.globalData.token = token;
+            this.globalData.userInfo = userInfo;
+            wx.setStorageSync('token', token);
+            wx.setStorageSync('userInfo', userInfo);
+            resolve(userInfo);
+          } else {
+            reject(new Error(res.data.message));
+          }
+        },
+        fail: reject
+      });
+    });
   }
 });

@@ -11,7 +11,7 @@
     "pages/profile/profile"
   ],
   "window": {
-    "backgroundTextStyle": "dark",
+    "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#FFFFFF",
     "navigationBarTitleText": "简基",
     "navigationBarTextStyle": "black",
@@ -19,6 +19,9 @@
     "backgroundColorTop": "#F5F7FA",
     "backgroundColorBottom": "#F5F7FA"
   },
+  "darkMode": true,
+  "darkModeBackgroundColorList": ["#0F172A"],
+  "darkModeTextColorList": ["#F1F5F9"],
   "tabBar": {
     "color": "#94A3B8",
     "selectedColor": "#3B82F6",

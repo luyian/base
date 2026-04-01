@@ -201,6 +201,14 @@ Page({
             } else {
               const token = res.data.token;
               wx.setStorageSync('token', token);
+              
+              // 获取用户信息
+              return authApi.getUserInfo();
+            }
+          })
+          .then(userRes => {
+            if (userRes && userRes.data) {
+              wx.setStorageSync('userInfo', userRes.data);
               wx.showToast({ title: '登录成功', icon: 'success' });
               setTimeout(() => {
                 wx.switchTab({ url: '/pages/index/index' });

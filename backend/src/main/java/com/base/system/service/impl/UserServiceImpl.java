@@ -132,12 +132,44 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long addUser(UserSaveRequest request) {
-        // 检查用户名是否已存在
+        // 检查用户名是否已存在（排除已删除的软删除记录）
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(SysUser::getUsername, request.getUsername());
-        Long count = userMapper.selectCount(wrapper);
-        if (count > 0) {
+        wrapper.eq(SysUser::getDeleted, 0);  // 只查询未删除的用户
+        SysUser existUser = userMapper.selectOne(wrapper);
+        
+        if (existUser != null) {
             throw new BusinessException(ResultCode.USERNAME_ALREADY_EXISTS);
+        }
+        
+        // 检查是否有已删除的用户同名，如果有则恢复
+        LambdaQueryWrapper<SysUser> deletedWrapper = new LambdaQueryWrapper<>();
+        deletedWrapper.eq(SysUser::getUsername, request.getUsername());
+        deletedWrapper.eq(SysUser::getDeleted, 1);
+        SysUser deletedUser = userMapper.selectOne(deletedWrapper);
+        
+        if (deletedUser != null) {
+            // 恢复已删除的用户
+            deletedUser.setDeleted(0);
+            deletedUser.setStatus(1);
+            if (StringUtils.hasText(request.getNickname())) {
+                deletedUser.setNickname(request.getNickname());
+            }
+            if (StringUtils.hasText(request.getEmail())) {
+                deletedUser.setEmail(request.getEmail());
+            }
+            if (StringUtils.hasText(request.getPhone())) {
+                deletedUser.setPhone(request.getPhone());
+            }
+            if (request.getGender() != null) {
+                deletedUser.setGender(request.getGender());
+            }
+            if (request.getDeptId() != null) {
+                deletedUser.setDeptId(request.getDeptId());
+            }
+            userMapper.updateById(deletedUser);
+            log.info("恢复已删除用户成功，username: {}, userId: {}", deletedUser.getUsername(), deletedUser.getId());
+            return deletedUser.getId();
         }
 
         // 检查密码

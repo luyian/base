@@ -21,9 +21,12 @@ Page({
 
   onLoad(options) {
     this.applyTheme();
+    console.log('edit page options:', options);
     if (options.id) {
-      this.setData({ isEdit: true, fundId: parseInt(options.id) });
-      this.loadFundDetail(options.id);
+      const fundId = parseInt(options.id);
+      console.log('fundId:', fundId, typeof fundId);
+      this.setData({ isEdit: true, fundId: fundId });
+      this.loadFundDetail(fundId);
     }
   },
 

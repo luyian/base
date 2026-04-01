@@ -45,7 +45,7 @@ App({
       backgroundColor: tabBgColor,
       borderColor: tabBorderColor
     });
-  }
+  },
 
   // 切换主题
   setTheme(theme) {

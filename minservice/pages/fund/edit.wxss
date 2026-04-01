@@ -1,18 +1,38 @@
 /*pages/fund/edit.wxss*/
-/* 亮色主题（默认） */
+/* ==================== 主题变量 ==================== */
+page {
+  /* 亮色主题 */
+  --primary: #3B82F6;
+  --primary-light: #EFF6FF;
+  --success: #10B981;
+  --danger: #EF4444;
+  --bg: #F5F7FA;
+  --card: #FFFFFF;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --text-tertiary: #94A3B8;
+  --border: #E2E8F0;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4rpx 12px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 4rpx 12px rgba(59, 130, 246, 0.15);
+  
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
 .container {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f5f7fa 0%, #e4e7ed 50%, #dcdfe6 100%);
+  background: var(--bg);
   padding: 30rpx;
   padding-bottom: 100rpx;
 }
 
 .form {
-  background: #ffffff;
+  background: var(--card);
   border-radius: 24rpx;
   padding: 40rpx;
-  border: 1rpx solid #e4e7ed;
-  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+  border: 1rpx solid var(--border);
+  box-shadow: var(--shadow);
 }
 
 .form-item {
@@ -22,7 +42,7 @@
 .label {
   display: block;
   font-size: 28rpx;
-  color: #303133;
+  color: var(--text-primary);
   margin-bottom: 16rpx;
   font-weight: 500;
 }
@@ -31,24 +51,35 @@
   width: 100%;
   height: 88rpx;
   padding: 0 24rpx;
-  background: #f5f7fa;
+  background: var(--bg);
   border-radius: 12rpx;
   font-size: 28rpx;
-  color: #303133;
-  border: 1rpx solid #dcdfe6;
+  color: var(--text-primary);
+  border: 1rpx solid var(--border);
+  box-sizing: border-box;
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
 }
 
 .textarea {
   width: 100%;
   height: 160rpx;
   padding: 24rpx;
-  background: #f5f7fa;
+  background: var(--bg);
   border-radius: 12rpx;
   font-size: 28rpx;
-  color: #303133;
-  border: 1rpx solid #dcdfe6;
+  color: var(--text-primary);
+  border: 1rpx solid var(--border);
+  box-sizing: border-box;
 }
 
+.textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* 持仓列表 */
 .holdings-list {
   margin-top: 20rpx;
 }
@@ -71,24 +102,28 @@
   top: 88rpx;
   left: 0;
   right: 0;
-  background: #ffffff;
-  border: 1rpx solid #dcdfe6;
+  background: var(--card);
+  border: 1rpx solid var(--border);
   border-radius: 12rpx;
   max-height: 400rpx;
   overflow-y: auto;
   z-index: 10;
-  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.1);
+  box-shadow: var(--shadow);
 }
 
 .suggestion-item {
   padding: 24rpx;
-  border-bottom: 1rpx solid #f5f7fa;
+  border-bottom: 1rpx solid var(--border);
   font-size: 26rpx;
-  color: #303133;
+  color: var(--text-primary);
 }
 
 .suggestion-item:last-child {
   border-bottom: none;
+}
+
+.suggestion-item:active {
+  background: var(--primary-light);
 }
 
 .weight-input {
@@ -104,7 +139,7 @@
 .percent {
   margin-left: 8rpx;
   font-size: 28rpx;
-  color: #909399;
+  color: var(--text-secondary);
 }
 
 .remove-btn {
@@ -112,79 +147,124 @@
   height: 60rpx;
   line-height: 60rpx;
   text-align: center;
-  color: #f56c6c;
+  color: var(--danger);
   font-size: 32rpx;
-  background: #fef0f0;
+  background: rgba(239, 68, 68, 0.1);
   border-radius: 50%;
+}
+
+.remove-btn:active {
+  background: rgba(239, 68, 68, 0.2);
 }
 
 .add-btn {
   padding: 24rpx;
   text-align: center;
-  color: #409eff;
+  color: var(--primary);
   font-size: 28rpx;
-  border: 2rpx dashed #409eff;
+  border: 2rpx dashed var(--border);
   border-radius: 12rpx;
+}
+
+.add-btn:active {
+  background: var(--primary-light);
 }
 
 .submit-btn {
   margin-top: 40rpx;
-  background: linear-gradient(135deg, #409eff 0%, #66b1ff 100%);
+  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
   color: #fff;
   border-radius: 50rpx;
   height: 96rpx;
   line-height: 96rpx;
   font-size: 32rpx;
   font-weight: 600;
-  box-shadow: 0 8rpx 30rpx rgba(64,158,255,0.3);
+  box-shadow: 0 8rpx 30rpx rgba(59, 130, 246, 0.3);
   border: none;
 }
 
-/* 暗色主题 */
-.dark-theme .container {
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+.submit-btn:active {
+  opacity: 0.9;
+  transform: scale(0.98);
+}
+
+/* 加载状态 */
+.loading {
+  text-align: center;
+  padding: 60rpx;
+  color: var(--text-secondary);
+}
+
+/* ==================== 深色主题 ==================== */
+.dark-theme,
+.dark-theme page {
+  --primary: #60A5FA;
+  --primary-light: #1E3A5F;
+  --success: #34D399;
+  --danger: #F87171;
+  --bg: #0F172A;
+  --card: #1E293B;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --border: #334155;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4rpx 12px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 4rpx 12px rgba(96, 165, 250, 0.2);
+  
+  background: var(--bg);
+  color: var(--text-primary);
 }
 
 .dark-theme .form {
-  background: rgba(255,255,255,0.06);
-  border: 1rpx solid rgba(255,255,255,0.1);
-}
-
-.dark-theme .label {
-  color: rgba(255,255,255,0.9);
+  border-color: var(--border);
 }
 
 .dark-theme .input,
 .dark-theme .textarea {
-  background: rgba(255,255,255,0.08);
-  color: #fff;
-  border: 1rpx solid rgba(255,255,255,0.15);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border);
+  color: var(--text-primary);
+}
+
+.dark-theme .input::placeholder,
+.dark-theme .textarea::placeholder {
+  color: var(--text-tertiary);
 }
 
 .dark-theme .stock-suggestions {
-  background: #16213e;
-  border: 1rpx solid rgba(255,255,255,0.15);
+  background: var(--card);
+  border-color: var(--border);
 }
 
 .dark-theme .suggestion-item {
-  border-bottom: 1rpx solid rgba(255,255,255,0.08);
-  color: #fff;
+  border-color: var(--border);
 }
 
-.dark-theme .percent {
-  color: rgba(255,255,255,0.7);
+.dark-theme .suggestion-item:active {
+  background: var(--primary-light);
 }
 
 .dark-theme .remove-btn {
-  background: rgba(255,107,107,0.15);
+  background: rgba(248, 113, 113, 0.15);
+}
+
+.dark-theme .remove-btn:active {
+  background: rgba(248, 113, 113, 0.25);
 }
 
 .dark-theme .add-btn {
-  color: #667eea;
-  border: 2rpx dashed rgba(102,126,234,0.5);
+  border-color: var(--border);
+}
+
+.dark-theme .add-btn:active {
+  background: var(--primary-light);
 }
 
 .dark-theme .submit-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 8rpx 30rpx rgba(102,126,234,0.4);
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+  box-shadow: 0 8rpx 30rpx rgba(96, 165, 250, 0.3);
+}
+
+.dark-theme .loading {
+  color: var(--text-secondary);
 }

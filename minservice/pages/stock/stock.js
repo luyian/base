@@ -12,12 +12,23 @@ Page({
     keyword: '',
     industry: '',
     industries: [],
-    themeClass: ''
+    themeClass: '',
+    isAdmin: false,
+    showAddModal: false,
+    submitting: false,
+    newStock: {
+      stockCode: '',
+      stockName: '',
+      market: '',
+      industry: ''
+    },
+    markets: ['SH', 'SZ', 'HK'],
+    marketIndex: 0
   },
 
   onLoad() {
-    const theme = app.getTheme();
     this.applyTheme();
+    this.setData({ isAdmin: app.isAdmin() });
     this.loadStocks();
     this.loadIndustryOptions();
   },
@@ -105,5 +116,57 @@ Page({
   goToDetail(e) {
     const stockCode = e.currentTarget.dataset.code;
     wx.navigateTo({ url: `/pages/stock/detail?code=${stockCode}` });
+  },
+
+  // 新增股票
+  showAddModal() {
+    this.setData({
+      showAddModal: true,
+      newStock: { stockCode: '', stockName: '', market: 'SH', industry: '' }
+    });
+  },
+
+  hideAddModal() {
+    this.setData({ showAddModal: false });
+  },
+
+  onStockCodeChange(e) {
+    this.setData({ 'newStock.stockCode': e.detail.value });
+  },
+
+  onStockNameChange(e) {
+    this.setData({ 'newStock.stockName': e.detail.value });
+  },
+
+  onMarketChange(e) {
+    this.setData({
+      marketIndex: e.detail.value,
+      'newStock.market': this.data.markets[e.detail.value]
+    });
+  },
+
+  onIndustryChangeInput(e) {
+    this.setData({ 'newStock.industry': e.detail.value });
+  },
+
+  submitAddStock() {
+    const { stockCode, stockName, market, industry } = this.data.newStock;
+    if (!stockCode || !stockName) {
+      wx.showToast({ title: '请填写股票代码和名称', icon: 'none' });
+      return;
+    }
+    this.setData({ submitting: true });
+    stockApi.createStock(this.data.newStock)
+      .then(() => {
+        wx.showToast({ title: '添加成功', icon: 'success' });
+        this.setData({ showAddModal: false });
+        this.loadStocks();
+      })
+      .catch(err => {
+        wx.showToast({ title: err.message || '添加失败', icon: 'none' });
+      })
+      .finally(() => {
+        this.setData({ submitting: false });
+      });
   }
 });

@@ -15,5 +15,8 @@ module.exports = {
   getStockKline: (stockCode, startDate, endDate) => request.get(`/stock/${stockCode}/kline`, { startDate, endDate }),
   
   // Get industry options
-  getIndustryOptions: () => request.get('/stock/industry/options')
+  getIndustryOptions: () => request.get('/stock/industry/options'),
+  
+  // Create stock (admin)
+  createStock: (data) => request.post('/stock', data)
 };

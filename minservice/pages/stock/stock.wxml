@@ -3,6 +3,7 @@
   <!-- Search Bar -->
   <view class="search-bar">
     <input class="search-input" placeholder="搜索股票代码/名称" bindconfirm="onSearch" />
+    <view class="add-btn" bindtap="showAddModal" wx:if="{{isAdmin}}">+ 新增</view>
   </view>
 
   <!-- Industry Filter -->
@@ -44,5 +45,35 @@
   <!-- Empty -->
   <view class="empty" wx:if="{{!loading && stocks.length === 0}}">
     <text>暂无股票数据</text>
+  </view>
+
+  <!-- Add Stock Modal -->
+  <view class="modal-mask" wx:if="{{showAddModal}}" bindtap="hideAddModal"></view>
+  <view class="modal" wx:if="{{showAddModal}}">
+    <view class="modal-title">新增股票</view>
+    <view class="modal-content">
+      <view class="form-item">
+        <text class="label">股票代码 *</text>
+        <input class="input" value="{{newStock.stockCode}}" placeholder="如: 600000" bindinput="onStockCodeChange" />
+      </view>
+      <view class="form-item">
+        <text class="label">股票名称 *</text>
+        <input class="input" value="{{newStock.stockName}}" placeholder="如: 浦发银行" bindinput="onStockNameChange" />
+      </view>
+      <view class="form-item">
+        <text class="label">市场</text>
+        <picker bindchange="onMarketChange" value="{{marketIndex}}" range="{{markets}}">
+          <view class="picker">{{newStock.market || '请选择'}}</view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="label">行业</text>
+        <input class="input" value="{{newStock.industry}}" placeholder="如: 银行" bindinput="onIndustryChangeInput" />
+      </view>
+    </view>
+    <view class="modal-btns">
+      <button class="btn cancel" bindtap="hideAddModal">取消</button>
+      <button class="btn confirm" bindtap="submitAddStock" loading="{{submitting}}">确定</button>
+    </view>
   </view>
 </view>

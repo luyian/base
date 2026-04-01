@@ -131,7 +131,14 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="部门" prop="deptId">
-          <el-input v-model="form.deptId" placeholder="请输入部门ID" />
+          <el-cascader
+            v-model="form.deptId"
+            :options="deptList"
+            :props="{ value: 'id', label: 'name', checkStrictly: true, emitPath: false }"
+            placeholder="请选择部门"
+            clearable
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
@@ -209,6 +216,7 @@ import {
   getUserRoleIds
 } from '@/api/user'
 import { listAllRoles } from '@/api/role'
+import { getDeptTree } from '@/api/dept'
 
 // 查询表单
 const queryForm = reactive({
@@ -300,6 +308,9 @@ const roleDialogVisible = ref(false)
 const currentUserId = ref(null)
 const selectedRoleIds = ref([])
 const allRoles = ref([])
+
+// 部门列表
+const deptList = ref([])
 
 // 查询用户列表
 const handleQuery = async () => {
@@ -481,7 +492,18 @@ const handleRoleSubmit = async () => {
 // 页面加载时查询数据
 onMounted(() => {
   handleQuery()
+  loadDeptList()
 })
+
+// 获取部门列表
+const loadDeptList = async () => {
+  try {
+    const { data } = await getDeptTree()
+    deptList.value = data || []
+  } catch (error) {
+    console.error('获取部门列表失败', error)
+  }
+}
 </script>
 
 <style scoped>

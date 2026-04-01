@@ -1,121 +1,126 @@
-/*pages/fund/detail.wxss*/
-.container {
-  min-height: 100vh;
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  color: #fff;
-  padding-bottom: 40rpx;
+/* pages/fund/detail.wxss - 基金详情页样式 */
+/* 亮色主题 */
+page {
+  --primary: #3B82F6;
+  --primary-light: #EFF6FF;
+  --success: #10B981;
+  --success-light: #ECFDF5;
+  --danger: #EF4444;
+  --danger-light: #FEF2F2;
+  --bg: #F5F7FA;
+  --card: #FFFFFF;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --text-tertiary: #94A3B8;
+  --border: #E2E8F0;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 4px 12px rgba(59, 130, 246, 0.15);
+  
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.loading {
-  text-align: center;
-  padding: 100rpx;
-  color: rgba(255,255,255,0.6);
-}
+.container { min-height: 100vh; background: var(--bg); padding-bottom: 40rpx; }
+.loading { text-align: center; padding: 100rpx; color: var(--text-tertiary); font-size: 28rpx; }
 
 .fund-header {
-  background: rgba(255,255,255,0.08);
-  backdrop-filter: blur(10px);
-  padding: 40rpx;
-  margin: 30rpx;
+  background: var(--card);
+  padding: 48rpx 40rpx;
+  margin: 24rpx;
   border-radius: 24rpx;
-  border: 1rpx solid rgba(255,255,255,0.1);
-  box-shadow: 0 8rpx 32rpx rgba(0,0,0,0.3);
+  box-shadow: var(--shadow);
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.fund-header .name {
-  font-size: 40rpx;
-  font-weight: 700;
-  margin-bottom: 10rpx;
+.fund-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8rpx;
+  background: linear-gradient(90deg, var(--primary) 0%, #60A5FA 100%);
 }
 
-.fund-header .code {
-  font-size: 26rpx;
-  color: rgba(255,255,255,0.5);
-  margin-bottom: 30rpx;
-}
+.fund-header .name { font-size: 40rpx; font-weight: 700; margin-bottom: 12rpx; color: var(--text-primary); text-align: center; }
+.fund-header .code { font-size: 26rpx; color: var(--text-tertiary); margin-bottom: 32rpx; }
 
 .fund-header .change {
-  padding: 16rpx 40rpx;
-  border-radius: 50rpx;
-  font-size: 48rpx;
-  font-weight: bold;
+  padding: 20rpx 48rpx;
+  border-radius: 16rpx;
+  font-size: 52rpx;
+  font-weight: 700;
+  transition: all 0.25s ease;
 }
 
-.fund-header .change.up {
-  background: rgba(255,107,107,0.2);
-  color: #ff6b6b;
-  box-shadow: 0 4rpx 20rpx rgba(255,107,107,0.3);
-}
+.fund-header .change.up { background: var(--success-light); color: var(--success); box-shadow: 0 8rpx 24rpx rgba(16, 185, 129, 0.2); }
+.fund-header .change.down { background: var(--danger-light); color: var(--danger); box-shadow: 0 8rpx 24rpx rgba(239, 68, 68, 0.2); }
 
-.fund-header .change.down {
-  background: rgba(81,207,102,0.2);
-  color: #51cf66;
-  box-shadow: 0 4rpx 20rpx rgba(81,207,102,0.3);
-}
-
-.section-title {
-  font-size: 32rpx;
-  font-weight: 600;
-  padding: 30rpx;
-  color: rgba(255,255,255,0.9);
-}
-
-.holding-list {
-  padding: 0 30rpx;
-}
+.section-title { font-size: 32rpx; font-weight: 600; padding: 32rpx 24rpx 20rpx; color: var(--text-primary); }
+.holding-list { padding: 0 24rpx; }
 
 .holding-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255,255,255,0.06);
-  padding: 30rpx;
-  margin-bottom: 16rpx;
+  background: var(--card);
+  padding: 28rpx 24rpx;
+  margin-bottom: 12rpx;
   border-radius: 16rpx;
-  border: 1rpx solid rgba(255,255,255,0.08);
+  box-shadow: var(--shadow);
+  transition: all 0.2s ease;
 }
 
-.stock-info {
-  display: flex;
-  flex-direction: column;
+.holding-item:active { transform: scale(0.992); box-shadow: var(--shadow-hover); }
+.stock-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.stock-name { font-size: 30rpx; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stock-code { font-size: 24rpx; color: var(--text-tertiary); margin-top: 4rpx; }
+.stock-data { display: flex; flex-direction: column; align-items: flex-end; gap: 4rpx; }
+
+.price { font-size: 32rpx; font-weight: 600; color: var(--text-primary); }
+.change { font-size: 26rpx; font-weight: 500; }
+.change.up { color: var(--success); }
+.change.down { color: var(--danger); }
+.weight { font-size: 22rpx; color: var(--text-tertiary); background: var(--bg); padding: 4rpx 12rpx; border-radius: 6rpx; }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.stock-name {
-  font-size: 30rpx;
-  font-weight: 500;
-  color: #fff;
+.holding-item { animation: fadeInUp 0.35s ease-out backwards; }
+.holding-item:nth-child(1) { animation-delay: 0.05s; }
+.holding-item:nth-child(2) { animation-delay: 0.1s; }
+.holding-item:nth-child(3) { animation-delay: 0.15s; }
+.holding-item:nth-child(4) { animation-delay: 0.2s; }
+.holding-item:nth-child(5) { animation-delay: 0.25s; }
+
+/* ==================== 深色主题 ==================== */
+.dark-theme,
+.dark-theme page {
+  --primary: #60A5FA;
+  --primary-light: #1E3A5F;
+  --success: #34D399;
+  --success-light: #064E3B;
+  --danger: #F87171;
+  --danger-light: #7F1D1D;
+  --bg: #0F172A;
+  --card: #1E293B;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --border: #334155;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 4px 12px rgba(96, 165, 250, 0.2);
+  
+  background: var(--bg);
+  color: var(--text-primary);
 }
 
-.stock-code {
-  font-size: 24rpx;
-  color: rgba(255,255,255,0.5);
-  margin-top: 6rpx;
-}
-
-.stock-data {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.price {
-  font-size: 32rpx;
-  font-weight: 600;
-  color: #fff;
-}
-
-.change {
-  font-size: 26rpx;
-  margin: 6rpx 0;
-}
-
-.change.up { color: #ff6b6b; }
-.change.down { color: #51cf66; }
-
-.weight {
-  font-size: 24rpx;
-  color: rgba(255,255,255,0.5);
-}
+.dark-theme .fund-header { border: 1rpx solid var(--border); }
+.dark-theme .holding-item { border: 1rpx solid var(--border); }

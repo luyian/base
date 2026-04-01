@@ -1,5 +1,5 @@
 <!--pages/index/index.wxml-->
-<view class="container">
+<view class="container {{themeClass}}">
   <!-- Header -->
   <view class="header">
     <text class="header-title">基金估值</text>

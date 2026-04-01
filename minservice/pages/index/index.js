@@ -1,5 +1,6 @@
 // pages/index/index.js
 const fundApi = require('../../api/fund');
+const app = getApp();
 
 Page({
   data: {
@@ -7,18 +8,34 @@ Page({
     funds: [],
     loading: true,
     refreshing: false,
-    lastUpdate: ''
+    lastUpdate: '',
+    themeClass: ''
   },
 
   onLoad() {
+    this.applyTheme();
     this.loadData();
   },
 
   onShow() {
+    this.applyTheme();
     // Refresh data when page shows
     if (getApp().isLoggedIn()) {
       this.loadData();
     }
+  },
+
+  // 应用主题
+  applyTheme() {
+    const theme = app.getTheme();
+    this.setData({
+      themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme'
+    });
+  },
+
+  // 页面样式设置（供 app.js 调用）
+  setTheme(theme) {
+    this.applyTheme();
   },
 
   // Load all data: watchlist first, then all funds

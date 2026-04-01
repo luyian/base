@@ -1,5 +1,6 @@
 // pages/login/login.js
 const authApi = require('../../api/auth');
+const app = getApp();
 
 Page({
   data: {
@@ -15,7 +16,20 @@ Page({
     binding: false,
     wxCode: '',
     bindUsername: '',
-    bindPassword: ''
+    bindPassword: '',
+    themeClass: ''
+  },
+
+  onLoad() {
+    this.applyTheme();
+  },
+
+  // 应用主题
+  applyTheme() {
+    const theme = app.getTheme();
+    this.setData({
+      themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme'
+    });
   },
 
   onLoad() {

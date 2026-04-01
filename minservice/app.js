@@ -3,7 +3,8 @@ App({
   globalData: {
     userInfo: null,
     token: null,
-    baseUrl: 'http://119.45.176.101/api'  // 测试用HTTP，生产环境需要HTTPS + SSL证书
+    baseUrl: 'http://119.45.176.101/api',  // 测试用HTTP，生产环境需要HTTPS + SSL证书
+    theme: 'light'  // 默认亮色主题
   },
 
   onLaunch() {
@@ -14,6 +15,57 @@ App({
       this.globalData.token = token;
       this.globalData.userInfo = userInfo;
     }
+    
+    // Load saved theme preference
+    const savedTheme = wx.getStorageSync('theme');
+    if (savedTheme) {
+      this.globalData.theme = savedTheme;
+      this.setTheme(savedTheme);
+    }
+  },
+
+  // 切换主题
+  setTheme(theme) {
+    this.globalData.theme = theme;
+    wx.setStorageSync('theme', theme);
+    
+    // 设置页面栈中所有页面的样式
+    const pages = getCurrentPages();
+    pages.forEach(page => {
+      if (page && page.setTheme) {
+        page.setTheme(theme);
+      }
+    });
+    
+    // 触发主题切换事件
+    wx.eventCenter && wx.eventCenter.trigger('themeChange', theme);
+  },
+
+  // 切换到亮色主题
+  setLightTheme() {
+    this.setTheme('light');
+  },
+
+  // 切换到暗色主题
+  setDarkTheme() {
+    this.setTheme('dark');
+  },
+
+  // 切换主题（toggle）
+  toggleTheme() {
+    const newTheme = this.globalData.theme === 'light' ? 'dark' : 'light';
+    this.setTheme(newTheme);
+    return newTheme;
+  },
+
+  // 获取当前主题
+  getTheme() {
+    return this.globalData.theme;
+  },
+
+  // 判断是否为暗色主题
+  isDarkTheme() {
+    return this.globalData.theme === 'dark';
   },
 
   // Login method
@@ -58,9 +110,14 @@ App({
   },
 
   // Check if user is admin (has fund management permission)
+  // Check if user is admin (has fund management permission or SUPER_ADMIN role)
   isAdmin() {
     const userInfo = this.globalData.userInfo || wx.getStorageSync('userInfo');
     if (!userInfo) return false;
+    // Check roles first
+    const roles = userInfo.roles || [];
+    if (roles.includes('SUPER_ADMIN')) return true;
+    // Check permissions
     const permissions = userInfo.permissions || [];
     return permissions.some(p => 
       p === 'stock:fund:add' || 
@@ -68,4 +125,5 @@ App({
       p === 'stock:fund:delete'
     );
   }
-});
+
+};

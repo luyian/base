@@ -80,7 +80,7 @@ export:
 stock:
   quote:
     source: tencent
-    fallback-enabled: false
+    fallback-enabled: true
   # 股票同步配置
   sync:
     # 每个线程需要的Token数量
@@ -99,7 +99,7 @@ stock:
 # OAuth 第三方登录配置
 # 飞书配置
 feishu:
-  enabled: false
+  enabled: true
   app-id: cli_a906a4c972f99bcc
   app-secret: x7RQFPRqzVKNnurLmrq5CgXESbDItgmM
   base-url: https://open.feishu.cn/open-apis
@@ -108,7 +108,7 @@ feishu:
   redirect-uri: http://119.45.176.101/oauth/callback?platform=feishu
 
 oauth:
-  enabled: false
+  enabled: true
   github:
     client-id: your-github-client-id
     client-secret: your-github-client-secret

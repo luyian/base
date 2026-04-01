@@ -11,6 +11,14 @@
 
   <!-- Menu -->
   <view class="menu-list">
+    <!-- 主题切换 -->
+    <view class="menu-item" bindtap="toggleTheme">
+      <text>主题模式</text>
+      <view class="theme-switch">
+        <text class="{{isDarkTheme ? '' : 'active'}}">☀ 亮色</text>
+        <text class="{{isDarkTheme ? 'active' : ''}}">🌙 暗色</text>
+      </view>
+    </view>
     <view class="menu-item" bindtap="bindWechat" wx:if="{{!userInfo.wxOpenid}}">
       <text>绑定微信</text>
       <text class="arrow">></text>

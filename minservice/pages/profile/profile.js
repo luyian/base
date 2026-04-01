@@ -22,7 +22,11 @@ Page({
   },
 
   loadUserInfo() {
-    const userInfo = wx.getStorageSync('userInfo');
+    // 优先从本地存储获取，其次从 app.globalData 获取
+    let userInfo = wx.getStorageSync('userInfo');
+    if (!userInfo) {
+      userInfo = app.globalData.userInfo;
+    }
     this.setData({ userInfo });
   },
 

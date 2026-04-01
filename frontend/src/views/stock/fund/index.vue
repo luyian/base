@@ -633,6 +633,11 @@ const getChangeClass = (value) => {
   margin-bottom: 20px;
 }
 
+/* 去掉按钮动画 */
+.action-card .el-button {
+  transition: none !important;
+}
+
 .fund-card {
   margin-bottom: 20px;
   cursor: pointer;

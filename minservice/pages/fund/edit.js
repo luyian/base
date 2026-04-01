@@ -6,6 +6,7 @@ Page({
   data: {
     isEdit: false,
     fundId: null,
+    themeClass: '',
     form: {
       fundName: '',
       fundCode: '',

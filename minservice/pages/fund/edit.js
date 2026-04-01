@@ -23,9 +23,6 @@ Page({
   onLoad(options) {
     // 同步设置导航栏颜色
     const theme = app.getTheme();
-    const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
-    const navTextStyle = theme === 'dark' ? 'white' : 'black';
-    wx.setNavigationBarColor({ frontColor: navTextStyle, backgroundColor: navBgColor });
     this.applyTheme();
     console.log('edit page options:', options);
     if (options.id) {
@@ -38,9 +35,6 @@ Page({
 
   onShow() {
     const theme = app.getTheme();
-    const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
-    const navTextStyle = theme === 'dark' ? 'white' : 'black';
-    wx.setNavigationBarColor({ frontColor: navTextStyle, backgroundColor: navBgColor });
     this.applyTheme();
   },
 

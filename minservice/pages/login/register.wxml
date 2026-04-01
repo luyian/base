@@ -1,5 +1,5 @@
 <!--pages/login/register.wxml-->
-<view class="container">
+<view class="container {{themeClass}}">
   <view class="circle circle-1"></view>
   <view class="circle circle-2"></view>
   

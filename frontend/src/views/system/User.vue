@@ -41,7 +41,6 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="55" align="center" />
-        <el-table-column prop="id" label="用户ID" width="80" align="center" />
         <el-table-column prop="username" label="用户名" width="120" align="center" />
         <el-table-column prop="nickname" label="昵称" width="120" align="center" />
         <el-table-column prop="email" label="邮箱" width="180" align="center" />
@@ -131,14 +130,7 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="部门" prop="deptId">
-          <el-cascader
-            v-model="form.deptId"
-            :options="deptList"
-            :props="{ value: 'id', label: 'name', checkStrictly: true, emitPath: false }"
-            placeholder="请选择部门"
-            clearable
-            style="width: 100%"
-          />
+          <el-input v-model="form.deptId" placeholder="请输入部门ID" />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">

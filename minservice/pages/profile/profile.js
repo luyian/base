@@ -12,6 +12,11 @@ Page({
   },
 
   onLoad() {
+    // 同步导航栏颜色
+    const theme = app.getTheme();
+    const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
+    const navTextStyle = theme === 'dark' ? 'white' : 'black';
+    wx.setNavigationBarColor({ frontColor: navTextStyle, backgroundColor: navBgColor });
     this.loadUserInfo();
     this.applyTheme();
   },

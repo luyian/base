@@ -1,173 +1,3 @@
-/* pages/index/index.wxss - 简基小程序首页样式 */
-/* 亮色主题 */
-page {
-  --primary: #3B82F6;
-  --primary-light: #EFF6FF;
-  --success: #10B981;
-  --success-light: #ECFDF5;
-  --danger: #EF4444;
-  --danger-light: #FEF2F2;
-  --bg: #F5F7FA;
-  --card: #FFFFFF;
-  --text-primary: #1E293B;
-  --text-secondary: #64748B;
-  --text-tertiary: #94A3B8;
-  --border: #E2E8F0;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
-  --shadow-hover: 0 4px 12px rgba(59, 130, 246, 0.15);
-  
-  background: var(--bg);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-.container {
-  min-height: 100vh;
-  background: var(--bg);
-  padding-bottom: 120rpx;
-}
-
-.header {
-  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%);
-  padding: 40rpx 32rpx 48rpx;
-  border-bottom-left-radius: 32rpx;
-  border-bottom-right-radius: 32rpx;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
-  position: relative;
-  overflow: hidden;
-}
-
-.header::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -20%;
-  width: 300rpx;
-  height: 300rpx;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
-  border-radius: 50%;
-}
-
-.header-title {
-  font-size: 44rpx;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.5rpx;
-  display: block;
-  position: relative;
-}
-
-.header-subtitle {
-  font-size: 26rpx;
-  color: var(--text-secondary);
-  margin-top: 8rpx;
-  display: block;
-  position: relative;
-}
-
-.loading-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 120rpx 0;
-  color: var(--text-tertiary);
-}
-
-.loading {
-  width: 48rpx;
-  height: 48rpx;
-  border: 3rpx solid var(--border);
-  border-top-color: var(--primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-bottom: 20rpx;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.fund-list { padding: 24rpx; }
-
-.section-title {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16rpx 8rpx 24rpx;
-  font-size: 28rpx;
-}
-
-.section-title text:first-child {
-  font-weight: 600;
-  color: var(--text-primary);
-  font-size: 30rpx;
-  letter-spacing: -0.3rpx;
-}
-
-.section-title .more { color: var(--primary); font-size: 24rpx; font-weight: 500; }
-.section-title .update-time { color: var(--text-tertiary); font-size: 22rpx; }
-
-.watchlist { margin-bottom: 16rpx; }
-.watchlist-card { position: relative; }
-.watchlist-card::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 24rpx;
-  bottom: 24rpx;
-  width: 6rpx;
-  background: linear-gradient(180deg, #F59E0B 0%, #FBBF24 100%);
-  border-radius: 3rpx;
-}
-
-.fund-name-row { display: flex; align-items: center; gap: 8rpx; }
-.star { color: #F59E0B; font-size: 26rpx; }
-
-.fund-card { 
-  background: var(--card);
-  padding: 28rpx 24rpx;
-  margin-bottom: 16rpx; 
-  border-radius: 20rpx; 
-  display: flex; 
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: var(--shadow);
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fund-card:active { transform: scale(0.992); box-shadow: var(--shadow-hover); }
-.fund-info { flex: 1; min-width: 0; }
-
-.fund-name {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: var(--text-primary);
-  display: block;
-  margin-bottom: 6rpx;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.fund-code { font-size: 24rpx; color: var(--text-tertiary); letter-spacing: 0.5rpx; }
-
-.fund-change {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12rpx 20rpx;
-  border-radius: 12rpx;
-  min-width: 110rpx;
-  font-weight: 600;
-  font-size: 28rpx;
-  transition: all 0.2s ease;
-}
-
-.fund-change.positive { background: var(--success-light); color: var(--success); }
-.fund-change.negative { background: var(--danger-light); color: var(--danger); }
-.fund-change.zero { background: var(--bg); color: var(--text-tertiary); }
-
-.empty { text-align: center; padding: 120rpx 40rpx; color: var(--text-tertiary); font-size: 28rpx; }
-
 /* 刷新按钮 - 精致流光风格 */
 .refresh-btn {
   position: fixed;
@@ -177,6 +7,7 @@ page {
   height: 80rpx;
   padding: 0 40rpx;
   background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #3B82F6 100%);
+  background-size: 200% 100%;
   border-radius: 40rpx;
   display: flex;
   align-items: center;
@@ -189,34 +20,32 @@ page {
   color: #fff;
   font-weight: 600;
   letter-spacing: 1rpx;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
+  overflow: hidden;
 }
 
-/* 去掉流光效果 */
-/* .refresh-btn::before { */
-/*   content: ''; */
-/*   position: absolute; */
-/*   top: 0; */
-/*   left: -100%; */
-/*   width: 100%; */
-/*   height: 100%; */
-/*   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent); */
-/*   animation: shimmer 3s infinite; */
-/* } */
+/* 流光效果 */
+.refresh-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 3s infinite;
+}
 
-/* @keyframes shimmer { */
-/*   0% { left: -100%; } */
-/*   50%, 100% { left: 100%; } */
-/* } */
+@keyframes shimmer {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
 
-/* 刷新图标 */
+/* 刷新图标 - 去掉点击旋转 */
 .refresh-icon {
   font-size: 28rpx;
 }
-
-/* .refresh-btn:active .refresh-icon { */
-/*   transform: rotate(180deg); */
-/* } */
 
 /* 加载中动画 */
 .refresh-btn.loading .refresh-icon {
@@ -228,13 +57,13 @@ page {
   to { transform: rotate(360deg); }
 }
 
-/* 去掉点击效果 */
-/* .refresh-btn:active { */ */
-/*   transform: translateX(-50%) scale(0.96); */
-/*   box-shadow: */ 
-/*     0 2rpx 8rpx rgba(59, 130, 246, 0.2), */
-/*     0 0 0 1rpx rgba(255, 255, 255, 0.15) inset; */
-/* } */
+/* 点击缩放效果保留 */
+.refresh-btn:active { 
+  transform: translateX(-50%) scale(0.96);
+  box-shadow: 
+    0 2rpx 8rpx rgba(59, 130, 246, 0.2),
+    0 0 0 1rpx rgba(255, 255, 255, 0.15) inset;
+}
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(16rpx); }
@@ -247,50 +76,95 @@ page {
 .fund-card:nth-child(3) { animation-delay: 0.15s; }
 .fund-card:nth-child(4) { animation-delay: 0.2s; }
 .fund-card:nth-child(5) { animation-delay: 0.25s; }
+.fund-card:nth-child(6) { animation-delay: 0.3s; }
 
-/* ==================== 深色主题 ==================== */
-.dark-theme,
-.dark-theme page {
-  --primary: #60A5FA;
-  --primary-light: #1E3A5F;
-  --success: #34D399;
-  --success-light: #064E3B;
-  --danger: #F87171;
-  --danger-light: #7F1D1D;
-  --bg: #0F172A;
-  --card: #1E293B;
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --text-tertiary: #64748B;
-  --border: #334155;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
-  --shadow-hover: 0 4px 12px rgba(96, 165, 250, 0.2);
-  
-  background: var(--bg);
-  color: var(--text-primary);
+.fund-item {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
 }
 
-.dark-theme .header {
-  background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+.fund-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.dark-theme .header::before {
-  background: radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, transparent 70%);
+.fund-info {
+  flex: 1;
 }
 
-.dark-theme .watchlist-card::before {
-  background: linear-gradient(180deg, #FBBF24 0%, #F59E0B 100%);
+.fund-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
 }
 
-.dark-theme .fund-card {
-  border: 1rpx solid var(--border);
+.fund-name-row .name {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1f2937;
 }
 
-.dark-theme .refresh-btn {
-  background: linear-gradient(135deg, #3B82F6 0%, #60A5FA 50%, #3B82F6 100%);
-  background-size: 200% 100%;
-  box-shadow: 
-    0 4rpx 16rpx rgba(59, 130, 246, 0.4),
-    0 0 0 1rpx rgba(255, 255, 255, 0.08) inset;
+.fund-name-row .star {
+  color: #f59e0b;
+  font-size: 28rpx;
+}
+
+.fund-code {
+  font-size: 24rpx;
+  color: #9ca3af;
+  margin-top: 4rpx;
+}
+
+.change {
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.change.up {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+.change.down {
+  background: #f0fdf4;
+  color: #22c55e;
+}
+
+/* 暗色主题适配 */
+.dark-theme .fund-item {
+  background: #1f2937;
+}
+
+.dark-theme .fund-name-row .name {
+  color: #f3f4f6;
+}
+
+.dark-theme .change.up {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.dark-theme .change.down {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+/* 空状态 */
+.empty {
+  text-align: center;
+  padding: 120rpx 40rpx;
+  color: #9ca3af;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  margin-bottom: 16rpx;
+}
+
+.empty-text {
+  font-size: 28rpx;
 }

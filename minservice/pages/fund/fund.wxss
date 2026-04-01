@@ -81,7 +81,21 @@ page {
 
 .fund-actions { display: flex; justify-content: flex-end; gap: 16rpx; margin-top: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--border); }
 
-.action-btn-small { padding: 14rpx 28rpx; background: var(--primary-light); border-radius: 10rpx; font-size: 24rpx; color: var(--primary); font-weight: 500; transition: all 0.2s ease; }
+.action-btn-small { 
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 20rpx; 
+  background: var(--primary-light); 
+  border-radius: 8rpx; 
+  font-size: 22rpx; 
+  color: var(--primary); 
+  font-weight: 500; 
+  line-height: 1.2;
+  height: auto;
+  margin-left: 10rpx;
+  transition: all 0.2s ease; 
+}
 .action-btn-small:active { background: var(--primary); color: #fff; }
 .action-btn-small.delete { background: var(--danger-light); color: var(--danger); }
 .action-btn-small.delete:active { background: var(--danger); color: #fff; }

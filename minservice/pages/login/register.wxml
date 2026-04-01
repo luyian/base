@@ -5,7 +5,7 @@
   
   <view class="header">
     <text class="title">创建账号</text>
-    <text class="subtitle">加入 Base 基金估值</text>
+    <text class="subtitle">加入简基</text>
   </view>
 
   <view class="form">

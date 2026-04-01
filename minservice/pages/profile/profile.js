@@ -70,7 +70,7 @@ Page({
           })
           .catch(err => {
             console.error('Bind error:', err);
-            wx.showToast({ title: err.data?.message || '绑定失败', icon: 'none' });
+            wx.showToast({ title: err.message || '绑定失败', icon: 'none' });
           })
           .finally(() => {
             that.setData({ binding: false });
@@ -103,7 +103,7 @@ Page({
             })
             .catch(err => {
               console.error('Unbind error:', err);
-              wx.showToast({ title: err.data?.message || '解绑失败', icon: 'none' });
+              wx.showToast({ title: err.message || '解绑失败', icon: 'none' });
             });
         }
       }

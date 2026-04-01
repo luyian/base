@@ -30,6 +30,18 @@ App({
     wx.setStorageSync('theme', theme);
     
     // 设置导航栏颜色
+    
+    // 设置TabBar颜色
+    const tabBgColor = theme === 'dark' ? '#1E293B' : '#FFFFFF';
+    const tabBorderColor = theme === 'dark' ? '#334155' : '#E2E8F0';
+    const tabTextColor = theme === 'dark' ? '#94A3B8' : '#94A3B8';
+    const tabSelectedColor = theme === 'dark' ? '#60A5FA' : '#3B82F6';
+    wx.setTabBarStyle({
+      color: tabTextColor,
+      selectedColor: tabSelectedColor,
+      backgroundColor: tabBgColor,
+      borderColor: tabBorderColor
+    });
     const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
     const navTextStyle = theme === 'dark' ? 'white' : 'black';
     wx.setNavigationBarColor({

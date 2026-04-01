@@ -7,20 +7,44 @@ Page({
     userInfo: null,
     showBindModal: false,
     binding: false,
-    wxCode: ''
+    wxCode: '',
+    isDarkTheme: false
   },
 
   onLoad() {
     this.loadUserInfo();
+    this.checkTheme();
   },
 
   onShow() {
     this.loadUserInfo();
+    this.checkTheme();
   },
 
   loadUserInfo() {
     const userInfo = wx.getStorageSync('userInfo');
     this.setData({ userInfo });
+  },
+
+  // 检查当前主题
+  checkTheme() {
+    const theme = app.getTheme();
+    this.setData({ isDarkTheme: theme === 'dark' });
+  },
+
+  // 页面样式设置（供 app.js 调用）
+  setTheme(theme) {
+    this.setData({ isDarkTheme: theme === 'dark' });
+  },
+
+  // 切换主题
+  toggleTheme() {
+    const newTheme = app.toggleTheme();
+    this.setData({ isDarkTheme: newTheme === 'dark' });
+    wx.showToast({
+      title: newTheme === 'dark' ? '已切换到深色模式' : '已切换到亮色模式',
+      icon: 'success'
+    });
   },
 
   // Bind WeChat

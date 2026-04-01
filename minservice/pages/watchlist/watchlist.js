@@ -1,18 +1,36 @@
 // pages/watchlist/watchlist.js
 const watchlistApi = require('../../api/watchlist');
+const app = getApp();
 
 Page({
   data: {
     watchlist: [],
-    loading: true
+    loading: true,
+    themeClass: ''
   },
 
   onLoad() {
+    this.applyTheme();
     this.loadWatchlist();
   },
 
   onShow() {
+    this.applyTheme();
     this.loadWatchlist();
+  },
+
+  // 应用主题
+  applyTheme() {
+    const theme = app.getTheme();
+    this.setData({
+      themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme'
+    });
+  },
+
+  // 页面样式设置（供 app.js 调用）
+  setTheme(theme) {
+    this.applyTheme();
+  },
   },
 
   loadWatchlist() {

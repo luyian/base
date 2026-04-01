@@ -1,5 +1,6 @@
 // pages/login/register.js
 const authApi = require('../../api/auth');
+const app = getApp();
 
 Page({
   data: {
@@ -8,7 +9,20 @@ Page({
     confirmPassword: '',
     nickname: '',
     phone: '',
-    loading: false
+    loading: false,
+    themeClass: ''
+  },
+
+  onLoad() {
+    this.applyTheme();
+  },
+
+  // 应用主题
+  applyTheme() {
+    const theme = app.getTheme();
+    this.setData({
+      themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme'
+    });
   },
 
   onUsernameInput(e) { this.setData({ username: e.detail.value }); },

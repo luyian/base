@@ -1,5 +1,5 @@
 <!--pages/fund/detail.wxml-->
-<view class="container">
+<view class="container {{themeClass}}">
   <view class="loading" wx:if="{{loading}}">加载中...</view>
   
   <view wx:else>

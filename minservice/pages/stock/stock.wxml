@@ -1,5 +1,5 @@
 <!--pages/stock/stock.wxml-->
-<view class="container">
+<view class="container {{themeClass}}">
   <!-- Search Bar -->
   <view class="search-bar">
     <input class="search-input" placeholder="搜索股票代码/名称" bindconfirm="onSearch" />

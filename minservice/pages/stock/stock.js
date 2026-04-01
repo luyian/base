@@ -1,5 +1,6 @@
 // pages/stock/stock.js
 const stockApi = require('../../api/stock');
+const app = getApp();
 
 Page({
   data: {
@@ -10,12 +11,31 @@ Page({
     hasMore: true,
     keyword: '',
     industry: '',
-    industries: []
+    industries: [],
+    themeClass: ''
   },
 
   onLoad() {
+    this.applyTheme();
     this.loadStocks();
     this.loadIndustryOptions();
+  },
+
+  onShow() {
+    this.applyTheme();
+  },
+
+  // 应用主题
+  applyTheme() {
+    const theme = app.getTheme();
+    this.setData({
+      themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme'
+    });
+  },
+
+  // 页面样式设置（供 app.js 调用）
+  setTheme(theme) {
+    this.applyTheme();
   },
 
   loadIndustryOptions() {

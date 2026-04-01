@@ -1,115 +1,132 @@
-/* pages/fund/fund.wxss */
-.container { 
-  min-height: 100vh; 
-  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-  padding-bottom: 40rpx;
+/* pages/fund/fund.wxss - 基金列表页样式 */
+/* 亮色主题 */
+page {
+  --primary: #3B82F6;
+  --primary-light: #EFF6FF;
+  --success: #10B981;
+  --success-light: #ECFDF5;
+  --danger: #EF4444;
+  --danger-light: #FEF2F2;
+  --warning: #F59E0B;
+  --warning-light: #FFFBEB;
+  --bg: #F5F7FA;
+  --card: #FFFFFF;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --text-tertiary: #94A3B8;
+  --border: #E2E8F0;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 4px 12px rgba(59, 130, 246, 0.15);
+  
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+
+.container { min-height: 100vh; background: var(--bg); padding-bottom: 40rpx; }
 
 .action-bar {
   display: flex;
-  gap: 20rpx;
-  padding: 30rpx;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(10px);
+  gap: 16rpx;
+  padding: 24rpx;
+  background: var(--card);
+  border-bottom: 1rpx solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .action-btn {
   flex: 1;
-  padding: 24rpx;
+  padding: 22rpx;
   text-align: center;
-  background: rgba(255,255,255,0.1);
-  border-radius: 16rpx;
+  background: var(--bg);
+  border-radius: 14rpx;
   font-size: 28rpx;
-  color: #fff;
-  border: 1rpx solid rgba(255,255,255,0.15);
+  color: var(--text-secondary);
+  font-weight: 500;
+  border: 1rpx solid var(--border);
+  transition: all 0.2s ease;
 }
 
-.action-btn.primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  box-shadow: 0 8rpx 20rpx rgba(102, 126, 234, 0.4);
-}
+.action-btn:active { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+.action-btn.primary { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); border: none; color: #fff; box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.3); }
+.action-btn.primary:active { transform: scale(0.98); }
 
-.loading { 
-  text-align: center; 
-  padding: 100rpx; 
-  color: rgba(255,255,255,0.6); 
-}
+.loading { text-align: center; padding: 100rpx; color: var(--text-tertiary); font-size: 28rpx; }
+.fund-list { padding: 24rpx; }
 
-.fund-list { 
-  padding: 20rpx; 
-}
-
-.fund-item { 
-  background: rgba(255,255,255,0.08);
-  padding: 30rpx; 
-  margin-bottom: 20rpx; 
-  border-radius: 20rpx; 
-  display: flex; 
-  flex-direction: column;
-  border: 1rpx solid rgba(255,255,255,0.1);
-  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.2);
-}
-
-.fund-main { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-}
-
-.fund-info { 
-  flex: 1; 
-}
-
-.name { 
-  font-size: 32rpx; 
-  font-weight: 600; 
-  display: block; 
-  margin-bottom: 8rpx; 
-  color: #fff;
-}
-
-.code { 
-  font-size: 24rpx; 
-  color: rgba(255,255,255,0.5); 
-}
-
-.change { 
-  font-size: 40rpx; 
-  font-weight: bold; 
-  padding: 10rpx 20rpx;
-  border-radius: 12rpx;
-}
-
-.up { 
-  color: #ff6b6b; 
-  background: rgba(255,107,107,0.15);
-}
-
-.down { 
-  color: #51cf66; 
-  background: rgba(81,207,102,0.15);
-}
-
-.fund-actions {
+.fund-item {
+  background: var(--card);
+  padding: 28rpx 24rpx;
+  margin-bottom: 16rpx;
+  border-radius: 20rpx;
   display: flex;
-  justify-content: flex-end;
-  gap: 20rpx;
-  margin-top: 24rpx;
-  padding-top: 24rpx;
-  border-top: 1rpx solid rgba(255,255,255,0.1);
+  flex-direction: column;
+  box-shadow: var(--shadow);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.watchlist-btn text {
-  font-size: 36rpx;
-  color: #ffd43b;
-  text-shadow: 0 2rpx 8rpx rgba(255,212,59,0.5);
+.fund-item:active { transform: scale(0.992); box-shadow: var(--shadow-hover); }
+.fund-main { display: flex; justify-content: space-between; align-items: center; }
+.fund-info { flex: 1; min-width: 0; }
+.fund-name-row { display: flex; align-items: center; gap: 8rpx; }
+
+.name { font-size: 32rpx; font-weight: 600; color: var(--text-primary); display: block; margin-bottom: 6rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.code { font-size: 24rpx; color: var(--text-tertiary); letter-spacing: 0.5rpx; }
+
+.change { font-size: 34rpx; font-weight: 700; padding: 14rpx 22rpx; border-radius: 12rpx; min-width: 110rpx; text-align: center; transition: all 0.2s ease; }
+.change.up { background: var(--success-light); color: var(--success); }
+.change.down { background: var(--danger-light); color: var(--danger); }
+
+.fund-actions { display: flex; justify-content: flex-end; gap: 16rpx; margin-top: 20rpx; padding-top: 20rpx; border-top: 1rpx solid var(--border); }
+
+.action-btn-small { padding: 14rpx 28rpx; background: var(--primary-light); border-radius: 10rpx; font-size: 24rpx; color: var(--primary); font-weight: 500; transition: all 0.2s ease; }
+.action-btn-small:active { background: var(--primary); color: #fff; }
+.action-btn-small.delete { background: var(--danger-light); color: var(--danger); }
+.action-btn-small.delete:active { background: var(--danger); color: #fff; }
+
+.watchlist-btn { padding: 12rpx 16rpx; display: flex; align-items: center; }
+.watchlist-btn text { font-size: 36rpx; color: var(--text-tertiary); transition: all 0.2s ease; }
+.watchlist-btn text.added { color: var(--warning); text-shadow: 0 2rpx 8rpx rgba(245, 158, 11, 0.3); }
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12rpx); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.edit-btn text {
-  font-size: 26rpx;
-  color: rgba(255,255,255,0.7);
-  padding: 12rpx 24rpx;
-  background: rgba(255,255,255,0.1);
-  border-radius: 30rpx;
+.fund-item { animation: fadeInUp 0.35s ease-out backwards; }
+.fund-item:nth-child(1) { animation-delay: 0.03s; }
+.fund-item:nth-child(2) { animation-delay: 0.06s; }
+.fund-item:nth-child(3) { animation-delay: 0.09s; }
+.fund-item:nth-child(4) { animation-delay: 0.12s; }
+.fund-item:nth-child(5) { animation-delay: 0.15s; }
+
+/* ==================== 深色主题 ==================== */
+.dark-theme,
+.dark-theme page {
+  --primary: #60A5FA;
+  --primary-light: #1E3A5F;
+  --success: #34D399;
+  --success-light: #064E3B;
+  --danger: #F87171;
+  --danger-light: #7F1D1D;
+  --warning: #FBBF24;
+  --warning-light: #78350F;
+  --bg: #0F172A;
+  --card: #1E293B;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --border: #334155;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+  --shadow-hover: 0 4px 12px rgba(96, 165, 250, 0.2);
+  
+  background: var(--bg);
+  color: var(--text-primary);
 }
+
+.dark-theme .action-btn.primary { box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.4); }
+.dark-theme .fund-item { border: 1rpx solid var(--border); }
+.dark-theme .action-btn-small { background: var(--primary-light); }
+.dark-theme .action-btn-small.delete { background: var(--danger-light); }

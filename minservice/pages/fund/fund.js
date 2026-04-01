@@ -7,18 +7,35 @@ Page({
     funds: [],
     loading: true,
     activeTab: 'all',
-    isAdmin: false
+    isAdmin: false,
+    themeClass: ''
   },
 
   onLoad() {
+    this.applyTheme();
     this.setData({ isAdmin: app.isAdmin() });
+    console.log('isAdmin:', app.isAdmin());
   },
 
   onShow() {
+    this.applyTheme();
     if (app.isLoggedIn()) {
       this.setData({ isAdmin: app.isAdmin() });
       this.loadFunds();
     }
+  },
+
+  // 应用主题
+  applyTheme() {
+    const theme = app.getTheme();
+    this.setData({
+      themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme'
+    });
+  },
+
+  // 页面样式设置（供 app.js 调用）
+  setTheme(theme) {
+    this.applyTheme();
   },
 
   loadFunds() {
@@ -52,11 +69,35 @@ Page({
     wx.navigateTo({ url: `/pages/fund/edit?id=${id}` });
   },
 
+  // Delete fund
+  deleteFund(e) {
+    const fund = e.currentTarget.dataset.fund;
+    const that = this;
+    const fundId = fund.fundId;
+    
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除「${fund.fundName}」吗？此操作不可恢复`,
+      success(res) {
+        if (res.confirm) {
+          fundApi.deleteFund(fundId)
+            .then(() => {
+              wx.showToast({ title: '删除成功', icon: 'success' });
+              that.loadFunds();
+            })
+            .catch(err => {
+              wx.showToast({ title: '删除失败', icon: 'none' });
+            });
+        }
+      }
+    });
+  },
+
   // Toggle watchlist
   toggleWatchlist(e) {
     const fund = e.currentTarget.dataset.fund;
     const that = this;
-    const fundId = fund.id || fund.fundId; // 支持 id 或 fundId
+    const fundId = fund.fundId;
     
     if (!fundId) {
       wx.showToast({ title: '基金ID获取失败', icon: 'none' });
@@ -64,7 +105,6 @@ Page({
     }
     
     if (fund.inWatchlist) {
-      // Remove from watchlist
       wx.showModal({
         title: '提示',
         content: `确定取消关注「${fund.fundName}」？`,
@@ -82,7 +122,6 @@ Page({
         }
       });
     } else {
-      // Add to watchlist
       fundApi.addToWatchlist(fundId)
         .then(() => {
           wx.showToast({ title: '已添加到自选', icon: 'success' });

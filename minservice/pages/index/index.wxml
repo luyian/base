@@ -65,6 +65,6 @@
 
   <!-- Refresh button -->
   <view class="refresh-btn" bindtap="refreshData">
-    <text>刷新估值</text>
+    <text>刷新</text>
   </view>
 </view>

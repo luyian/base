@@ -170,23 +170,27 @@ page {
 
 .refresh-btn {
   position: fixed;
-  bottom: 40rpx;
-  right: 32rpx;
-  width: 96rpx;
-  height: 96rpx;
-  background: var(--card);
-  border-radius: 50%;
+  bottom: 32rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200rpx;
+  height: 72rpx;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  border-radius: 36rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(59, 130, 246, 0.25);
-  font-size: 36rpx;
-  color: var(--primary);
+  box-shadow: 0 6rpx 20rpx rgba(59, 130, 246, 0.35);
+  font-size: 26rpx;
+  color: #fff;
+  font-weight: 500;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
 }
 
-.refresh-btn:active { transform: scale(0.92); }
+.refresh-btn:active { 
+  transform: translateX(-50%) scale(0.96); 
+}
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(16rpx); }
@@ -240,6 +244,6 @@ page {
 }
 
 .dark-theme .refresh-btn {
-  border: 1rpx solid var(--border);
-  box-shadow: 0 8rpx 24rpx rgba(96, 165, 250, 0.25);
+  background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+  box-shadow: 0 6rpx 20rpx rgba(59, 130, 246, 0.4);
 }

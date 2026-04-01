@@ -1,6 +1,11 @@
 package com.base.stock.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.base.common.exception.BusinessException;
+
+import java.util.*;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.util.ChineseConvertUtil;
 import com.base.stock.dto.StockQueryRequest;
@@ -126,6 +131,44 @@ public class StockServiceImpl implements StockService {
             option.put("label", item.getEnumValue());
             return option;
         }).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<StockInfo> searchStocks(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+        return stockInfoMapper.selectList(
+            new QueryWrapper<StockInfo>()
+                .like("stock_code", keyword.trim())
+                .or()
+                .like("stock_name", keyword.trim())
+                .last("limit 20")
+        );
+    }
+
+    @Override
+    public StockInfo createStock(StockInfo stockInfo) {
+        // 检查股票是否已存在
+        StockInfo existing = stockInfoMapper.selectById(stockInfo.getStockCode());
+        if (existing != null) {
+            throw new BusinessException("股票代码已存在");
+        }
+        // 设置默认值
+        if (stockInfo.getMarket() == null) {
+            String code = stockInfo.getStockCode();
+            if (code != null) {
+                if (code.startsWith("6")) {
+                    stockInfo.setMarket("SH");
+                } else if (code.startsWith("0") || code.startsWith("3")) {
+                    stockInfo.setMarket("SZ");
+                } else if (code.startsWith("HK") || code.startsWith("0")) {
+                    stockInfo.setMarket("HK");
+                }
+            }
+        }
+        stockInfoMapper.insert(stockInfo);
+        return stockInfo;
     }
 
     /**

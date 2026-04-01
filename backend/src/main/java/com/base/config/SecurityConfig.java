@@ -91,6 +91,8 @@ public class SecurityConfig {
                 // 允许匿名访问的接口
                 .antMatchers(
                         "/auth/**",
+                        "/stock/list",
+                        "/stock/search",
                         "/swagger-ui/**",
                         "/swagger-ui.html",
                         "/swagger-resources/**",

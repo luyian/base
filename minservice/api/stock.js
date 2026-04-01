@@ -2,7 +2,10 @@
 const request = require('../utils/request');
 
 module.exports = {
-  // Get stock list (paginated)
+  // Search stocks (public, no auth required)
+  searchStocks: (keyword) => request.get('/stock/search', { keyword }),
+  
+  // Get stock list (paginated, requires auth)
   getStockList: (data) => request.post('/stock/list', data),
   
   // Get stock detail by code

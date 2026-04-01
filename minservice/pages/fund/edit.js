@@ -90,10 +90,10 @@ Page({
       return;
     }
     this.setData({ stockSearchLoading: true });
-    stockApi.getStockList({ keyword, page: 1, size: 20 })
+    stockApi.searchStocks(keyword)
       .then(res => {
         this.setData({
-          stockOptions: res.data?.records || [],
+          stockOptions: res.data || [],
           stockSearchLoading: false
         });
       })

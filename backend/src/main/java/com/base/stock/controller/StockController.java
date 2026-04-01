@@ -31,6 +31,16 @@ public class StockController {
     private final StockService stockService;
 
     /**
+     * 搜索股票（公开接口，无需登录）
+     */
+    @ApiOperation("搜索股票")
+    @GetMapping("/search")
+    public Result<List<StockInfo>> search(@RequestParam String keyword) {
+        List<StockInfo> result = stockService.searchStocks(keyword);
+        return Result.success(result);
+    }
+
+    /**
      * 分页查询股票列表
      */
     @ApiOperation("分页查询股票列表")
@@ -74,5 +84,16 @@ public class StockController {
     @PreAuthorize("hasAuthority('stock:info:list')")
     public Result<List<Map<String, String>>> industryOptions() {
         return Result.success(stockService.listIndustryOptions());
+    }
+
+    /**
+     * 新增股票配置（需要管理员权限）
+     */
+    @ApiOperation("新增股票配置")
+    @PostMapping
+    @PreAuthorize("hasAuthority('stock:info:add')")
+    public Result<StockInfo> create(@RequestBody StockInfo stockInfo) {
+        StockInfo created = stockService.createStock(stockInfo);
+        return Result.success(created);
     }
 }

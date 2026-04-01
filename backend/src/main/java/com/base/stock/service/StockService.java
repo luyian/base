@@ -48,4 +48,20 @@ public interface StockService {
      * @return 行业选项列表
      */
     List<Map<String, String>> listIndustryOptions();
+
+    /**
+     * 搜索股票（模糊匹配）
+     *
+     * @param keyword 关键词
+     * @return 股票列表
+     */
+    List<StockInfo> searchStocks(String keyword);
+
+    /**
+     * 创建股票配置
+     *
+     * @param stockInfo 股票信息
+     * @return 创建后的股票信息
+     */
+    StockInfo createStock(StockInfo stockInfo);
 }

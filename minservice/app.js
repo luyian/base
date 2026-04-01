@@ -29,6 +29,15 @@ App({
     this.globalData.theme = theme;
     wx.setStorageSync('theme', theme);
     
+    // 设置导航栏颜色
+    const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
+    const navTextStyle = theme === 'dark' ? 'white' : 'black';
+    wx.setNavigationBarColor({
+      frontColor: navTextStyle,
+      backgroundColor: navBgColor,
+      animation: { duration: 300 }
+    });
+    
     // 设置页面栈中所有页面的样式
     const pages = getCurrentPages();
     pages.forEach(page => {

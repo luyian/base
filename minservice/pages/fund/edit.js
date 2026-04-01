@@ -19,10 +19,23 @@ Page({
   },
 
   onLoad(options) {
+    this.applyTheme();
     if (options.id) {
       this.setData({ isEdit: true, fundId: parseInt(options.id) });
       this.loadFundDetail(options.id);
     }
+  },
+
+  onShow() {
+    this.applyTheme();
+  },
+
+  // 应用主题
+  applyTheme() {
+    const theme = app.getTheme();
+    this.setData({
+      themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme'
+    });
   },
 
   loadFundDetail(fundId) {

@@ -1,5 +1,5 @@
 <!--pages/fund/edit.wxml-->
-<view class="container">
+<view class="container {{themeClass}}">
   <view class="form">
     <!-- Fund Name -->
     <view class="form-item">

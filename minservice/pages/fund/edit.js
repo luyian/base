@@ -1,4 +1,5 @@
 // pages/fund/edit.js - Fund edit/Create page
+const app = getApp();
 const fundApi = require('../../api/fund');
 const stockApi = require('../../api/stock');
 

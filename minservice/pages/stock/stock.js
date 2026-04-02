@@ -75,7 +75,7 @@ Page({
       data.industry = this.data.industry;
     }
     
-    stockApi.getStockList(data)
+    return stockApi.getStockList(data)
       .then(res => {
         const list = res.data?.records || [];
         this.setData({

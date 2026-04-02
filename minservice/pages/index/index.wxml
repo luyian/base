@@ -1,5 +1,6 @@
 <!--pages/index/index.wxml-->
 <view class="container {{themeClass}}">
+  <nav-bar title="简基" />
   <!-- Header -->
   <view class="header">
     <text class="header-title">基金估值</text>

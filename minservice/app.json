@@ -12,9 +12,7 @@
   ],
   "window": {
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#FFFFFF",
-    "navigationBarTitleText": "简基",
-    "navigationBarTextStyle": "black",
+    "navigationStyle": "custom",
     "backgroundColor": "#F5F7FA",
     "backgroundColorTop": "#F5F7FA",
     "backgroundColorBottom": "#F5F7FA"
@@ -54,6 +52,8 @@
       }
     ]
   },
-  "usingComponents": {},
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/nav-bar"
+  },
   "sitemapLocation": "sitemap.json"
 }

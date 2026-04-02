@@ -1,5 +1,6 @@
 <!--pages/fund/edit.wxml-->
 <view class="container {{themeClass}}">
+  <nav-bar title="{{isEdit ? '编辑基金' : '创建基金'}}" back="{{true}}" />
   <view class="form">
     <!-- Fund Name -->
     <view class="form-item">

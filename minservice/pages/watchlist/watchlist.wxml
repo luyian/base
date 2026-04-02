@@ -1,5 +1,6 @@
 <!--pages/watchlist/watchlist.wxml-->
 <view class="container {{themeClass}}">
+  <nav-bar title="自选" />
   <view class="loading" wx:if="{{loading}}">加载中...</view>
   
   <view class="watchlist" wx:else>

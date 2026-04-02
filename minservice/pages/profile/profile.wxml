@@ -1,5 +1,6 @@
 <!--pages/profile/profile.wxml-->
 <view class="container {{themeClass}}">
+  <nav-bar title="我的" />
   <!-- User Info -->
   <view class="user-header">
     <view class="avatar">

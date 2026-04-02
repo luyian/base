@@ -1,4 +1,47 @@
-// app.js
+// 全局劫持 Page，为每个页面自动注入主题同步
+const _originalPage = Page;
+const _windowInfo = wx.getWindowInfo();
+const _navBarTotalHeight = (_windowInfo.statusBarHeight || 20) + 44;
+
+Page = function(pageConfig) {
+  const originalOnShow = pageConfig.onShow;
+  const originalOnLoad = pageConfig.onLoad;
+
+  pageConfig.onLoad = function(...args) {
+    this.setData({ navBarTotalHeight: _navBarTotalHeight });
+    if (originalOnLoad) {
+      originalOnLoad.apply(this, args);
+    }
+  };
+
+  pageConfig.onShow = function(...args) {
+    const app = getApp();
+    if (app) {
+      app._syncThemeStyle();
+    }
+    if (!pageConfig.applyTheme) {
+      const theme = app ? app.getTheme() : 'light';
+      this.setData({ themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme' });
+    }
+    if (originalOnShow) {
+      originalOnShow.apply(this, args);
+    }
+  };
+
+  if (!pageConfig.setTheme) {
+    pageConfig.setTheme = function() {
+      const app = getApp();
+      if (app) {
+        app._syncThemeStyle();
+      }
+      const theme = app ? app.getTheme() : 'light';
+      this.setData({ themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme' });
+    };
+  }
+
+  _originalPage(pageConfig);
+};
+
 App({
   globalData: {
     userInfo: null,
@@ -23,62 +66,46 @@ App({
       this.globalData.theme = 'light';
     }
     
-    // 延迟一点执行，确保app完全初始化
     setTimeout(() => {
-      this._syncNavigationBarColor();
+      this._syncThemeStyle();
     }, 100);
   },
 
-  // 同步主题颜色
-  _syncNavigationBarColor() {
+  _syncThemeStyle() {
     try {
       const theme = this.globalData.theme || 'light';
-      console.log('[Theme] 同步主题:', theme);
-      
-      // 导航栏
-      const navBgColor = theme === 'dark' ? '#0F172A' : '#FFFFFF';
-      const navTextStyle = theme === 'dark' ? 'white' : 'black';
-      wx.setNavigationBarColor({
-        frontColor: navTextStyle,
-        backgroundColor: navBgColor,
-        animation: { duration: 0 }
-      });
-      console.log('[Theme] 导航栏:', navBgColor, navTextStyle);
-      
-      // TabBar
+
+      // TabBar 样式
       const tabBgColor = theme === 'dark' ? '#1E293B' : '#FFFFFF';
-      const tabBorderColor = theme === 'dark' ? '#334155' : '#E2E8F0';
       const tabTextColor = theme === 'dark' ? '#94A3B8' : '#94A3B8';
       const tabSelectedColor = theme === 'dark' ? '#60A5FA' : '#3B82F6';
       wx.setTabBarStyle({
         color: tabTextColor,
         selectedColor: tabSelectedColor,
         backgroundColor: tabBgColor,
-        borderColor: tabBorderColor
+        borderStyle: theme === 'dark' ? 'white' : 'black'
       });
-      
-      // 页面背景
+
+      // 页面下拉/橡皮筋区域背景色
       const bgColor = theme === 'dark' ? '#0F172A' : '#F5F7FA';
       wx.setBackgroundColor({
         backgroundColor: bgColor,
         backgroundColorTop: bgColor,
         backgroundColorBottom: bgColor
       });
-      
-      console.log('[Theme] 同步完成');
     } catch (e) {
       console.error('[Theme] 同步失败:', e);
     }
   },
 
   onShow() {
-    this._syncNavigationBarColor();
+    this._syncThemeStyle();
   },
 
   setTheme(theme) {
     this.globalData.theme = theme;
     wx.setStorageSync('theme', theme);
-    this._syncNavigationBarColor();
+    this._syncThemeStyle();
     
     const pages = getCurrentPages();
     pages.forEach(page => {
@@ -86,6 +113,7 @@ App({
         page.setTheme(theme);
       }
     });
+    (this._navBars || []).forEach(nb => nb._syncTheme());
   },
 
   toggleTheme() {
@@ -103,7 +131,8 @@ App({
   },
 
   isAdmin() {
-    return this.globalData.userInfo && this.globalData.userInfo.role === 'ADMIN';
+    const roles = this.globalData.userInfo && this.globalData.userInfo.roles;
+    return Array.isArray(roles) && (roles.includes('SUPER_ADMIN') || roles.includes('ADMIN'));
   },
 
   logout() {

@@ -1,5 +1,6 @@
 <!--pages/login/register.wxml-->
 <view class="container {{themeClass}}">
+  <nav-bar title="注册" back="{{true}}" />
   <view class="circle circle-1"></view>
   <view class="circle circle-2"></view>
   

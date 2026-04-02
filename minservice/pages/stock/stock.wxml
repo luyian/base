@@ -1,7 +1,8 @@
 <!--pages/stock/stock.wxml-->
 <view class="container {{themeClass}}">
+  <nav-bar title="股票列表" back="{{true}}" />
   <!-- Search Bar -->
-  <view class="search-bar">
+  <view class="search-bar" style="top: {{navBarTotalHeight}}px;">
     <input class="search-input" placeholder="搜索股票代码/名称" bindconfirm="onSearch" />
     <view class="add-btn" bindtap="showAddModal" wx:if="{{isAdmin}}">+ 新增</view>
   </view>

@@ -12,7 +12,6 @@ Page({
   },
 
   onLoad() {
-    const theme = app.getTheme();
     this.loadUserInfo();
     this.applyTheme();
   },
@@ -23,7 +22,6 @@ Page({
   },
 
   loadUserInfo() {
-    // 优先从本地存储获取，其次从 app.globalData 获取
     let userInfo = wx.getStorageSync('userInfo');
     if (!userInfo) {
       userInfo = app.globalData.userInfo;
@@ -31,21 +29,24 @@ Page({
     this.setData({ userInfo });
   },
 
-  // 检查当前主题
   applyTheme() {
     const theme = app.getTheme();
-    this.setData({ themeClass: theme === 'dark' ? 'dark-theme' : '' });
+    this.setData({
+      themeClass: theme === 'dark' ? 'dark-theme' : 'light-theme',
+      isDarkTheme: theme === 'dark'
+    });
   },
 
-  // 页面样式设置（供 app.js 调用）
   setTheme(theme) {
-    this.setData({ themeClass: theme === 'dark' ? 'dark-theme' : '' });
+    this.applyTheme();
   },
 
-  // 切换主题
   toggleTheme() {
     const newTheme = app.toggleTheme();
-    this.setData({ themeClass: newTheme === 'dark' ? 'dark-theme' : '' });
+    this.setData({
+      themeClass: newTheme === 'dark' ? 'dark-theme' : 'light-theme',
+      isDarkTheme: newTheme === 'dark'
+    });
     wx.showToast({
       title: newTheme === 'dark' ? '已切换到深色模式' : '已切换到亮色模式',
       icon: 'success'
@@ -66,6 +67,7 @@ Page({
           .then(res => {
             if (res.data) {
               wx.setStorageSync('userInfo', res.data);
+              app.globalData.userInfo = res.data;
               that.setData({ userInfo: res.data });
             }
           })
@@ -99,6 +101,7 @@ Page({
             .then(res => {
               if (res.data) {
                 wx.setStorageSync('userInfo', res.data);
+                app.globalData.userInfo = res.data;
                 that.setData({ userInfo: res.data });
               }
             })

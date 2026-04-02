@@ -105,10 +105,12 @@ Page({
       .then(res => {
         const token = res.data.token;
         wx.setStorageSync('token', token);
+        app.globalData.token = token;
         return authApi.getUserInfo();
       })
       .then(userRes => {
         wx.setStorageSync('userInfo', userRes.data);
+        app.globalData.userInfo = userRes.data;
         
         const userInfo = userRes.data;
         if (!userInfo.wxOpenid) {
@@ -187,12 +189,14 @@ Page({
             } else {
               const token = res.data.token;
               wx.setStorageSync('token', token);
+              app.globalData.token = token;
               return authApi.getUserInfo();
             }
           })
           .then(userRes => {
             if (userRes && userRes.data) {
               wx.setStorageSync('userInfo', userRes.data);
+              app.globalData.userInfo = userRes.data;
               wx.showToast({ title: '登录成功', icon: 'success' });
               setTimeout(() => { wx.switchTab({ url: '/pages/index/index' }); }, 1000);
             }
@@ -225,6 +229,7 @@ Page({
       .then(res => {
         const token = res.data.token;
         wx.setStorageSync('token', token);
+        app.globalData.token = token;
         wx.showToast({ title: '绑定成功', icon: 'success' });
         this.setData({ showBindModal: false });
         return authApi.getUserInfo();
@@ -232,6 +237,7 @@ Page({
       .then(res => {
         if (res.data) {
           wx.setStorageSync('userInfo', res.data);
+          app.globalData.userInfo = res.data;
         }
       })
       .catch(err => {

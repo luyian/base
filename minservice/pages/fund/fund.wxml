@@ -1,7 +1,8 @@
 <!--pages/fund/fund.wxml-->
 <view class="container {{themeClass}}">
+  <nav-bar title="基金" />
   <!-- Action Bar -->
-  <view class="action-bar">
+  <view class="action-bar" style="top: {{navBarTotalHeight}}px;">
     <view class="action-btn" bindtap="goToStock">
       <text>📊 股票列表</text>
     </view>

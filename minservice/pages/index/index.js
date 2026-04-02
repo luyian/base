@@ -43,8 +43,7 @@ Page({
   loadData() {
     this.setData({ loading: true });
     
-    // Load watchlist and all funds in parallel
-    Promise.all([
+    return Promise.all([
       fundApi.getWatchlistValuation(),
       fundApi.getFundList()
     ])

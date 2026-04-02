@@ -1,5 +1,6 @@
 <!--pages/login/login.wxml-->
 <view class="container {{themeClass}}">
+  <nav-bar title="简基" />
   <!-- Decorative circles -->
   <view class="circle circle-1"></view>
   <view class="circle circle-2"></view>
@@ -7,9 +8,7 @@
   
   <view class="header">
     <view class="logo-container">
-      <view class="logo-icon">
-        <text class="logo-text">B</text>
-      </view>
+      <image class="logo-icon" src="/assets/logo.png" mode="aspectFit" />
     </view>
     <text class="title">简基</text>
     <text class="subtitle">专业的基金估值分析平台</text>

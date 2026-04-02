@@ -46,7 +46,7 @@ App({
   globalData: {
     userInfo: null,
     token: null,
-    baseUrl: 'http://119.45.176.101/api',
+    baseUrl: 'https://xuecong.xyz/api',
     theme: 'light'
   },
 

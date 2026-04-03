@@ -625,6 +625,15 @@ public class AuthServiceImpl implements AuthService {
                 .filter(StringUtils::hasText)
                 .collect(Collectors.toList()));
 
+        // 查询微信绑定状态
+        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
+        oauthWrapper.eq(UserOauth::getUserId, user.getId())
+                .eq(UserOauth::getOauthType, "wechat");
+        UserOauth userOauth = userOauthMapper.selectOne(oauthWrapper);
+        if (userOauth != null) {
+            response.setWxOpenid(userOauth.getOauthId());
+        }
+
         log.info("获取用户信息成功，username: {}", username);
 
         return response;

@@ -1,68 +1,113 @@
 <!--pages/profile/profile.wxml-->
 <view class="container {{themeClass}}">
   <nav-bar title="我的" />
-  <!-- User Info -->
+
+  <!-- 用户信息头部 -->
   <view class="user-header">
-    <view class="avatar">
-      <text>{{userInfo.nickname || '用户'}}</text>
+    <view class="avatar-wrap">
+      <view class="avatar">
+        <text class="avatar-text">{{userInfo.nickname ? userInfo.nickname.substring(0,1) : '用'}}</text>
+      </view>
+      <view class="wechat-badge {{userInfo.wxOpenid ? 'bound' : 'unbound'}}">
+        <text class="badge-icon">{{userInfo.wxOpenid ? '✓' : '—'}}</text>
+      </view>
     </view>
     <text class="nickname">{{userInfo.nickname || '未登录'}}</text>
     <text class="username">@{{userInfo.username || ''}}</text>
+    <view class="wechat-status">
+      <text class="status-dot {{userInfo.wxOpenid ? 'dot-green' : 'dot-gray'}}"></text>
+      <text class="status-label">微信{{userInfo.wxOpenid ? '已绑定' : '未绑定'}}</text>
+    </view>
   </view>
 
-  <!-- Menu -->
-  <view class="menu-list">
-    <!-- 主题切换 -->
-    <view class="menu-item" bindtap="toggleTheme">
-      <text>主题模式</text>
-      <view class="theme-switch">
-        <text class="{{isDarkTheme ? '' : 'active'}}">☀ 亮色</text>
-        <text class="{{isDarkTheme ? 'active' : ''}}">🌙 暗色</text>
+  <!-- 账号管理 -->
+  <view class="section">
+    <view class="section-title">账号管理</view>
+    <view class="card-list">
+      <!-- 绑定微信 -->
+      <view class="menu-item" bindtap="bindWechat" wx:if="{{!userInfo.wxOpenid}}">
+        <view class="item-left">
+          <view class="item-icon icon-wechat">
+            <text>微</text>
+          </view>
+          <view class="item-info">
+            <text class="item-title">绑定微信</text>
+            <text class="item-desc">绑定后可使用微信一键登录</text>
+          </view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
+      <!-- 解绑微信 -->
+      <view class="menu-item danger-item" bindtap="unbindWechat" wx:else>
+        <view class="item-left">
+          <view class="item-icon icon-wechat-bound">
+            <text>微</text>
+          </view>
+          <view class="item-info">
+            <text class="item-title">解绑微信</text>
+            <text class="item-desc danger-desc">解绑后无法使用微信一键登录</text>
+          </view>
+        </view>
+        <view class="bound-tag">
+          <text>已绑定</text>
+        </view>
       </view>
     </view>
-    <view class="menu-item" bindtap="bindWechat" wx:if="{{!userInfo.wxOpenid}}">
-      <text>绑定微信</text>
-      <text class="arrow">></text>
-    </view>
-    <view class="menu-item" bindtap="unbindWechat" wx:else>
-      <text>解绑微信</text>
-      <text class="arrow">></text>
-    </view>
-    <view class="menu-item">
-      <text>通知设置</text>
-      <text class="arrow">></text>
-    </view>
-    <view class="menu-item">
-      <text>关于我们</text>
-      <text class="arrow">></text>
+  </view>
+
+  <!-- 偏好设置 -->
+  <view class="section">
+    <view class="section-title">偏好设置</view>
+    <view class="card-list">
+      <view class="menu-item" bindtap="toggleTheme">
+        <view class="item-left">
+          <view class="item-icon icon-theme">
+            <text>{{isDarkTheme ? '🌙' : '☀'}}</text>
+          </view>
+          <view class="item-info">
+            <text class="item-title">主题模式</text>
+            <text class="item-desc">{{isDarkTheme ? '当前：深色模式' : '当前：亮色模式'}}</text>
+          </view>
+        </view>
+        <view class="theme-toggle {{isDarkTheme ? 'dark-on' : ''}}">
+          <view class="toggle-knob"></view>
+        </view>
+      </view>
+      <view class="menu-item">
+        <view class="item-left">
+          <view class="item-icon icon-notify">
+            <text>🔔</text>
+          </view>
+          <view class="item-info">
+            <text class="item-title">通知设置</text>
+            <text class="item-desc">管理消息推送偏好</text>
+          </view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
     </view>
   </view>
 
-  <!-- Logout -->
+  <!-- 其他 -->
+  <view class="section">
+    <view class="section-title">其他</view>
+    <view class="card-list">
+      <view class="menu-item">
+        <view class="item-left">
+          <view class="item-icon icon-about">
+            <text>ℹ</text>
+          </view>
+          <view class="item-info">
+            <text class="item-title">关于我们</text>
+          </view>
+        </view>
+        <text class="arrow">›</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 退出登录 -->
   <view class="logout-btn" bindtap="logout">
     <text>退出登录</text>
-  </view>
-</view>
-<!-- Bind WeChat Modal -->
-<view class="modal-mask" wx:if="{{showBindModal}}">
-  <view class="modal">
-    <view class="modal-title">绑定微信</view>
-    <view class="modal-content">
-      <view class="tip">请输入当前账号的用户名和密码进行绑定</view>
-      
-      <view class="input-group">
-        <view class="input-icon">👤</view>
-        <input class="input" placeholder="用户名" value="{{bindUsername}}" bindinput="onBindUsernameInput" />
-      </view>
-      <view class="input-group">
-        <view class="input-icon">🔒</view>
-        <input class="input password" type="password" placeholder="密码" value="{{bindPassword}}" bindinput="onBindPasswordInput" />
-      </view>
-      
-      <view class="modal-btns">
-        <button class="btn cancel" bindtap="closeBindModal">取消</button>
-        <button class="btn confirm" bindtap="confirmBind" loading="{{binding}}">确认绑定</button>
-      </view>
-    </view>
   </view>
 </view>

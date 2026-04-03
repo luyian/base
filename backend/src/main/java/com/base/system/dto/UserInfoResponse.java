@@ -64,4 +64,9 @@ public class UserInfoResponse {
      * 权限列表
      */
     private List<String> permissions;
+
+    /**
+     * 微信 openid（不为空表示已绑定微信）
+     */
+    private String wxOpenid;
 }

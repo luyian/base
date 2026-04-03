@@ -224,7 +224,7 @@ page {
 /* } */
 
 /* 加载中动画 */
-.refresh-btn.loading .refresh-icon {
+.refresh-icon.spinning {
   animation: spin 1s linear infinite;
 }
 

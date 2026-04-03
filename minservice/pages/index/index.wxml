@@ -65,8 +65,8 @@
   </scroll-view>
 
   <!-- Refresh button -->
-  <view class="refresh-btn {{refreshing ? 'loading' : ''}}" bindtap="refreshData">
-    <text class="refresh-icon">↻</text>
+  <view class="refresh-btn" bindtap="refreshData">
+    <text class="refresh-icon {{refreshing ? 'spinning' : ''}}">↻</text>
     <text>刷新估值</text>
   </view>
 </view>

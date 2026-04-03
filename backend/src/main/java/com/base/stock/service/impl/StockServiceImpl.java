@@ -171,6 +171,23 @@ public class StockServiceImpl implements StockService {
         return stockInfo;
     }
 
+    @Override
+    public StockInfo updateStock(String stockCode, StockInfo stockInfo) {
+        StockInfo existing = getByStockCode(stockCode);
+        if (existing == null) {
+            throw new BusinessException("股票不存在");
+        }
+        existing.setStockName(stockInfo.getStockName());
+        if (stockInfo.getMarket() != null) {
+            existing.setMarket(stockInfo.getMarket());
+        }
+        if (stockInfo.getIndustry() != null) {
+            existing.setIndustry(stockInfo.getIndustry());
+        }
+        stockInfoMapper.updateById(existing);
+        return existing;
+    }
+
     /**
      * 获取行业中英文映射
      *

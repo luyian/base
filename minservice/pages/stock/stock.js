@@ -23,7 +23,15 @@ Page({
       industry: ''
     },
     markets: ['SH', 'SZ', 'HK'],
-    marketIndex: 0
+    marketIndex: 0,
+    showEditModal: false,
+    editStock: {
+      stockCode: '',
+      stockName: '',
+      market: '',
+      industry: ''
+    },
+    editMarketIndex: 0
   },
 
   onLoad() {
@@ -147,6 +155,62 @@ Page({
 
   onIndustryChangeInput(e) {
     this.setData({ 'newStock.industry': e.detail.value });
+  },
+
+  // 编辑股票
+  showEditModal(e) {
+    const stock = e.currentTarget.dataset.stock;
+    const editMarketIndex = this.data.markets.indexOf(stock.market);
+    this.setData({
+      showEditModal: true,
+      editStock: {
+        stockCode: stock.stockCode,
+        stockName: stock.stockName,
+        market: stock.market || 'SH',
+        industry: stock.industry || ''
+      },
+      editMarketIndex: editMarketIndex >= 0 ? editMarketIndex : 0
+    });
+  },
+
+  hideEditModal() {
+    this.setData({ showEditModal: false });
+  },
+
+  onEditStockNameChange(e) {
+    this.setData({ 'editStock.stockName': e.detail.value });
+  },
+
+  onEditMarketChange(e) {
+    this.setData({
+      editMarketIndex: e.detail.value,
+      'editStock.market': this.data.markets[e.detail.value]
+    });
+  },
+
+  onEditIndustryChange(e) {
+    this.setData({ 'editStock.industry': e.detail.value });
+  },
+
+  submitEditStock() {
+    const { stockCode, stockName, market, industry } = this.data.editStock;
+    if (!stockName) {
+      wx.showToast({ title: '请填写股票名称', icon: 'none' });
+      return;
+    }
+    this.setData({ submitting: true });
+    stockApi.updateStock(stockCode, { stockName, market, industry })
+      .then(() => {
+        wx.showToast({ title: '更新成功', icon: 'success' });
+        this.setData({ showEditModal: false });
+        this.loadStocks();
+      })
+      .catch(err => {
+        wx.showToast({ title: err.message || '更新失败', icon: 'none' });
+      })
+      .finally(() => {
+        this.setData({ submitting: false });
+      });
   },
 
   submitAddStock() {

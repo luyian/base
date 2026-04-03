@@ -17,7 +17,8 @@ Page({
     loading: false,
     submitting: false,
     stockOptions: [],
-    stockSearchLoading: false
+    stockSearchLoading: false,
+    currentFocus: null
   },
 
   onLoad(options) {
@@ -85,6 +86,8 @@ Page({
 
   onStockSearch(e) {
     const keyword = e.detail.value;
+    const index = e.currentTarget.dataset.index;
+    this.setData({ currentFocus: index });
     if (!keyword || keyword.length < 1) {
       this.setData({ stockOptions: [] });
       return;
@@ -103,15 +106,16 @@ Page({
   },
 
   onStockSelect(e) {
-    const index = e.currentTarget.dataset.index;
-    const stock = this.data.stockOptions[index];
-    const holdings = this.data.form.holdings;
-    holdings[index] = {
+    const holdingIndex = e.currentTarget.dataset.holdingIndex;
+    const stockIndex = e.currentTarget.dataset.stockIndex;
+    const stock = this.data.stockOptions[stockIndex];
+    const holdings = [...this.data.form.holdings];
+    holdings[holdingIndex] = {
       stockCode: stock.stockCode,
       stockName: stock.stockName,
-      weight: holdings[index]?.weight || null
+      weight: holdings[holdingIndex]?.weight || null
     };
-    this.setData({ 'form.holdings': holdings, stockOptions: [] });
+    this.setData({ 'form.holdings': holdings, stockOptions: [], currentFocus: null });
   },
 
   onWeightChange(e) {

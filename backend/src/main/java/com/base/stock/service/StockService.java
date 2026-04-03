@@ -64,4 +64,13 @@ public interface StockService {
      * @return 创建后的股票信息
      */
     StockInfo createStock(StockInfo stockInfo);
+
+    /**
+     * 更新股票配置
+     *
+     * @param stockCode 股票代码
+     * @param stockInfo 更新内容
+     * @return 更新后的股票信息
+     */
+    StockInfo updateStock(String stockCode, StockInfo stockInfo);
 }

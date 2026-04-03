@@ -96,4 +96,15 @@ public class StockController {
         StockInfo created = stockService.createStock(stockInfo);
         return Result.success(created);
     }
+
+    /**
+     * 更新股票配置（需要管理员权限）
+     */
+    @ApiOperation("更新股票配置")
+    @PutMapping("/{stockCode}")
+    @PreAuthorize("hasAuthority('stock:info:edit')")
+    public Result<StockInfo> update(@PathVariable String stockCode, @RequestBody StockInfo stockInfo) {
+        StockInfo updated = stockService.updateStock(stockCode, stockInfo);
+        return Result.success(updated);
+    }
 }

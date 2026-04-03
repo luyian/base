@@ -7,6 +7,7 @@
     <view class="add-btn" bindtap="showAddModal" wx:if="{{isAdmin}}">+ 新增</view>
   </view>
 
+
   <!-- Industry Filter -->
   <view class="filter-bar" wx:if="{{industries.length > 0}}">
     <picker bindchange="onIndustryChange" value="{{industryIndex}}" range="{{industries}}" range-key="name">
@@ -21,18 +22,19 @@
   <view class="loading" wx:if="{{loading && stocks.length === 0}}">加载中...</view>
   
   <view class="stock-list" wx:else>
-    <view class="stock-item" wx:for="{{stocks}}" wx:key="stockCode" bindtap="goToDetail" data-code="{{item.stockCode}}">
-      <view class="stock-main">
+    <view class="stock-item" wx:for="{{stocks}}" wx:key="stockCode">
+      <view class="stock-main" bindtap="goToDetail" data-code="{{item.stockCode}}">
         <view class="stock-info">
           <text class="name">{{item.stockName}}</text>
           <text class="code">{{item.stockCode}}</text>
         </view>
         <view class="stock-industry">{{item.industry || '--'}}</view>
       </view>
-      <view class="stock-market">
-        <text class="market-tag {{item.market === 'SH' ? 'sh' : item.market === 'SZ' ? 'sz' : 'hk'}}">
+      <view class="stock-right">
+        <view class="market-tag {{item.market === 'SH' ? 'sh' : item.market === 'SZ' ? 'sz' : 'hk'}}">
           {{item.market === 'SH' ? '沪市' : item.market === 'SZ' ? '深市' : '港股'}}
-        </text>
+        </view>
+        <view class="edit-btn" wx:if="{{isAdmin}}" bindtap="showEditModal" data-stock="{{item}}">编辑</view>
       </view>
     </view>
     
@@ -75,6 +77,36 @@
     <view class="modal-btns">
       <button class="btn cancel" bindtap="hideAddModal">取消</button>
       <button class="btn confirm" bindtap="submitAddStock" loading="{{submitting}}">确定</button>
+    </view>
+  </view>
+
+  <!-- Edit Stock Modal -->
+  <view class="modal-mask" wx:if="{{showEditModal}}" bindtap="hideEditModal"></view>
+  <view class="modal" wx:if="{{showEditModal}}">
+    <view class="modal-title">编辑股票</view>
+    <view class="modal-content">
+      <view class="form-item">
+        <text class="label">股票代码</text>
+        <input class="input disabled-input" value="{{editStock.stockCode}}" disabled />
+      </view>
+      <view class="form-item">
+        <text class="label">股票名称 *</text>
+        <input class="input" value="{{editStock.stockName}}" placeholder="如: 浦发银行" bindinput="onEditStockNameChange" />
+      </view>
+      <view class="form-item">
+        <text class="label">市场</text>
+        <picker bindchange="onEditMarketChange" value="{{editMarketIndex}}" range="{{markets}}">
+          <view class="picker">{{editStock.market || '请选择'}}</view>
+        </picker>
+      </view>
+      <view class="form-item">
+        <text class="label">行业</text>
+        <input class="input" value="{{editStock.industry}}" placeholder="如: 银行" bindinput="onEditIndustryChange" />
+      </view>
+    </view>
+    <view class="modal-btns">
+      <button class="btn cancel" bindtap="hideEditModal">取消</button>
+      <button class="btn confirm" bindtap="submitEditStock" loading="{{submitting}}">保存</button>
     </view>
   </view>
 </view>

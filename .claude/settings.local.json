@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(xargs grep:*)",
+      "Bash(xargs head:*)"
     ]
   }
 }

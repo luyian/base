@@ -33,12 +33,14 @@
               data-index="{{index}}"
             />
             <view class="stock-suggestions" wx:if="{{stockOptions.length > 0 && index === currentFocus}}">
-              <view class="suggestion-item" 
-                wx:for="{{stockOptions}}" 
+              <view class="suggestion-item"
+                wx:for="{{stockOptions}}"
                 wx:for-item="stock"
+                wx:for-index="stockIdx"
                 wx:key="stockCode"
                 bindtap="onStockSelect"
-                data-index="{{index}}">
+                data-holding-index="{{index}}"
+                data-stock-index="{{stockIdx}}">
                 {{stock.stockCode}} - {{stock.stockName}}
               </view>
             </view>

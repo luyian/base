@@ -55,5 +55,6 @@
   "usingComponents": {
     "nav-bar": "/components/nav-bar/nav-bar"
   },
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
 }

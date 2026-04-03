@@ -18,5 +18,8 @@ module.exports = {
   getIndustryOptions: () => request.get('/stock/industry/options'),
   
   // Create stock (admin)
-  createStock: (data) => request.post('/stock', data)
+  createStock: (data) => request.post('/stock', data),
+
+  // Update stock (admin)
+  updateStock: (stockCode, data) => request.put(`/stock/${stockCode}`, data)
 };

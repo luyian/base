@@ -9,10 +9,13 @@
     />
     <!-- 侧边栏 -->
     <el-aside :width="isCollapse && !isMobile ? '64px' : '200px'" class="layout-aside">
-      <div class="logo">
-        <span v-if="!isCollapse">后台管理系统</span>
-        <span v-else>后台</span>
+      <div class="logo" :class="{ 'logo-collapsed': isCollapse && !isMobile }">
+        <div class="logo-icon-wrap">
+          <img src="/logo.svg" alt="Logo" class="logo-img" />
+        </div>
+        <span v-if="!isCollapse || isMobile" class="logo-text">后台管理系统</span>
       </div>
+      <div class="sidebar-nav-wrap">
       <el-menu
         :default-active="activeMenu"
         :collapse="isCollapse && !isMobile"
@@ -75,6 +78,7 @@
           </el-menu-item>
         </template>
       </el-menu>
+      </div>
     </el-aside>
 
     <!-- 主内容区 -->
@@ -397,53 +401,153 @@ const sendFeishu = async () => {
 }
 
 .layout-aside {
-  background-color: #304156;
-  transition: width 0.3s;
+  background-color: #fff;
+  border-right: 1px solid #e8eaed;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
+/* ---- Logo 区域 ---- */
 .logo {
   height: 60px;
-  line-height: 60px;
-  text-align: center;
-  font-size: 20px;
-  font-weight: bold;
-  color: #fff;
-  background-color: #2b3a4b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  background-color: #fff;
+  border-bottom: 1px solid #e8eaed;
+  flex-shrink: 0;
+  overflow: hidden;
+  transition: padding 0.28s;
 }
 
+.logo-collapsed {
+  padding: 0 14px;
+  justify-content: center;
+}
+
+.logo-icon-wrap {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: rgba(64, 158, 255, 0.1);
+  border: 1px solid rgba(64, 158, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.logo-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+.logo-text {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+
+/* ---- 导航滚动区 ---- */
+.sidebar-nav-wrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #dcdfe6 transparent;
+}
+
+.sidebar-nav-wrap::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-nav-wrap::-webkit-scrollbar-thumb {
+  background: #dcdfe6;
+  border-radius: 2px;
+}
+
+.sidebar-nav-wrap::-webkit-scrollbar-thumb:hover {
+  background: #c0c4cc;
+}
+
+.sidebar-nav-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- 菜单整体 ---- */
 .el-menu {
   border-right: none;
-  background-color: #304156;
+  background-color: #fff;
 }
 
+/* ---- 菜单项 & 子菜单标题 ---- */
 :deep(.el-menu-item),
 :deep(.el-sub-menu__title) {
-  color: #bfcbd9;
+  color: #606266;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+  border-left: 3px solid transparent;
 }
 
+/* ---- 子菜单背景 ---- */
 :deep(.el-sub-menu .el-menu) {
-  background-color: #1f2d3d;
+  background-color: #f7f8fa;
 }
 
 :deep(.el-sub-menu .el-menu-item) {
-  background-color: #1f2d3d;
-  color: #bfcbd9;
+  background-color: #f7f8fa;
+  color: #909399;
+  font-size: 13px;
+  border-left: 3px solid transparent;
+  transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
 }
 
+/* ---- Hover 效果 ---- */
 :deep(.el-menu-item:hover),
 :deep(.el-sub-menu__title:hover) {
-  background-color: #263445 !important;
-  color: #fff;
+  background-color: #f0f5ff !important;
+  color: #409eff !important;
+  border-left-color: rgba(64, 158, 255, 0.35) !important;
 }
 
 :deep(.el-sub-menu .el-menu-item:hover) {
-  background-color: #263445 !important;
-  color: #fff;
+  background-color: #eaf2ff !important;
+  color: #409eff !important;
+  border-left-color: rgba(64, 158, 255, 0.35) !important;
 }
 
+/* ---- 激活状态：左侧蓝条 + 浅蓝底色 ---- */
 :deep(.el-menu-item.is-active) {
-  background-color: #409eff !important;
-  color: #fff;
+  background-color: #e8f2ff !important;
+  color: #409eff !important;
+  border-left-color: #409eff !important;
+  font-weight: 600;
+}
+
+/* 折叠状态下激活不显示左边框 */
+:deep(.el-menu--collapse .el-menu-item.is-active) {
+  border-left-color: transparent !important;
+  background-color: #e8f2ff !important;
+}
+
+/* 父菜单展开时标题颜色 */
+:deep(.el-sub-menu.is-opened > .el-sub-menu__title) {
+  color: #409eff;
+}
+
+/* 子菜单箭头图标 */
+:deep(.el-sub-menu__icon-arrow) {
+  color: #c0c4cc;
+  transition: transform 0.25s ease, color 0.18s ease;
+}
+
+:deep(.el-sub-menu.is-opened > .el-sub-menu__title .el-sub-menu__icon-arrow) {
+  color: #409eff;
 }
 
 .layout-main {

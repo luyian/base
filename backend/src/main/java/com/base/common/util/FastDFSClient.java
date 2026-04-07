@@ -15,7 +15,7 @@ public class FastDFSClient {
 
     private static final Logger logger = LoggerFactory.getLogger(FastDFSClient.class);
 
-    private static String trackerServer = "119.45.176.101";
+    private static String trackerServer = "wuecong.xyz";
     private static String storagePath = "/fastdfs/storage/data";
 
     static {

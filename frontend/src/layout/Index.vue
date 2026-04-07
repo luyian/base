@@ -95,6 +95,17 @@
           </el-icon>
         </div>
         <div class="header-right">
+          <!-- 主题切换按钮 -->
+          <el-tooltip :content="isDark ? '切换亮色' : '切换暗色'" placement="bottom" :hide-after="1500">
+            <button class="theme-toggle-btn" @click="toggleTheme" :aria-label="isDark ? '切换亮色' : '切换暗色'">
+              <Transition name="theme-icon" mode="out-in">
+                <el-icon :key="isDark ? 'moon' : 'sun'">
+                  <Sunny v-if="isDark" />
+                  <Moon v-else />
+                </el-icon>
+              </Transition>
+            </button>
+          </el-tooltip>
           <NoticeDropdown ref="noticeBadgeRef" />
           <el-dropdown @command="handleCommand">
             <span class="user-info">
@@ -173,7 +184,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { HomeFilled, Setting, User, Expand, Fold, Menu, Document, Bell, ChatDotRound, Close } from '@element-plus/icons-vue'
+import { HomeFilled, Setting, User, Expand, Fold, Menu, Document, Bell, ChatDotRound, Close, Sunny, Moon } from '@element-plus/icons-vue'
 import { useUserStore } from '@/store/user'
 import NoticeDropdown from '@/components/NoticeDropdown.vue'
 import { sendFeishuMessageToUser, uploadFeishuImage, uploadFeishuFile } from '@/api/feishu'
@@ -181,6 +192,19 @@ import { sendFeishuMessageToUser, uploadFeishuImage, uploadFeishuFile } from '@/
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+
+// ---- 主题切换 ----
+const isDark = ref(false)
+
+const applyTheme = (dark) => {
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+  localStorage.setItem('theme', dark ? 'dark' : 'light')
+}
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  applyTheme(isDark.value)
+}
 
 // 侧边栏折叠状态（桌面端）
 const isCollapse = ref(false)
@@ -203,6 +227,12 @@ onMounted(() => {
   if (mobileQuery) {
     updateMobile()
     mobileQuery.addEventListener('change', updateMobile)
+  }
+  // 恢复本地存储的主题
+  const saved = localStorage.getItem('theme')
+  if (saved === 'dark') {
+    isDark.value = true
+    document.documentElement.setAttribute('data-theme', 'dark')
   }
 })
 
@@ -401,9 +431,9 @@ const sendFeishu = async () => {
 }
 
 .layout-aside {
-  background-color: #fff;
-  border-right: 1px solid #e8eaed;
-  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), var(--theme-transition);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -416,11 +446,11 @@ const sendFeishu = async () => {
   align-items: center;
   gap: 10px;
   padding: 0 18px;
-  background-color: #fff;
-  border-bottom: 1px solid #e8eaed;
+  background-color: var(--logo-bg);
+  border-bottom: 1px solid var(--sidebar-border);
   flex-shrink: 0;
   overflow: hidden;
-  transition: padding 0.28s;
+  transition: padding 0.28s, var(--theme-transition);
 }
 
 .logo-collapsed {
@@ -432,12 +462,13 @@ const sendFeishu = async () => {
   width: 30px;
   height: 30px;
   border-radius: 7px;
-  background: rgba(64, 158, 255, 0.1);
-  border: 1px solid rgba(64, 158, 255, 0.2);
+  background: var(--logo-icon-bg);
+  border: 1px solid var(--logo-icon-border);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  transition: var(--theme-transition);
 }
 
 .logo-img {
@@ -449,9 +480,10 @@ const sendFeishu = async () => {
 .logo-text {
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--logo-text-color);
   white-space: nowrap;
   letter-spacing: 0.02em;
+  transition: var(--theme-transition);
 }
 
 /* ---- 导航滚动区 ---- */
@@ -460,7 +492,7 @@ const sendFeishu = async () => {
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
-  scrollbar-color: #dcdfe6 transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 
 .sidebar-nav-wrap::-webkit-scrollbar {
@@ -468,12 +500,13 @@ const sendFeishu = async () => {
 }
 
 .sidebar-nav-wrap::-webkit-scrollbar-thumb {
-  background: #dcdfe6;
+  background: var(--scrollbar-thumb);
   border-radius: 2px;
+  transition: var(--theme-transition);
 }
 
 .sidebar-nav-wrap::-webkit-scrollbar-thumb:hover {
-  background: #c0c4cc;
+  background: var(--scrollbar-thumb-hov);
 }
 
 .sidebar-nav-wrap::-webkit-scrollbar-track {
@@ -483,25 +516,26 @@ const sendFeishu = async () => {
 /* ---- 菜单整体 ---- */
 .el-menu {
   border-right: none;
-  background-color: #fff;
+  background-color: var(--menu-bg) !important;
+  transition: var(--theme-transition);
 }
 
 /* ---- 菜单项 & 子菜单标题 ---- */
 :deep(.el-menu-item),
 :deep(.el-sub-menu__title) {
-  color: #606266;
+  color: var(--menu-text);
   transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
   border-left: 3px solid transparent;
 }
 
 /* ---- 子菜单背景 ---- */
 :deep(.el-sub-menu .el-menu) {
-  background-color: #f7f8fa;
+  background-color: var(--menu-sub-bg) !important;
 }
 
 :deep(.el-sub-menu .el-menu-item) {
-  background-color: #f7f8fa;
-  color: #909399;
+  background-color: var(--menu-sub-bg);
+  color: var(--menu-sub-text);
   font-size: 13px;
   border-left: 3px solid transparent;
   transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease;
@@ -510,46 +544,46 @@ const sendFeishu = async () => {
 /* ---- Hover 效果 ---- */
 :deep(.el-menu-item:hover),
 :deep(.el-sub-menu__title:hover) {
-  background-color: #f0f5ff !important;
-  color: #409eff !important;
-  border-left-color: rgba(64, 158, 255, 0.35) !important;
+  background-color: var(--menu-hover-bg) !important;
+  color: var(--menu-hover-text) !important;
+  border-left-color: var(--menu-hover-border) !important;
 }
 
 :deep(.el-sub-menu .el-menu-item:hover) {
-  background-color: #eaf2ff !important;
-  color: #409eff !important;
-  border-left-color: rgba(64, 158, 255, 0.35) !important;
+  background-color: var(--menu-hover-bg) !important;
+  color: var(--menu-hover-text) !important;
+  border-left-color: var(--menu-hover-border) !important;
 }
 
-/* ---- 激活状态：左侧蓝条 + 浅蓝底色 ---- */
+/* ---- 激活状态 ---- */
 :deep(.el-menu-item.is-active) {
-  background-color: #e8f2ff !important;
-  color: #409eff !important;
-  border-left-color: #409eff !important;
+  background-color: var(--menu-active-bg) !important;
+  color: var(--menu-active-text) !important;
+  border-left-color: var(--menu-active-border) !important;
   font-weight: 600;
 }
 
-/* 折叠状态下激活不显示左边框 */
 :deep(.el-menu--collapse .el-menu-item.is-active) {
   border-left-color: transparent !important;
-  background-color: #e8f2ff !important;
+  background-color: var(--menu-active-bg) !important;
 }
 
 /* 父菜单展开时标题颜色 */
 :deep(.el-sub-menu.is-opened > .el-sub-menu__title) {
-  color: #409eff;
+  color: var(--menu-active-text);
 }
 
 /* 子菜单箭头图标 */
 :deep(.el-sub-menu__icon-arrow) {
-  color: #c0c4cc;
+  color: var(--menu-arrow-color);
   transition: transform 0.25s ease, color 0.18s ease;
 }
 
 :deep(.el-sub-menu.is-opened > .el-sub-menu__title .el-sub-menu__icon-arrow) {
-  color: #409eff;
+  color: var(--menu-arrow-open);
 }
 
+/* ---- 主体 ---- */
 .layout-main {
   flex: 1;
   display: flex;
@@ -560,9 +594,10 @@ const sendFeishu = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #fff;
-  border-bottom: 1px solid #e6e6e6;
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
   padding: 0 20px;
+  transition: var(--theme-transition);
 }
 
 .header-left {
@@ -573,16 +608,18 @@ const sendFeishu = async () => {
 .collapse-icon {
   font-size: 20px;
   cursor: pointer;
-  transition: color 0.3s;
+  color: var(--header-icon-color);
+  transition: color 0.2s ease;
 }
 
 .collapse-icon:hover {
-  color: #409eff;
+  color: var(--header-icon-hover);
 }
 
 .header-right {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 
 .user-info {
@@ -590,6 +627,8 @@ const sendFeishu = async () => {
   align-items: center;
   cursor: pointer;
   padding: 0 10px;
+  color: var(--user-info-color);
+  transition: var(--theme-transition);
 }
 
 .user-info .el-icon {
@@ -597,10 +636,50 @@ const sendFeishu = async () => {
 }
 
 .layout-content {
-  background-color: #f0f2f5;
+  background-color: var(--content-bg);
   padding: 20px;
+  transition: var(--theme-transition);
 }
 
+/* ---- 主题切换按钮 ---- */
+.theme-toggle-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--theme-toggle-bg);
+  color: var(--theme-toggle-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s ease, color 0.2s ease;
+  outline: none;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--theme-toggle-hover);
+  color: var(--header-icon-hover);
+}
+
+/* 主题图标切换动画 */
+.theme-icon-enter-active,
+.theme-icon-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.theme-icon-enter-from {
+  opacity: 0;
+  transform: rotate(-30deg) scale(0.8);
+}
+
+.theme-icon-leave-to {
+  opacity: 0;
+  transform: rotate(30deg) scale(0.8);
+}
+
+/* ---- 飞书浮窗 ---- */
 .feishu-float {
   position: fixed;
   right: 24px;
@@ -618,10 +697,12 @@ const sendFeishu = async () => {
 
 .feishu-panel {
   width: 320px;
-  background: #ffffff;
+  background: var(--feishu-panel-bg);
   border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.16);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
   overflow: hidden;
+  border: 1px solid var(--feishu-panel-border);
+  transition: var(--theme-transition);
 }
 
 .feishu-panel-header {
@@ -629,9 +710,10 @@ const sendFeishu = async () => {
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  background: #f7f8fa;
-  border-bottom: 1px solid #eceef2;
+  background: var(--feishu-panel-head-bg);
+  border-bottom: 1px solid var(--feishu-panel-border);
   font-weight: 600;
+  transition: var(--theme-transition);
 }
 
 .feishu-panel-body {
@@ -643,7 +725,7 @@ const sendFeishu = async () => {
 
 .feishu-panel-body.is-dragging {
   border: 1px dashed #409eff;
-  background: #f0f7ff;
+  background: rgba(64, 158, 255, 0.05);
   border-radius: 8px;
 }
 
@@ -654,18 +736,17 @@ const sendFeishu = async () => {
   flex-wrap: wrap;
 }
 
-
 .feishu-panel-footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   padding: 10px 12px 12px;
-  border-top: 1px solid #eceef2;
+  border-top: 1px solid var(--feishu-panel-border);
 }
 
 .feishu-tip {
   margin-left: 8px;
-  color: #909399;
+  color: var(--feishu-tip-color);
   font-size: 12px;
 }
 

@@ -31,14 +31,19 @@ public class TencentQuoteProvider implements QuoteProvider {
 
     @Override
     public Map<String, StockQuote> getQuotes(List<String> codes) {
+        return getQuotes(codes, null);
+    }
+
+    @Override
+    public Map<String, StockQuote> getQuotes(List<String> codes, Map<String, String> marketMap) {
         Map<String, StockQuote> result = new ConcurrentHashMap<>();
 
         if (codes == null || codes.isEmpty()) {
             return result;
         }
 
-        // 按市场分组
-        Map<String, List<String>> marketGroups = groupByMarket(codes);
+        // 按市场分组，使用传入的 marketMap 或自动推断
+        Map<String, List<String>> marketGroups = groupByMarket(codes, marketMap);
 
         for (Map.Entry<String, List<String>> entry : marketGroups.entrySet()) {
             String market = entry.getKey();
@@ -70,10 +75,17 @@ public class TencentQuoteProvider implements QuoteProvider {
     /**
      * 按市场分组股票代码
      */
-    private Map<String, List<String>> groupByMarket(List<String> codes) {
+    private Map<String, List<String>> groupByMarket(List<String> codes, Map<String, String> marketMap) {
         Map<String, List<String>> groups = new HashMap<>();
         for (String code : codes) {
-            String market = inferMarket(code);
+            String market;
+            if (marketMap != null && marketMap.containsKey(code)) {
+                // 优先使用传入的市场映射
+                market = marketMap.get(code);
+            } else {
+                // 否则自动推断
+                market = inferMarket(code);
+            }
             groups.computeIfAbsent(market, k -> new ArrayList<>()).add(code);
         }
         return groups;
@@ -85,6 +97,10 @@ public class TencentQuoteProvider implements QuoteProvider {
     private String inferMarket(String code) {
         if (code == null || code.isEmpty()) {
             return "SZ";
+        }
+        // 港股: 5位数代码 (如 00189, 00700, 09988)
+        if (code.length() == 5) {
+            return "HK";
         }
         if (code.startsWith("60") || code.startsWith("68")) {
             return "SH";

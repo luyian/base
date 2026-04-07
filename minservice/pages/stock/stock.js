@@ -25,6 +25,7 @@ Page({
     markets: ['SH', 'SZ', 'HK'],
     marketIndex: 0,
     showEditModal: false,
+    originalStockCode: '',
     editStock: {
       stockCode: '',
       stockName: '',
@@ -126,6 +127,9 @@ Page({
     wx.navigateTo({ url: `/pages/stock/detail?code=${stockCode}` });
   },
 
+  // 阻止事件冒泡
+  stopPropagation() {},
+
   // 新增股票
   showAddModal() {
     this.setData({
@@ -163,6 +167,7 @@ Page({
     const editMarketIndex = this.data.markets.indexOf(stock.market);
     this.setData({
       showEditModal: true,
+      originalStockCode: stock.stockCode,
       editStock: {
         stockCode: stock.stockCode,
         stockName: stock.stockName,
@@ -175,6 +180,10 @@ Page({
 
   hideEditModal() {
     this.setData({ showEditModal: false });
+  },
+
+  onEditStockCodeChange(e) {
+    this.setData({ 'editStock.stockCode': e.detail.value });
   },
 
   onEditStockNameChange(e) {
@@ -194,12 +203,12 @@ Page({
 
   submitEditStock() {
     const { stockCode, stockName, market, industry } = this.data.editStock;
-    if (!stockName) {
-      wx.showToast({ title: '请填写股票名称', icon: 'none' });
+    if (!stockCode || !stockName) {
+      wx.showToast({ title: '请填写股票代码和名称', icon: 'none' });
       return;
     }
     this.setData({ submitting: true });
-    stockApi.updateStock(stockCode, { stockName, market, industry })
+    stockApi.updateStock(this.data.originalStockCode, { stockCode, stockName, market, industry })
       .then(() => {
         wx.showToast({ title: '更新成功', icon: 'success' });
         this.setData({ showEditModal: false });

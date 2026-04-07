@@ -178,6 +178,14 @@ public class StockServiceImpl implements StockService {
             throw new BusinessException("股票不存在");
         }
         existing.setStockName(stockInfo.getStockName());
+        if (stockInfo.getStockCode() != null && !stockInfo.getStockCode().equals(stockCode)) {
+            // 检查新股票代码是否已存在
+            StockInfo duplicate = getByStockCode(stockInfo.getStockCode());
+            if (duplicate != null) {
+                throw new BusinessException("股票代码已存在");
+            }
+            existing.setStockCode(stockInfo.getStockCode());
+        }
         if (stockInfo.getMarket() != null) {
             existing.setMarket(stockInfo.getMarket());
         }

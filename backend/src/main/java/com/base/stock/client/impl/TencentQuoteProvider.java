@@ -106,7 +106,14 @@ public class TencentQuoteProvider implements QuoteProvider {
         Map<String, StockQuote> result = new HashMap<>();
 
         // 构建腾讯API的股票代码格式: sh600000, sz000001
-        String prefix = "SH".equalsIgnoreCase(market) ? "sh" : "sz";
+        String prefix;
+        if ("SH".equalsIgnoreCase(market)) {
+            prefix = "sh";
+        } else if ("HK".equalsIgnoreCase(market)) {
+            prefix = "hk";
+        } else {
+            prefix = "sz";
+        }
         String codesParam = codes.stream()
                 .map(code -> prefix + code)
                 .reduce((a, b) -> a + "," + b)
@@ -143,12 +150,14 @@ public class TencentQuoteProvider implements QuoteProvider {
                     value = value.substring(1, value.length() - 1);
                 }
                 
-                // 提取股票代码: v_sh600000 -> 600000, v_sz000001 -> 000001
+                // 提取股票代码: v_sh600000 -> 600000, v_sz000001 -> 000001, v_hk00700 -> 00700
                 String stockCode = key;
                 if (stockCode.startsWith("v_sh")) {
-                    stockCode = stockCode.substring(4);  // 去掉 "v_sh" 得到 "600000"
+                    stockCode = stockCode.substring(4);
                 } else if (stockCode.startsWith("v_sz")) {
-                    stockCode = stockCode.substring(4);  // 去掉 "v_sz" 得到 "000001"
+                    stockCode = stockCode.substring(4);
+                } else if (stockCode.startsWith("v_hk")) {
+                    stockCode = stockCode.substring(4);
                 } else {
                     continue;
                 }
@@ -203,12 +212,14 @@ public class TencentQuoteProvider implements QuoteProvider {
 
             StockQuote quote = new StockQuote();
 
-            // 0: 市场代码 0=深圳, 1=上海
+            // 0: 市场代码 0=深圳, 1=上海, 3=港股
             String marketCode = fields[0];
             if ("1".equals(marketCode)) {
                 quote.setMarket("SH");
             } else if ("0".equals(marketCode)) {
                 quote.setMarket("SZ");
+            } else if ("3".equals(marketCode)) {
+                quote.setMarket("HK");
             } else {
                 quote.setMarket(defaultMarket);
             }

@@ -225,7 +225,7 @@ public class FastDFSClient {
             return null;
         }
         // 使用 nginx 端口 80
-        return "http://" + trackerServer + "/" + filePath;
+        return "https://" + trackerServer + "/" + filePath;
     }
 
     /**

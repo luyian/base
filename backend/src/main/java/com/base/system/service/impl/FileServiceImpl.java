@@ -136,6 +136,85 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public SysFile uploadFile(MultipartFile file, String fileGroup, String fileDesc, String uploaderName, HttpServletRequest request) {
+        long startTime = System.currentTimeMillis();
+        SysFileLog fileLog = new SysFileLog();
+
+        // 获取IP和地址
+        String ip = IpUtils.getIpAddress(request);
+        fileLog.setIp(ip);
+        fileLog.setLocation("");
+
+        try {
+            // 上传到 FastDFS
+            String originalName = file.getOriginalFilename();
+            String filePath = FastDFSClient.uploadFile(file.getBytes(), originalName);
+
+            if (filePath == null) {
+                throw new RuntimeException("文件上传到FastDFS失败");
+            }
+
+            // 获取文件信息
+            String fileExt = getFileExt(originalName);
+            long fileSize = file.getSize();
+            String fileType = file.getContentType();
+
+            // 保存文件记录
+            SysFile sysFile = new SysFile();
+            sysFile.setFileName(filePath);
+            sysFile.setOriginalName(originalName);
+            sysFile.setFileExt(fileExt);
+            sysFile.setFileSize(fileSize);
+            sysFile.setFileType(fileType);
+            sysFile.setFilePath(filePath);
+            sysFile.setFileUrl(FastDFSClient.getFileUrl(filePath));
+            sysFile.setFileGroup(fileGroup);
+            sysFile.setFileDesc(fileDesc);
+            sysFile.setUploadUserName(uploaderName);
+            sysFile.setStatus(1);
+            sysFile.setCreateTime(LocalDateTime.now());
+            sysFile.setUpdateTime(LocalDateTime.now());
+
+            sysFileMapper.insert(sysFile);
+
+            // 记录日志
+            long executeTime = System.currentTimeMillis() - startTime;
+            fileLog.setFileId(sysFile.getId());
+            fileLog.setFileName(originalName);
+            fileLog.setFilePath(filePath);
+            fileLog.setFileSize(fileSize);
+            fileLog.setOperationType(1);
+            fileLog.setOperatorName(uploaderName);
+            fileLog.setStatus(1);
+            fileLog.setExecuteTime((int) executeTime);
+            fileLog.setCreateTime(LocalDateTime.now());
+            sysFileLogMapper.insert(fileLog);
+
+            logger.info("开放接口文件上传成功: {}, 上传者: {}, 耗时: {}ms", originalName, uploaderName, executeTime);
+            return sysFile;
+
+        } catch (Exception e) {
+            long executeTime = System.currentTimeMillis() - startTime;
+            logger.error("开放接口文件上传失败", e);
+
+            fileLog.setOperationType(1);
+            fileLog.setOperatorName(uploaderName);
+            fileLog.setStatus(0);
+            fileLog.setErrorMsg(e.getMessage());
+            fileLog.setExecuteTime((int) executeTime);
+            fileLog.setCreateTime(LocalDateTime.now());
+            try {
+                sysFileLogMapper.insert(fileLog);
+            } catch (Exception ex) {
+                logger.error("记录文件日志失败", ex);
+            }
+
+            throw new RuntimeException("文件上传失败: " + e.getMessage());
+        }
+    }
+
+    @Override
     public SysFile getFileById(Long id) {
         return sysFileMapper.selectById(id);
     }

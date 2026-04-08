@@ -8,7 +8,7 @@
         </el-form-item>
         <el-form-item label="文件分组">
           <el-select v-model="queryForm.fileGroup" placeholder="请选择文件分组" clearable style="width: 150px">
-            <el-option v-for="item in fileGroups" :key="item" :label="item" :value="item" />
+            <el-option v-for="item in fileGroups" :key="item" :label="groupLabelMap[item] || item" :value="item" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -56,8 +56,22 @@
             {{ formatSize(row.fileSize) }}
           </template>
         </el-table-column>
-        <el-table-column prop="fileGroup" label="分组" width="120" />
-        <el-table-column prop="uploadUserName" label="上传人" width="120" />
+        <el-table-column prop="fileGroup" label="分组" width="120">
+          <template #default="{ row }">
+            <el-tag :type="row.fileGroup === 'open' ? 'warning' : ''" size="small">
+              {{ groupLabelMap[row.fileGroup] || row.fileGroup }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="uploadUserName" label="上传人" width="150">
+          <template #default="{ row }">
+            <template v-if="row.uploadUserName && row.uploadUserName.startsWith('OPEN:')">
+              <el-tag type="warning" size="small">开放接口</el-tag>
+              <span style="margin-left: 4px">{{ row.uploadUserName.substring(5) }}</span>
+            </template>
+            <span v-else>{{ row.uploadUserName }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="createTime" label="上传时间" width="180" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
@@ -110,6 +124,17 @@ const total = ref(0)
 const loading = ref(false)
 const selectedIds = ref([])
 const fileGroups = ref([])
+
+// 分组中文映射
+const groupLabelMap = {
+  default: '默认',
+  images: '图片',
+  documents: '文档',
+  videos: '视频',
+  audio: '音频',
+  others: '其他',
+  open: '开放接口'
+}
 
 // 上传相关
 const uploadUrl = computed(() => '/api' + '/system/file/upload')

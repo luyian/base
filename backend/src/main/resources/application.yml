@@ -1,6 +1,7 @@
 spring:
   profiles:
     active: dev
+    include: open-api
   application:
     name: base-system
 

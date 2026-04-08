@@ -25,6 +25,18 @@ public interface FileService {
     SysFile uploadFile(MultipartFile file, String fileGroup, String fileDesc, HttpServletRequest request);
 
     /**
+     * 上传文件（供开放接口使用，指定上传者名称）
+     *
+     * @param file         文件
+     * @param fileGroup    文件分组
+     * @param fileDesc     文件描述
+     * @param uploaderName 上传者名称
+     * @param request      HTTP 请求
+     * @return 文件信息
+     */
+    SysFile uploadFile(MultipartFile file, String fileGroup, String fileDesc, String uploaderName, HttpServletRequest request);
+
+    /**
      * 根据ID获取文件信息
      */
     SysFile getFileById(Long id);

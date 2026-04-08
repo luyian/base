@@ -58,7 +58,15 @@
             {{ formatSize(row.fileSize) }}
           </template>
         </el-table-column>
-        <el-table-column prop="operatorName" label="操作人" width="120" />
+        <el-table-column prop="operatorName" label="操作人" width="150">
+          <template #default="{ row }">
+            <template v-if="row.operatorName && row.operatorName.startsWith('OPEN:')">
+              <el-tag type="warning" size="small">开放接口</el-tag>
+              <span style="margin-left: 4px">{{ row.operatorName.substring(5) }}</span>
+            </template>
+            <span v-else>{{ row.operatorName }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="ip" label="IP地址" width="150" />
         <el-table-column prop="location" label="操作地点" width="150" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" width="80">
@@ -102,7 +110,13 @@
         <el-descriptions-item label="文件名" :span="2">{{ currentLog.fileName }}</el-descriptions-item>
         <el-descriptions-item label="文件路径" :span="2">{{ currentLog.filePath }}</el-descriptions-item>
         <el-descriptions-item label="文件大小">{{ formatSize(currentLog.fileSize) }}</el-descriptions-item>
-        <el-descriptions-item label="操作人">{{ currentLog.operatorName }}</el-descriptions-item>
+        <el-descriptions-item label="操作人">
+          <template v-if="currentLog.operatorName && currentLog.operatorName.startsWith('OPEN:')">
+            <el-tag type="warning" size="small">开放接口</el-tag>
+            <span style="margin-left: 4px">{{ currentLog.operatorName.substring(5) }}</span>
+          </template>
+          <span v-else>{{ currentLog.operatorName }}</span>
+        </el-descriptions-item>
         <el-descriptions-item label="操作人ID">{{ currentLog.operatorId }}</el-descriptions-item>
         <el-descriptions-item label="IP地址">{{ currentLog.ip }}</el-descriptions-item>
         <el-descriptions-item label="操作地点" :span="2">{{ currentLog.location }}</el-descriptions-item>

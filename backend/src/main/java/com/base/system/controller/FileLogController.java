@@ -2,6 +2,7 @@ package com.base.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
+import com.base.system.dto.FileLogPageRequest;
 import com.base.system.entity.SysFileLog;
 import com.base.system.mapper.SysFileLogMapper;
 import io.swagger.annotations.Api;
@@ -11,10 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 文件操作日志控制器
@@ -33,28 +32,21 @@ public class FileLogController {
     @ApiOperation("分页查询文件操作日志列表")
     @GetMapping("/page")
     @PreAuthorize("hasAuthority('file:log:list')")
-    public Result<Page<SysFileLog>> pageFileLogs(
-            @RequestParam(value = "pageNum", defaultValue = "1") Long pageNum,
-            @RequestParam(value = "pageSize", defaultValue = "10") Long pageSize,
-            @RequestParam(value = "fileName", required = false) String fileName,
-            @RequestParam(value = "operationType", required = false) Integer operationType,
-            @RequestParam(value = "operatorName", required = false) String operatorName,
-            @RequestParam(value = "status", required = false) Integer status) {
-        
-        Page<SysFileLog> page = new Page<>(pageNum, pageSize);
+    public Result<Page<SysFileLog>> pageFileLogs(FileLogPageRequest pageRequest) {
+        Page<SysFileLog> page = new Page<>(pageRequest.getPageNum(), pageRequest.getPageSize());
         LambdaQueryWrapper<SysFileLog> wrapper = new LambdaQueryWrapper<>();
-        
-        if (fileName != null && !fileName.isEmpty()) {
-            wrapper.like(SysFileLog::getFileName, fileName);
+
+        if (pageRequest.getFileName() != null && !pageRequest.getFileName().isEmpty()) {
+            wrapper.like(SysFileLog::getFileName, pageRequest.getFileName());
         }
-        if (operationType != null) {
-            wrapper.eq(SysFileLog::getOperationType, operationType);
+        if (pageRequest.getOperationType() != null) {
+            wrapper.eq(SysFileLog::getOperationType, pageRequest.getOperationType());
         }
-        if (operatorName != null && !operatorName.isEmpty()) {
-            wrapper.like(SysFileLog::getOperatorName, operatorName);
+        if (pageRequest.getOperatorName() != null && !pageRequest.getOperatorName().isEmpty()) {
+            wrapper.like(SysFileLog::getOperatorName, pageRequest.getOperatorName());
         }
-        if (status != null) {
-            wrapper.eq(SysFileLog::getStatus, status);
+        if (pageRequest.getStatus() != null) {
+            wrapper.eq(SysFileLog::getStatus, pageRequest.getStatus());
         }
         
         wrapper.orderByDesc(SysFileLog::getCreateTime);

@@ -2,15 +2,15 @@ package com.base.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
+import com.base.system.dto.FilePageRequest;
+import com.base.system.dto.FileUploadRequest;
 import com.base.system.entity.SysFile;
 import com.base.system.entity.SysFileLog;
 import com.base.system.service.FileService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletResponse;
@@ -35,16 +35,17 @@ public class FileController {
      */
     @ApiOperation("上传文件")
     @PostMapping("/upload")
-    public Result<SysFile> uploadFile(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam(value = "fileGroup", required = false, defaultValue = "default") String fileGroup,
-            @RequestParam(value = "fileDesc", required = false) String fileDesc,
-            HttpServletRequest request) {
-        if (file.isEmpty()) {
+    public Result<SysFile> uploadFile(FileUploadRequest uploadRequest, HttpServletRequest request) {
+        if (uploadRequest.getFile() == null || uploadRequest.getFile().isEmpty()) {
             return Result.error("文件不能为空");
         }
         try {
-            SysFile sysFile = fileService.uploadFile(file, fileGroup, fileDesc, request);
+            SysFile sysFile = fileService.uploadFile(
+                    uploadRequest.getFile(),
+                    uploadRequest.getFileGroup(),
+                    uploadRequest.getFileDesc(),
+                    request
+            );
             return Result.success(sysFile);
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -68,12 +69,13 @@ public class FileController {
     @ApiOperation("分页查询文件列表")
     @GetMapping("/page")
     @PreAuthorize("hasAuthority('file:list')")
-    public Result<Page<SysFile>> pageFiles(
-            @RequestParam(value = "pageNum", defaultValue = "1") Long pageNum,
-            @RequestParam(value = "pageSize", defaultValue = "10") Long pageSize,
-            @RequestParam(value = "fileName", required = false) String fileName,
-            @RequestParam(value = "fileGroup", required = false) String fileGroup) {
-        Page<SysFile> page = fileService.pageFiles(pageNum, pageSize, fileName, fileGroup);
+    public Result<Page<SysFile>> pageFiles(FilePageRequest pageRequest) {
+        Page<SysFile> page = fileService.pageFiles(
+                pageRequest.getPageNum(),
+                pageRequest.getPageSize(),
+                pageRequest.getFileName(),
+                pageRequest.getFileGroup()
+        );
         return Result.success(page);
     }
 
@@ -132,7 +134,7 @@ public class FileController {
     @PreAuthorize("hasAuthority('file:list')")
     public Result<List<String>> getFileGroups() {
         // 返回常用的文件分组
-        List<String> groups = java.util.Arrays.asList("default", "images", "documents", "videos", "audio", "others");
+        List<String> groups = java.util.Arrays.asList("default", "images", "documents", "videos", "audio", "others", "open");
         return Result.success(groups);
     }
 }

@@ -769,8 +769,14 @@ public class FundServiceImpl implements FundService {
         log.info("获取实时报价，market: {}, codes: {}", market, codes);
 
         try {
-            // 使用 QuoteProviderFactory 获取报价
-            Map<String, StockQuote> quotes = quoteProviderFactory.getPrimaryProvider().getQuotes(codes);
+            // 构建市场映射，全部使用传入的 market 参数
+            Map<String, String> marketMap = new HashMap<>();
+            for (String code : codes) {
+                marketMap.put(code, market);
+            }
+            
+            // 使用 QuoteProviderFactory 获取报价，传入市场映射
+            Map<String, StockQuote> quotes = quoteProviderFactory.getPrimaryProvider().getQuotes(codes, marketMap);
             
             // 确保所有股票都有返回值
             Map<String, StockQuote> result = new HashMap<>();
@@ -793,7 +799,12 @@ public class FundServiceImpl implements FundService {
             // 尝试使用降级数据源
             if (tryFallback(market, codes)) {
                 try {
-                    Map<String, StockQuote> fallbackQuotes = quoteProviderFactory.getFallbackProvider().getQuotes(codes);
+                    // 构建市场映射
+                    Map<String, String> marketMap = new HashMap<>();
+                    for (String code : codes) {
+                        marketMap.put(code, market);
+                    }
+                    Map<String, StockQuote> fallbackQuotes = quoteProviderFactory.getFallbackProvider().getQuotes(codes, marketMap);
                     Map<String, StockQuote> result = new HashMap<>();
                     for (String code : codes) {
                         StockQuote quote = fallbackQuotes.get(code);

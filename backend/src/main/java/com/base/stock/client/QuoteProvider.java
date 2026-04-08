@@ -26,6 +26,17 @@ public interface QuoteProvider {
     Map<String, StockQuote> getQuotes(List<String> codes);
 
     /**
+     * 批量获取股票报价（带市场信息）
+     *
+     * @param codes 股票代码列表
+     * @param marketMap 股票代码 -> 市场 的映射，如果为null则自动推断
+     * @return 股票代码 -> 报价
+     */
+    default Map<String, StockQuote> getQuotes(List<String> codes, Map<String, String> marketMap) {
+        return getQuotes(codes);
+    }
+
+    /**
      * 获取单只股票报价
      *
      * @param code  股票代码

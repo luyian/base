@@ -27,6 +27,11 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   response => {
+    // Blob 响应（文件下载）直接返回，不走 code 判断
+    if (response.data instanceof Blob) {
+      return response.data
+    }
+
     const res = response.data
 
     // 如果返回的状态码不是 200，则认为是错误

@@ -328,6 +328,93 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    public void batchDownloadFiles(List<Long> ids, HttpServletResponse response, HttpServletRequest request) {
+        long startTime = System.currentTimeMillis();
+
+        try {
+            // 批量查询文件信息
+            List<SysFile> fileList = sysFileMapper.selectBatchIds(ids);
+            if (fileList.isEmpty()) {
+                throw new RuntimeException("未找到对应文件");
+            }
+
+            // 设置响应头
+            response.setContentType("application/zip");
+            response.setHeader("Content-Disposition", "attachment; filename=\"files.zip\"");
+
+            // 创建 ZIP 输出流
+            java.util.zip.ZipOutputStream zipOut = new java.util.zip.ZipOutputStream(response.getOutputStream());
+
+            // 用于处理重名文件
+            java.util.Map<String, Integer> nameCountMap = new java.util.HashMap<>();
+
+            for (SysFile sysFile : fileList) {
+                try {
+                    byte[] fileBytes = FastDFSClient.downloadFile(sysFile.getFilePath());
+                    if (fileBytes == null) {
+                        logger.warn("批量下载跳过文件（下载失败）: {}", sysFile.getOriginalName());
+                        continue;
+                    }
+
+                    // 处理重名
+                    String entryName = sysFile.getOriginalName();
+                    Integer count = nameCountMap.get(entryName);
+                    if (count != null) {
+                        String baseName = entryName;
+                        String ext = "";
+                        int dotIndex = entryName.lastIndexOf(".");
+                        if (dotIndex > 0) {
+                            baseName = entryName.substring(0, dotIndex);
+                            ext = entryName.substring(dotIndex);
+                        }
+                        entryName = baseName + "(" + count + ")" + ext;
+                        nameCountMap.put(sysFile.getOriginalName(), count + 1);
+                    } else {
+                        nameCountMap.put(entryName, 1);
+                    }
+
+                    // 写入 ZIP
+                    java.util.zip.ZipEntry zipEntry = new java.util.zip.ZipEntry(entryName);
+                    zipOut.putNextEntry(zipEntry);
+                    zipOut.write(fileBytes);
+                    zipOut.closeEntry();
+                } catch (Exception e) {
+                    logger.warn("批量下载跳过文件: {}, 原因: {}", sysFile.getOriginalName(), e.getMessage());
+                }
+            }
+
+            zipOut.finish();
+            zipOut.flush();
+
+            // 记录日志
+            long executeTime = System.currentTimeMillis() - startTime;
+            String ip = IpUtils.getIpAddress(request);
+            Long currentUserId = SecurityUtils.getCurrentUserId();
+            String currentUsername = SecurityUtils.getCurrentUsername();
+
+            SysFileLog fileLog = new SysFileLog();
+            fileLog.setFileName("批量下载(" + fileList.size() + "个文件)");
+            fileLog.setOperationType(2);
+            fileLog.setStatus(1);
+            fileLog.setExecuteTime((int) executeTime);
+            fileLog.setIp(ip);
+            fileLog.setLocation("");
+            fileLog.setCreateTime(LocalDateTime.now());
+            if (currentUserId != null) {
+                fileLog.setOperatorId(currentUserId);
+                fileLog.setOperatorName(currentUsername);
+            }
+            sysFileLogMapper.insert(fileLog);
+
+            logger.info("批量下载成功: {}个文件, 耗时: {}ms", fileList.size(), executeTime);
+
+        } catch (Exception e) {
+            logger.error("批量下载失败", e);
+            throw new RuntimeException("批量下载失败: " + e.getMessage());
+        }
+    }
+
+    @Override
     public String getFileUrl(String filePath) {
         return FastDFSClient.getFileUrl(filePath);
     }

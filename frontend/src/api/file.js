@@ -88,6 +88,18 @@ export function downloadFile(id) {
 }
 
 /**
+ * 批量下载文件（ZIP）
+ */
+export function batchDownloadFiles(ids) {
+  return request({
+    url: '/system/file/download/batch',
+    method: 'post',
+    data: { ids },
+    responseType: 'blob'
+  })
+}
+
+/**
  * 获取文件URL
  */
 export function getFileUrl(id) {

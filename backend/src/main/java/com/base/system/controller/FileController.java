@@ -2,10 +2,10 @@ package com.base.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
+import com.base.system.dto.FileBatchDownloadRequest;
 import com.base.system.dto.FilePageRequest;
 import com.base.system.dto.FileUploadRequest;
 import com.base.system.entity.SysFile;
-import com.base.system.entity.SysFileLog;
 import com.base.system.service.FileService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -13,10 +13,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
+import javax.servlet.http.HttpServletResponse;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -106,8 +106,20 @@ public class FileController {
      */
     @ApiOperation("下载文件")
     @GetMapping("/download/{id}")
+    @PreAuthorize("hasAuthority('file:download')")
     public void downloadFile(@PathVariable Long id, HttpServletResponse response, HttpServletRequest request) {
         fileService.downloadFile(id, response, request);
+    }
+
+    /**
+     * 批量下载文件（打包ZIP）
+     */
+    @ApiOperation("批量下载文件")
+    @PostMapping("/download/batch")
+    @PreAuthorize("hasAuthority('file:download')")
+    public void batchDownloadFiles(@RequestBody FileBatchDownloadRequest request,
+                                   HttpServletResponse response, HttpServletRequest httpRequest) {
+        fileService.batchDownloadFiles(request.getIds(), response, httpRequest);
     }
 
     /**

@@ -22,6 +22,7 @@
     <el-card class="table-card">
       <div class="toolbar">
         <div>
+          <el-button v-permission="'file:download'" type="primary" :disabled="selectedIds.length === 0" :loading="batchDownloading" @click="handleBatchDownload">批量下载</el-button>
           <el-button v-permission="'file:delete'" type="danger" :disabled="selectedIds.length === 0" @click="handleBatchDelete">批量删除</el-button>
         </div>
         <div>
@@ -110,7 +111,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { pageFiles, deleteFile, batchDeleteFiles, getFileGroups, getFileUrl } from '@/api/file'
+import { pageFiles, deleteFile, batchDeleteFiles, batchDownloadFiles, getFileGroups, getFileUrl } from '@/api/file'
 
 const queryForm = ref({
   pageNum: 1,
@@ -122,6 +123,7 @@ const queryForm = ref({
 const tableData = ref([])
 const total = ref(0)
 const loading = ref(false)
+const batchDownloading = ref(false)
 const selectedIds = ref([])
 const fileGroups = ref([])
 
@@ -199,6 +201,25 @@ async function handleDelete(id) {
     if (e !== 'cancel') {
       ElMessage.error(e.message || '删除失败')
     }
+  }
+}
+
+async function handleBatchDownload() {
+  batchDownloading.value = true
+  try {
+    const res = await batchDownloadFiles(selectedIds.value)
+    const blob = new Blob([res], { type: 'application/zip' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'files.zip'
+    link.click()
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('批量下载成功')
+  } catch (e) {
+    ElMessage.error(e.message || '批量下载失败')
+  } finally {
+    batchDownloading.value = false
   }
 }
 

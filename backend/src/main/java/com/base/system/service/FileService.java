@@ -62,6 +62,15 @@ public interface FileService {
     void downloadFile(Long id, HttpServletResponse response, HttpServletRequest request);
 
     /**
+     * 批量下载文件（打包为ZIP）
+     *
+     * @param ids      文件ID列表
+     * @param response HTTP 响应
+     * @param request  HTTP 请求
+     */
+    void batchDownloadFiles(List<Long> ids, HttpServletResponse response, HttpServletRequest request);
+
+    /**
      * 获取文件访问URL
      */
     String getFileUrl(String filePath);

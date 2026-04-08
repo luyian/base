@@ -111,7 +111,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { pageFiles, deleteFile, batchDeleteFiles, batchDownloadFiles, getFileGroups, getFileUrl } from '@/api/file'
+import { pageFiles, deleteFile, batchDeleteFiles, batchDownloadFiles, downloadFile, getFileGroups, getFileUrl } from '@/api/file'
 
 const queryForm = ref({
   pageNum: 1,
@@ -260,12 +260,16 @@ function handleUploadError(e) {
 
 async function handleDownload(row) {
   try {
-    const res = await getFileUrl(row.id)
-    if (res.data && res.data.url) {
-      window.open(res.data.url, '_blank')
-    }
+    const res = await downloadFile(row.id)
+    const blob = new Blob([res])
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = row.originalName || '未知文件'
+    link.click()
+    window.URL.revokeObjectURL(url)
   } catch (e) {
-    ElMessage.error('获取下载链接失败')
+    ElMessage.error('下载失败')
   }
 }
 

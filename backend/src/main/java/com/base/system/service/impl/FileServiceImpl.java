@@ -350,8 +350,9 @@ public class FileServiceImpl implements FileService {
 
             for (SysFile sysFile : fileList) {
                 try {
-                    byte[] fileBytes = FastDFSClient.downloadFile(sysFile.getFilePath());
-                    if (fileBytes == null) {
+                    // 通过 HTTP 从 fileUrl 下载，与单文件下载走同一通道
+                    byte[] fileBytes = downloadFileFromUrl(sysFile.getFileUrl());
+                    if (fileBytes == null || fileBytes.length == 0) {
                         logger.warn("批量下载跳过文件（下载失败）: {}", sysFile.getOriginalName());
                         continue;
                     }
@@ -447,6 +448,45 @@ public class FileServiceImpl implements FileService {
         }
 
         sysFileLogMapper.insert(fileLog);
+    }
+
+    /**
+     * 通过 HTTP 从 URL 下载文件内容
+     *
+     * @param fileUrl 文件访问URL
+     * @return 文件字节数组，失败返回 null
+     */
+    private byte[] downloadFileFromUrl(String fileUrl) {
+        if (fileUrl == null || fileUrl.isEmpty()) {
+            return null;
+        }
+        try {
+            // 确保使用 HTTPS 或 HTTP
+            java.net.URL url = new java.net.URL(fileUrl);
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(30000);
+
+            int responseCode = conn.getResponseCode();
+            if (responseCode != 200) {
+                logger.warn("HTTP下载文件失败，状态码: {}, URL: {}", responseCode, fileUrl);
+                return null;
+            }
+
+            try (java.io.InputStream is = conn.getInputStream();
+                 java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
+                byte[] buffer = new byte[8192];
+                int len;
+                while ((len = is.read(buffer)) != -1) {
+                    baos.write(buffer, 0, len);
+                }
+                return baos.toByteArray();
+            }
+        } catch (Exception e) {
+            logger.error("HTTP下载文件失败, URL: {}, 原因: {}", fileUrl, e.getMessage());
+            return null;
+        }
     }
 
     /**

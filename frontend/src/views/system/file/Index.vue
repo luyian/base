@@ -269,7 +269,8 @@ async function handleDownload(row) {
     link.click()
     window.URL.revokeObjectURL(url)
   } catch (e) {
-    ElMessage.error('下载失败')
+    console.error('下载失败:', e)
+    ElMessage.error(e?.response?.data?.message || e.message || '下载失败')
   }
 }
 

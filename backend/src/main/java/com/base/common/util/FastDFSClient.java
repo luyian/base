@@ -152,8 +152,8 @@ public class FastDFSClient {
     public static byte[] downloadFile(String filePath) {
         try {
             // 将 FastDFS 路径转换为本地路径
-            // group1/M00/00/00/xxx -> /fastdfs/storage/data/M00/00/00/xxx
-            String localPath = filePath.replace("group1/", storagePath + "/");
+            // group1/M00/00/00/xxx -> /fastdfs/storage/data/00/00/xxx
+            String localPath = filePath.replace("group1/M00/", storagePath + "/");
             
             File file = new File(localPath);
             if (file.exists()) {
@@ -164,7 +164,7 @@ public class FastDFSClient {
             File tempFile = File.createTempFile("fdfs_dl_", ".tmp");
             String result = executeCommand("fdfs_download_file", "/etc/fdfs/client.conf", filePath, tempFile.getAbsolutePath());
             
-            if (result != null && file.exists()) {
+            if (result != null && tempFile.exists()) {
                 byte[] data = java.nio.file.Files.readAllBytes(tempFile.toPath());
                 tempFile.delete();
                 return data;

@@ -290,7 +290,8 @@ public class FileServiceImpl implements FileService {
             // 设置响应头
             response.setContentType(sysFile.getFileType());
             response.setHeader("Content-Disposition", "attachment; filename=\"" + sysFile.getOriginalName() + "\"");
-            response.setContentLengthLong(sysFile.getFileSize());
+            // 使用实际文件大小，不使用预存的大小
+            response.setContentLengthLong(fileBytes.length);
 
             // 写入响应
             OutputStream outputStream = response.getOutputStream();

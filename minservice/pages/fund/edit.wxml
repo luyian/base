@@ -46,10 +46,10 @@
             </view>
           </view>
           <view class="weight-input">
-            <input class="input" 
-              type="number" 
-              value="{{item.weight}}" 
-              placeholder="权重%" 
+            <input class="input"
+              type="digit"
+              value="{{item.weight}}"
+              placeholder="权重%"
               bindinput="onWeightChange"
               data-index="{{index}}" />
             <text class="percent">%</text>

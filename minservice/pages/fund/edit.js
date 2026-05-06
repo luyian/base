@@ -120,10 +120,11 @@ Page({
 
   onWeightChange(e) {
     const index = e.currentTarget.dataset.index;
-    const value = parseFloat(e.detail.value);
+    const value = e.detail.value;
     const holdings = [...this.data.form.holdings];
     if (holdings[index]) {
-      holdings[index].weight = value;
+      // 保留原始字符串值，避免 parseFloat 吞掉输入过程中的小数点
+      holdings[index].weight = value === '' ? null : value;
     }
     this.setData({ 'form.holdings': holdings });
   },
@@ -152,14 +153,20 @@ Page({
       return;
     }
     
-    const validHoldings = form.holdings.filter(h => h.stockCode && h.weight);
+    const validHoldings = form.holdings
+      .filter(h => h.stockCode && h.weight !== null && h.weight !== '')
+      .map(h => ({
+        stockCode: h.stockCode,
+        stockName: h.stockName,
+        weight: parseFloat(h.weight)
+      }));
     if (validHoldings.length === 0) {
       wx.showToast({ title: '请添加至少一个持仓', icon: 'none' });
       return;
     }
 
     this.setData({ submitting: true });
-    
+
     const data = {
       fundName: form.fundName,
       fundCode: form.fundCode,

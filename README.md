@@ -1,206 +1,242 @@
-# Base 管理系统
+# Base 企业级管理系统
 
-一个基于 Spring Boot + Vue 3 的现代化企业级管理系统。
+基于 Spring Boot 2.7 + Vue 3 + Element Plus 构建的现代化企业级后台管理系统，提供完整的 RBAC 权限管理、股票数据分析、AI 大模型集成、消息推送等功能。
 
-## 项目简介
+## 技术架构
 
-本项目是一个功能完善的企业级后台管理系统，采用前后端分离架构，提供了完整的 RBAC 权限管理、数据权限控制、系统监控、股票数据分析、消息推送等功能。
-
-### 主要特性
-
-- 🔐 **完善的权限管理**：基于 RBAC 的权限控制，支持菜单权限和按钮权限
-- 📊 **数据权限控制**：支持全部数据、本部门、本部门及以下、仅本人、自定义等多种数据权限
-- 🎯 **动态路由**：前端根据用户权限动态生成路由和菜单
-- 📝 **操作日志**：基于 AOP 的操作日志记录，自动记录用户操作行为
-- 🔔 **通知公告**：支持系统通知和公告发布，实时未读提醒
-- 📈 **系统监控**：实时监控服务器状态、JVM 信息、Redis 缓存等
-- 📉 **股票数据分析**：支持股票数据同步、K线图展示、自选股票、基金估值、智能推荐
-- 🗂️ **知识库管理**：支持知识库、文档、目录、标签管理
-- 💬 **消息推送**：支持消息订阅、多种推送渠道（飞书、钉钉、邮件）
-- 🗺️ **行政区划管理**：支持省市区街道四级行政区划数据管理
-- 🎨 **现代化 UI**：基于 Element Plus 的美观界面
-- 🤖 **AI 大模型集成**：支持配置多个 AI 提供商（通义千问、MiniMax、智谱等）
-- 🚀 **高性能**：Redis 缓存、MyBatis Plus 优化、前端懒加载
-
-## 技术栈
-
-### 后端技术
+### 后端技术栈
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
-| Spring Boot | 2.7.x | 基础框架 |
-| Spring Security | 5.7.x | 安全框架 |
-| MyBatis Plus | 3.5.x | ORM 框架 |
-| MySQL | 8.0+ | 数据库 |
-| Redis | 6.0+ | 缓存 |
-| JWT | 0.11.x | Token 认证 |
-| Knife4j | 4.0.x | API 文档 |
-| Lombok | 1.18.x | 简化代码 |
-| Hutool | 5.8.x | 工具类库 |
-| OSHI | 6.4.x | 系统信息采集 |
+| Spring Boot | 2.7.18 | 基础框架 |
+| Spring Security | 5.7.x | 认证授权 |
+| MyBatis Plus | 3.5.3 | ORM 框架 |
+| MySQL | 8.0+ | 关系型数据库 |
+| Redis | 6.0+ | 缓存中间件 |
+| JWT | 0.11.5 | Token 认证 |
+| LangChain4j | 0.31.0 | AI 大模型集成 |
+| Knife4j | 3.0.3 | API 文档 |
+| EasyExcel | 3.3.2 | Excel 导出 |
+| OSHI | 6.4.0 | 系统监控 |
+| Druid | 1.2.16 | 数据库连接池 |
 
-### 前端技术
+### 前端技术栈
 
 | 技术 | 版本 | 说明 |
 |------|------|------|
-| Vue | 3.3.x | 前端框架 |
-| Vite | 4.4.x | 构建工具 |
-| Element Plus | 2.3.x | UI 组件库 |
-| Vue Router | 4.2.x | 路由管理 |
-| Pinia | 2.1.x | 状态管理 |
-| Axios | 1.5.x | HTTP 客户端 |
-| ECharts | 5.5.x | 图表库 |
+| Vue | 3.5.x | 渐进式框架 |
+| Vite | 7.2.x | 构建工具 |
+| Element Plus | 2.13.x | UI 组件库 |
+| Vue Router | 4.6.x | 路由管理 |
+| Pinia | 3.0.x | 状态管理 |
+| ECharts | 5.5.x | 图表可视化 |
+| Axios | 1.13.x | HTTP 客户端 |
+
+## 系统架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         前端 (Vue 3)                            │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
+│  │  Pinia  │  │ Router  │  │ ECharts │  │Element+ │            │
+│  └─────────┘  └─────────┘  └─────────┘  └─────────┘            │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │ /api (Vite Proxy)
+┌───────────────────────────▼─────────────────────────────────────┐
+│                      后端 (Spring Boot)                         │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │                    Security Filter                        │  │
+│  │              JWT 认证 + 权限校验 + XSS 过滤               │  │
+│  └──────────────────────────────────────────────────────────┘  │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
+│  │ system  │  │  stock  │  │   ai    │  │ message │            │
+│  │ 系统管理 │  │股票分析 │  │ AI对话  │  │消息推送 │            │
+│  └─────────┘  └─────────┘  └─────────┘  └─────────┘            │
+│  ┌──────────────────────────────────────────────────────────┐  │
+│  │              Common (公共模块)                            │  │
+│  │   数据权限切面 | 操作日志 | 文件上传 | 安全工具           │  │
+│  └──────────────────────────────────────────────────────────┘  │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+        ┌───────────────────┼───────────────────┐
+        ▼                   ▼                   ▼
+   ┌─────────┐        ┌─────────┐        ┌─────────┐
+   │  MySQL  │        │  Redis  │        │ 外部API │
+   │ 数据存储 │        │  缓存   │        │ iTick等 │
+   └─────────┘        └─────────┘        └─────────┘
+```
 
 ## 项目结构
 
 ```
 base/
-├── backend/                    # 后端项目
-│   ├── src/main/
-│   │   ├── java/com/base/
-│   │   │   ├── ai/            # AI 大模型模块
-│   │   │   │   ├── config/
-│   │   │   │   ├── controller/
-│   │   │   │   ├── service/
-│   │   │   │   └── dto/
-│   │   │   ├── common/        # 公共模块
-│   │   │   │   ├── annotation/
-│   │   │   │   ├── aspect/
-│   │   │   │   ├── config/
-│   │   │   │   ├── enums/
-│   │   │   │   ├── exception/
-│   │   │   │   ├── interceptor/
-│   │   │   │   └── util/
-│   │   │   ├── config/        # 配置模块
-│   │   │   ├── entity/        # 实体基类
-│   │   │   ├── message/       # 消息推送模块
-│   │   │   │   ├── channel/
-│   │   │   │   ├── content/
-│   │   │   │   ├── controller/
-│   │   │   │   ├── dto/
-│   │   │   │   ├── entity/
-│   │   │   │   ├── service/
-│   │   │   │   └── task/
-│   │   │   ├── security/      # 安全模块
-│   │   │   ├── stock/         # 股票分析模块
-│   │   │   │   ├── client/
-│   │   │   │   ├── config/
-│   │   │   │   ├── controller/
-│   │   │   │   ├── dto/
-│   │   │   │   ├── engine/
-│   │   │   │   ├── entity/
-│   │   │   │   ├── factory/
-│   │   │   │   ├── http/
-│   │   │   │   ├── mapper/
-│   │   │   │   ├── service/
-│   │   │   │   ├── strategy/
-│   │   │   │   └── task/
-│   │   │   ├── system/        # 系统管理模块
-│   │   │   │   ├── controller/
-│   │   │   │   ├── dto/
-│   │   │   │   ├── entity/
-│   │   │   │   ├── mapper/
-│   │   │   │   └── service/
-│   │   │   └── util/          # 工具类
-│   │   └── resources/
-│   │       ├── mapper/        # MyBatis XML
-│   │       ├── db/            # 数据库脚本
-│   │       │   ├── tables.sql # 表结构
-│   │       │   └── data.sql   # 初始数据
-│   │       └── application*.yml  # 配置文件
-│   └── pom.xml                # Maven 配置
+├── backend/                          # 后端项目
+│   ├── src/main/java/com/base/
+│   │   ├── ai/                       # AI 大模型模块
+│   │   │   ├── config/               # LangChain4j 配置
+│   │   │   ├── controller/           # AI 对话接口
+│   │   │   ├── service/              # AI 服务实现
+│   │   │   └── dto/                  # 请求响应对象
+│   │   ├── common/                   # 公共模块
+│   │   │   ├── annotation/           # @DataScope, @Log 注解
+│   │   │   ├── aspect/               # 数据权限切面
+│   │   │   ├── interceptor/          # MyBatis 拦截器
+│   │   │   └── security/             # XSS/SQL注入防护
+│   │   ├── config/                   # 全局配置
+│   │   ├── message/                  # 消息推送模块
+│   │   │   ├── channel/              # 渠道发送器 (飞书/钉钉/邮件)
+│   │   │   ├── content/              # 内容生成器
+│   │   │   ├── task/                 # 定时推送任务
+│   │   │   └── service/              # 订阅服务
+│   │   ├── security/                 # JWT 认证
+│   │   ├── stock/                    # 股票分析模块
+│   │   │   ├── client/               # 行情数据源 (iTick/东方财富/腾讯)
+│   │   │   ├── engine/               # 打分引擎
+│   │   │   ├── strategy/             # 10+ 打分策略
+│   │   │   ├── task/                 # 数据同步/估值计算任务
+│   │   │   └── service/              # 业务服务
+│   │   └── system/                   # 系统管理模块
+│   │       ├── controller/           # REST 接口
+│   │       ├── service/              # 业务逻辑
+│   │       ├── mapper/               # 数据访问
+│   │       ├── entity/               # 实体类
+│   │       └── dto/                  # 数据传输对象
+│   └── src/main/resources/
+│       ├── mapper/                   # MyBatis XML
+│       ├── db/                       # 数据库脚本
+│       └── application*.yml          # 配置文件
 │
-├── frontend/                  # 前端项目
-│   ├── src/
-│   │   ├── api/               # API 接口
-│   │   ├── assets/            # 静态资源
-│   │   ├── components/        # 公共组件
-│   │   ├── directives/        # 自定义指令
-│   │   ├── layout/            # 布局组件
-│   │   ├── router/            # 路由配置
-│   │   ├── store/             # 状态管理
-│   │   ├── utils/             # 工具函数
-│   │   ├── views/             # 页面组件
-│   │   │   ├── Dashboard.vue  # 首页
-│   │   │   ├── Login.vue      # 登录页
-│   │   │   ├── system/        # 系统管理
-│   │   │   ├── monitor/       # 系统监控
-│   │   │   ├── stock/         # 股票管理
-│   │   │   ├── message/       # 消息中心
-│   │   │   ├── profile/       # 个人中心
-│   │   │   └── Knowledge*.vue # 知识库
-│   │   ├── App.vue
-│   │   └── main.js
-│   └── package.json
-│
-└── docs/                      # 文档目录
+└── frontend/                         # 前端项目
+    ├── src/
+    │   ├── api/                      # API 接口封装
+    │   ├── components/               # 公共组件
+    │   ├── directives/               # 自定义指令 (权限控制)
+  yout/                   # 布局组件
+    │   ├── router/                   # 路由配置
+    │   ├── store/                    # Pinia 状态管理
+    │   ├── utils/                    # 工具函数
+    │   │   ├── request.js            # Axios 封装
+    │   │   └── route.js              # 动态路由生成
+    │   └── views/                    # 页面组件
+    │       ├── system/               # 系统管理页面
+    │       ├── stock/                # 股票分析页面
+    │       ├── message/              # 消息中心页面
+    │       └── monitor/              # 系统监控页面
+    └── vite.config.js                # Vite 配置
 ```
 
-## 功能模块
+## 核心功能
 
-### 系统管理
+### 1. 权限管理 (RBAC)
 
-- **用户管理**：用户的增删改查、状态管理、密码重置、角色分配
-- **角色管理**：角色的增删改查、权限分配、数据权限配置
-- **菜单管理**：菜单的树形管理、菜单权限、按钮权限
-- **部门管理**：部门的树形管理、部门层级关系
-- **枚举管理**：系统枚举值的管理、Redis 缓存
-- **全局变量**：系统参数配置、Redis 缓存
-- **行政区划**：省市区街道四级行政区划数据管理
-- **导出配置**：数据导出配置管理
-- **大模型配置**：AI 大模型接口配置（支持多条，选择生效）
+基于角色的访问控制，支持三级权限粒度：
 
-### 股票数据分析
+- **菜单权限**：控制用户可访问的菜单
+- **按钮权限**：控制用户可执行的操作
+- **数据权限**：控制用户可查看的数据范围
 
-- **股票列表**：股票基础信息查询、市场筛选
-- **K线图展示**：基于 ECharts 的 K 线图、MA 均线、成交量
-- **自选股票**：自选股票管理
-- **Token 管理**：API Token 轮询管理、使用统计
-- **映射配置**：数据字段映射配置
-- **股票推荐**：基于多规则评分的智能推荐
-- **规则配置**：推荐规则配置管理
-- **基金估值**：基金持仓估值计算与追踪
-- **同步失败记录**：数据同步失败重试管理
+数据权限支持 5 种模式：
+| 模式 | 说明 |
+|------|------|
+| 全部数据 | 无限制 |
+| 自定义 | 指定部门数据 |
+| 本部门 | 仅本部门数据 |
+| 本部门及以下 | 本部门及子部门数据 |
+| 仅本人 | 仅自己创建的数据 |
 
-### 知识库管理
+通过 `@DataScope` 注解 + MyBatis 拦截器实现，对业务代码无侵入：
 
-- **知识库管理**：知识库的增删改查
-- **文档管理**：Markdown 文档管理、目录组织
-- **标签管理**：文档标签管理
+```java
+@DataScope(deptAlias = "d", userAlias = "u")
+public List<User> selectUserList(UserQueryRequest request) {
+    return userMapper.selectUserList(request);
+}
+```
 
-### 消息中心
+### 2. 动态路由
 
-- **消息订阅**：用户消息订阅管理
-- **推送渠道**：支持飞书、钉钉、邮件等推送渠道
+前端根据用户权限动态生成路由，无需硬编码：
 
-### 系统监控
+```
+登录 → 获取菜单权限 → generateRoutes() → 注册到 Vue Router
+```
 
-- **服务器监控**：CPU、内存、JVM、磁盘等实时监控
-- **缓存监控**：Redis 信息、缓存键管理、缓存清理
+支持懒加载、路由缓存、面包屑导航。
 
-### 日志管理
+### 3. 股票数据分析
 
-- **操作日志**：记录用户的所有操作行为
-- **登录日志**：记录用户的登录信息
-- **文件日志**：记录文件操作日志
+#### 多数据源支持
 
-### 通知公告
+| 数据源 | 用途 |
+|--------|------|
+| iTick API | 港股/A股 K线数据 |
+| 东方财富 | 实时行情 |
+| 腾讯财经 | 实时行情备用 |
 
-- **通知管理**：通知的发布、编辑、删除
-- **我的通知**：查看个人通知、标记已读
-- **实时提醒**：顶部栏未读通知提醒
+#### 智能推荐引擎
 
-### 个人中心
+基于策略模式的多规则打分引擎，内置 10+ 技术分析策略：
 
-- **基本信息**：修改个人信息
-- **修改密码**：修改登录密码
-- **头像上传**：上传个人头像
-- **第三方登录绑定**：绑定飞书、微信等第三方账号
+| 策略 | 说明 |
+|------|------|
+| MACD 金叉 | DIF 上穿 DEA |
+| 均线多头 | MA5 > MA10 > MA20 |
+| 均线支撑 | 价格回踩均线 |
+| KDJ 金叉 | K 线上穿 D 线 |
+| RSI 超卖 | RSI < 30 |
+| 布林突破 | 价格突破上轨 |
+| 放量上涨 | 成交量放大 + 价格上涨 |
+| 连续上涨 | N 日连续收阳 |
+| 突破新高 | 创 N 日新高 |
 
-### 第三方登录
+每个策略可独立配置参数、权重、启用状态。
 
-- **飞书登录**：支持飞书 OAuth2 登录
-- **微信小程序登录**：支持微信小程序登录
+#### 基金估值
+
+根据基金持仓配置，实时计算基金估值涨跌幅：
+
+```
+估值涨跌幅 = Σ(持仓股票涨跌幅 × 权重)
+```
+
+### 4. AI 大模型集成
+
+基于 LangChain4j 实现，支持多个 AI 提供商：
+
+- 阿里云通义千问
+- 智谱 GLM
+- MiniMax
+- 其他 OpenAI 兼容接口
+
+支持动态切换生效配置，无需重启服务。
+
+### 5. 消息推送
+
+三层解耦架构，支持多渠道、多订阅类型：
+
+```
+定时任务触发
+    ↓
+MessagePushService.executePush(subType)
+    ↓
+ContentBuilder.build(userId)  →  生成内容
+    ↓
+ChannelSender.send(userId, message)  →  发送消息
+```
+
+扩展方式：
+- 新增渠道：实现 `ChannelSender` 接口
+- 新增订阅类型：实现 `ContentBuilder` 接口
+
+### 6. 导出配置
+
+可视化配置数据导出，支持：
+
+- 字段映射与排序
+- 数据脱敏 (手机号/身份证/银行卡)
+- 字典翻译
+- 异步导出大数据量
+- 多 Sheet 分页
 
 ## 快速开始
 
@@ -208,189 +244,240 @@ base/
 
 - JDK 8+
 - Maven 3.6+
-- MySQL 8.0+ (端口 13306)
+- MySQL 8.0+
 - Redis 6.0+
 - Node.js 16+
 
-### 后端启动
-
-1. **创建数据库**
-
-```sql
-CREATE DATABASE base_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-```
-
-2. **导入数据**
+### 1. 初始化数据库
 
 ```bash
-mysql -h127.0.0.1 -P13306 -uroot -p base_system < backend/src/main/resources/db/tables.sql
-mysql -h127.0.0.1 -P13306 -uroot -p base_system < backend/src/main/resources/db/data.sql
+# 创建数据库
+mysql -uroot -p -e "CREATE DATABASE base_system DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# 导入表结构和初始数据
+mysql -uroot -p base_system < backend/src/main/resources/db/tables.sql
+mysql -uroot -p base_system < backend/src/main/resources/db/data.sql
 ```
 
-3. **修改配置**
+### 2. 修改配置
 
-编辑 `backend/src/main/resources/application-dev.yml`，修改数据库和 Redis 连接信息
+编辑 `backend/src/main/resources/application-dev.yml`：
 
-4. **启动后端**
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/base_system?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: your_password
+  redis:
+    host: localhost
+    port: 6379
+```
 
-```bash
+### 3. 启动后端bash
 cd backend
-mvn clean package -DskipTests
-java -jar target/base-system-1.0.0.jar --spring.profiles.active=dev
+mvn spring-boot:run
 ```
 
-后端服务将在 `http://localhost:8080` 启动
+后端服务启动在 `http://localhost:8080`
 
-API 文档地址：`http://localhost:8080/doc.html`
+API 文档：`http://localhost:8080/doc.html`
 
-### 前端启动
-
-1. **安装依赖**
+### 4. 启动前端
 
 ```bash
 cd frontend
 npm install
-```
-
-2. **启动开发服务器**
-
-```bash
 npm run dev
 ```
 
-前端服务将在 `http://localhost:3000` 启动
+前端服务启动在 `http://localhost:3000`
 
-3. **构建生产版本**
-
-```bash
-npm run build
-```
-
-### 默认账号
+### 5. 默认账号
 
 | 用户名 | 密码 | 角色 |
 |--------|------|------|
 | admin | admin123 | 超级管理员 |
 | test | admin123 | 测试用户 |
 
-## 核心功能说明
+## 开发指南
 
-### 权限控制
+### 后端开发
 
-系统采用 RBAC（基于角色的访问控制）模型：
-- **菜单权限**：控制用户可以访问哪些菜单
-- **按钮权限**：控制用户可以执行哪些操作
-- **数据权限**：控制用户可以查看哪些数据
+```bash
+cd backend
+mvn spring-boot:run              # 启动开发服务器
+mvn clean install                # 构建项目
+mvn test                         # 运行测试
+mvn test -Dtest=ClassName        # 运行单个测试类
+```
 
-### 股票推荐引擎
+### 前端开发
 
-采用多规则评分引擎，支持：
-- 技术面分析（均线多头、MACD 金叉、成交量放大等）
-- 基本面分析（市盈率、市净率、涨幅等）
-- 动态评分规则配置
-- 可视化规则权重配置
+```bash
+cd frontend
+npm run dev                      # 启动开发服务器
+npm run build                    # 构建生产版本
+npm run preview                  # 预览生产构建
+```
 
-### AI 大模型集成
+### 添加新模块
 
-支持配置多个 AI 提供商：
-- 阿里云通义千问
-- 移动云 MiniMax
-- 联通云 MiniMax
-- 智谱 GLM
-- 可扩展支持更多提供商
+1. **后端**：在 `com.base` 下创建新包，按 controller/service/mapper/entity/dto 分层
+2. **前端**：在 `src/views` 下创建页面，在 `src/api` 下封装接口
+3. **权限**：在菜单管理中配置菜单和按钮权限
 
-## 部署说明
+### 添加打分策略
 
-详细部署文档请参考：[部署文档](docs/部署文档.md)
+1. 实现 `ScoreStrategy` 接口
+2. 添加 `@Component` 注解
+3. 在数据库 `stk_score_rule` 表中配置规则
 
-### 生产环境部署
+```java
+@Component
+public class MyStrategy implements ScoreStrategy {
+    @Override
+    public String getStrategyCode() { return "MY_STRATEGY"; }
+    
+    @Override
+    public ScoreResult execute(ScoreContext context) {
+        // 实现打分逻辑
+    }
+}
+```
 
-1. **后端配置**
-   - 修改 `application-prod.yml` 配置文件
-   - 配置生产环境的数据库和 Redis
-   - 配置文件上传路径 `/data/upload/`
-   - 配置 JWT 密钥
+### 添加消息渠道
 
-2. **前端配置**
-   - 修改 `.env.production` 配置文件
-   - 配置生产环境的 API 地址
-   - 执行 `npm run build` 构建生产版本
+实现 `ChannelSender` 接口：
 
-3. **部署方式**
-   - **后端**：打包成 JAR 文件，使用 `java -jar` 运行
-   - **前端**：将 `dist` 目录部署到 Nginx
+```java
+@Component
+public class EmailChannelSender implements ChannelSender {
+    @Override
+    public String getChannel() { return "email"; }
+    
+    @Override
+    public void send(Long userId, String message) {
+        // 实现发送逻辑
+    }
+}
+```
 
-## 访问地址
+## 部署
 
-| 服务 | 地址 |
+### 生产环境配置
+
+1. 修改 `application-prod.yml` 配置数据库、Redis、JWT 密钥
+2. 配置文件上传路径
+3. 前端修改 `.env.production` 配置 API 地址
+
+### 构建
+
+```bash
+# 后端
+cd backend
+mvn clean package -DskipTests
+java -jar target/base-system-1.0.0.jar --spring.profiles.active=prod
+
+# 前端
+cd frontend
+npm run b 将 dist 目录部署到 Nginx
+```
+
+### Docker 构建 (低内存)
+
+```bash
+cd frontend
+VITE_LOW_MEM=1 npm run build
+```
+
+## 数据库设计
+
+### 核心表
+
+| 表名 | 说明 |
 |------|------|
-| 前端 | http://119.45.176.101 |
-| API 文档 | http://119.45.176.101/doc.html |
+| sys_user | 用户表 |
+| sys_role | 角色表 |
+| sys_permission | 权限表 |
+| sys_dept | 部门表 |
+| sys_user_role | 用户角色关联 |
+| sys_role_permission | 角色权限关联 |
+| sys_role_department | 角色数据权限 |
+
+### 股票模块表
+
+| 表名 | 说明 |
+|------|------|
+| stk_stock_info | 股票基础信息 |
+| stk_kline_daily | 日K线数据 |
+| stk_score_rule | 打分规则配置 |
+| stk_score_record | 打分记录 |
+| stk_recommend | 推荐股票 |
+| stk_fund_config | 基金配置 |
+| stk_fund_holding | 基金持仓 |
+| stk_watchlist | 自选股票 |
+
+### 消息模块表
+
+| 表名 | 说明 |
+|------|------|
+cription | 消息订阅 |
+
+### 知识库模块表
+
+| 表名 | 说明 |
+|------|------|
+| kb_knowledge_base | 知识库 |
+| kb_document | 文档 |
+| kb_directory | 目录 |
+| kb_tag | 标签 |
+
+## API 响应格式
+
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {}
+}
+```
+
+| code | 说明 |
+|------|------|
+| 200 | 成功 |
+| 400 | 参数错误 |
+| 401 | 未授权 |
+| 403 | 禁止访问 |
+| 500 | 服务器错误 |
 
 ## 更新日志
 
-### v1.2.0 (2026-03-27)
+### v1.2.0 (2026-03)
 
-- ✨ 新增知识库管理模块
-  - 知识库 CRUD
-  - Markdown 文档管理
-  - 目录树管理
-  - 标签管理
-- ✨ 新增消息推送模块
-  - 消息订阅管理
-  - 多渠道支持（飞书、钉钉、邮件）
-- ✨ 新增文件管理模块
-  - 文件上传、下载、预览
-  - 文件操作日志
-- ✨ 新增大模型配置模块
-  - 多 AI 提供商支持
-  - 动态切换生效配置
-- ✨ 新增导出配置模块
-  - 可视化导出配置
-  - 字段映射与脱敏
-  - 异步导出任务
-- 🐛 优化股票推荐引擎性能
-- 🐛 修复多处已知问题
+- 新增知识库管理模块
+- 新增消息推送模块 (飞书/钉钉/邮件)
+- 新增文件管理模块
+- 新增大模型配置模块
+- 新增导出配置模块
+- 优化股票推荐引擎性能
 
-### v1.1.0 (2026-01-29)
+### v1.1.0 (2026-01)
 
-- ✨ 新增股票数据分析模块
-  - 股票列表查询（支持港股、A股）
-  - K 线图展示（ECharts 实现，支持 MA 均线）
-  - 自选股票管理
-  - API Token 轮询管理
-  - 数据字段映射配置
-  - iTick API 数据同步
-- ✨ 新增行政区划管理（省市区街道四级）
-- ✨ 新增按钮级别权限控制
-- 🐛 修复刷新页面后权限数据丢失问题
-- 🐛 修复角色权限分配功能
+- 新增股票数据分析模块
+- 新增行政区划管理
+- 新权限控制
+- 修复权限数据刷新丢失问题
 
-### v1.0.0 (2026-01-14)
+### v1.0.0 (2026-01)
 
-- ✨ 完成用户、角色、权限、部门管理
-- ✨ 完成枚举、全局变量管理
-- ✨ 完成操作日志、登录日志管理
-- ✨ 完成通知公告管理
-- ✨ 完成个人中心功能
-- ✨ 完成数据权限控制
-- ✨ 完成系统监控功能
-- ✨ 完成前端动态路由
+- 完成用户、角色、权限、部门管理
+- 完成枚举、全局变量管理
+- 完成操作日志、登录日志管理
+- 完成通知公告管理
+- 完成数据权限控制
+- 完成系统监控功能
 
-## 贡献指南
+## 许可证
 
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本仓库
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 提交 Pull Request
-
-## 开源协议
-
-本项目采用 MIT 协议开源。
-
----
-
-**注意**：本项目仅供学习交流，不可用于商业用途。
+MIT License

@@ -126,3 +126,10 @@ export function getProcessInstance(id) {
     method: 'get'
   })
 }
+
+export function getBpmnXml(id) {
+  return request({
+    url: `/workflow/definition/${id}/bpmn`,
+    method: 'get'
+  })
+}

@@ -1,10 +1,6 @@
 package com.base.workflow.service;
 
 import com.base.workflow.dto.*;
-import com.base.workflow.entity.ProcessDefinition;
-import com.base.workflow.entity.ProcessHistory;
-import com.base.workflow.entity.ProcessInstance;
-import com.base.workflow.entity.ProcessTask;
 
 import java.util.List;
 
@@ -16,7 +12,7 @@ public interface ProcessEngineService {
     /**
      * 发起流程
      */
-    ProcessInstance startProcess(StartProcessRequest request, String operator);
+    ProcessInstanceResponse startProcess(StartProcessRequest request, String operator);
 
     /**
      * 审批任务
@@ -36,7 +32,7 @@ public interface ProcessEngineService {
     /**
      * 终止流程
      */
-    void terminateProcess(Long instanceId, String operator, String comment);
+    void terminateProcess(String processInstanceId, String operator, String comment);
 
     /**
      * 获取我的待办任务
@@ -46,25 +42,20 @@ public interface ProcessEngineService {
     /**
      * 获取我发起的流程
      */
-    List<ProcessInstance> getMyInitiatedProcesses(String initiator);
+    List<ProcessInstanceResponse> getMyInitiatedProcesses(String initiator);
 
     /**
      * 获取流程历史
      */
-    List<ProcessHistory> getProcessHistory(Long instanceId);
+    List<ProcessHistoryResponse> getProcessHistory(String processInstanceId);
 
     /**
      * 获取当前任务列表
      */
-    List<ProcessTask> getCurrentTasks(Long instanceId);
-
-    /**
-     * 获取流程定义详情
-     */
-    ProcessDefinitionResponse getProcessDefinitionDetail(Long id);
+    List<TaskResponse> getCurrentTasks(String processInstanceId);
 
     /**
      * 获取流程实例详情
      */
-    ProcessInstance getProcessInstanceDetail(Long instanceId);
+    ProcessInstanceResponse getProcessInstanceDetail(String processInstanceId);
 }

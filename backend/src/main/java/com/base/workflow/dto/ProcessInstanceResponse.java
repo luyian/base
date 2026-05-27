@@ -6,13 +6,10 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 /**
- * 任务详情响应
+ * 流程实例响应
  */
 @Data
-public class TaskResponse {
-
-    /** Flowable 任务ID */
-    private String id;
+public class ProcessInstanceResponse {
 
     /** Flowable 流程实例ID */
     private String processInstanceId;
@@ -23,20 +20,24 @@ public class TaskResponse {
 
     private String processName;
 
-    /** 当前活动ID */
-    private String activityId;
+    private String businessKey;
 
-    /** 当前活动名称 */
-    private String activityName;
-
-    private String assignee;
+    private String businessType;
 
     private String title;
 
-    private String businessKey;
-
+    /** 发起人 */
     private String initiator;
 
+    /** 当前活动名称 */
+    private String currentActivityName;
+
+    /** 流程状态: RUNNING / COMPLETED / TERMINATED */
+    private String status;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private LocalDateTime createTime;
+    private LocalDateTime startTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime endTime;
 }

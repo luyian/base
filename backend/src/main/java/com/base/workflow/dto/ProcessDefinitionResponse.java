@@ -1,10 +1,10 @@
 package com.base.workflow.dto;
 
-import com.base.workflow.entity.ProcessDefinition;
+import com.base.workflow.entity.FlowableDefinitionExt;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * 流程定义详情响应
@@ -12,56 +12,53 @@ import java.util.List;
 @Data
 public class ProcessDefinitionResponse {
 
+    /** 扩展表ID */
     private Long id;
+
+    /** Flowable 流程定义ID */
+    private String processDefinitionId;
+
+    /** Flowable 部署ID */
+    private String deploymentId;
+
     private String processKey;
+
     private String processName;
+
     private String category;
+
     private Integer version;
+
+    /** 状态(0草稿 1已发布 2禁用) */
     private Integer status;
+
     private String description;
+
+    /** BPMN XML 内容 */
+    private String bpmnXml;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
+
     private String createBy;
 
-    private List<NodeResponse> nodes;
-    private List<NodeRelationResponse> nodeRelations;
-
-    @Data
-    public static class NodeResponse {
-        private Long id;
-        private String nodeKey;
-        private String nodeName;
-        private String nodeType;
-        private String eventHandler;
-        private String candidateType;
-        private String candidateConfig;
-        private String approveType;
-        private Double approveRatio;
-        private Integer canRollback;
-        private String rollbackNodes;
-        private Integer positionX;
-        private Integer positionY;
-    }
-
-    @Data
-    public static class NodeRelationResponse {
-        private Long id;
-        private String sourceNodeKey;
-        private String targetNodeKey;
-        private String conditionExpr;
-        private String relationName;
-    }
-
-    public static ProcessDefinitionResponse fromEntity(ProcessDefinition definition) {
+    /**
+     * 从扩展表实体转换
+     */
+    public static ProcessDefinitionResponse fromEntity(FlowableDefinitionExt ext) {
         ProcessDefinitionResponse response = new ProcessDefinitionResponse();
-        response.setId(definition.getId());
-        response.setProcessKey(definition.getProcessKey());
-        response.setProcessName(definition.getProcessName());
-        response.setCategory(definition.getCategory());
-        response.setVersion(definition.getVersion());
-        response.setStatus(definition.getStatus());
-        response.setDescription(definition.getDescription());
-        response.setCreateTime(definition.getCreateTime());
-        response.setCreateBy(definition.getCreateBy());
+        response.setId(ext.getId());
+        response.setProcessDefinitionId(ext.getProcessDefinitionId());
+        response.setDeploymentId(ext.getDeploymentId());
+        response.setProcessKey(ext.getProcessKey());
+        response.setProcessName(ext.getProcessName());
+        response.setCategory(ext.getCategory());
+        response.setVersion(ext.getVersion());
+        response.setStatus(ext.getStatus());
+        response.setDescription(ext.getDescription());
+        response.setBpmnXml(ext.getBpmnXml());
+        response.setCreateTime(ext.getCreateTime());
+        response.setCreateBy(ext.getCreateBy());
         return response;
     }
 }

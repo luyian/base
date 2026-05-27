@@ -31,54 +31,38 @@ public class NodeEventHandlerManager {
     }
 
     /**
-     * 触发节点进入事件
+     * 触发事件
+     *
+     * @param handlerKey 处理器标识
+     * @param eventType  事件类型：start / end / beforeApprove / afterApprove / complete / terminate
+     * @param context    流程上下文
      */
-    public void triggerOnEnter(ProcessContext context) {
-        if (context.getCurrentNode() == null || context.getCurrentNode().getEventHandler() == null) {
+    public void trigger(String handlerKey, String eventType, ProcessContext context) {
+        if (handlerKey == null || handlerKey.isEmpty()) {
             return;
         }
-        NodeEventHandler handler = getHandler(context.getCurrentNode().getEventHandler());
-        if (handler != null) {
-            handler.onEnter(context);
-        }
-    }
-
-    /**
-     * 触发审批前事件
-     */
-    public void triggerBeforeApprove(ProcessContext context) {
-        if (context.getCurrentNode() == null || context.getCurrentNode().getEventHandler() == null) {
+        NodeEventHandler handler = getHandler(handlerKey);
+        if (handler == null) {
             return;
         }
-        NodeEventHandler handler = getHandler(context.getCurrentNode().getEventHandler());
-        if (handler != null) {
-            handler.beforeApprove(context);
-        }
-    }
-
-    /**
-     * 触发审批后事件
-     */
-    public void triggerAfterApprove(ProcessContext context) {
-        if (context.getCurrentNode() == null || context.getCurrentNode().getEventHandler() == null) {
-            return;
-        }
-        NodeEventHandler handler = getHandler(context.getCurrentNode().getEventHandler());
-        if (handler != null) {
-            handler.afterApprove(context);
-        }
-    }
-
-    /**
-     * 触发流程完成事件
-     */
-    public void triggerOnComplete(ProcessContext context) {
-        if (context.getCurrentNode() == null || context.getCurrentNode().getEventHandler() == null) {
-            return;
-        }
-        NodeEventHandler handler = getHandler(context.getCurrentNode().getEventHandler());
-        if (handler != null) {
-            handler.onComplete(context);
+        switch (eventType) {
+            case "start":
+                handler.onEnter(context);
+                break;
+            case "end":
+                handler.afterApprove(context);
+                break;
+            case "beforeApprove":
+                handler.beforeApprove(context);
+                break;
+            case "complete":
+                handler.onComplete(context);
+                break;
+            case "terminate":
+                handler.onTerminate(context);
+                break;
+            default:
+                break;
         }
     }
 }

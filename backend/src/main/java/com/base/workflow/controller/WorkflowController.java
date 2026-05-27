@@ -2,10 +2,6 @@ package com.base.workflow.controller;
 
 import com.base.common.result.Result;
 import com.base.workflow.dto.*;
-import com.base.workflow.entity.ProcessDefinition;
-import com.base.workflow.entity.ProcessHistory;
-import com.base.workflow.entity.ProcessInstance;
-import com.base.workflow.entity.ProcessTask;
 import com.base.workflow.service.ProcessDefinitionService;
 import com.base.workflow.service.ProcessEngineService;
 import com.base.util.SecurityUtils;
@@ -31,21 +27,23 @@ public class WorkflowController {
     @Autowired
     private ProcessEngineService processEngineService;
 
+    // ==================== 流程定义管理 ====================
+
     @ApiOperation("创建流程定义")
     @PostMapping("/definition")
-    public Result<ProcessDefinition> save(@Valid @RequestBody ProcessDefinitionSaveRequest request) {
+    public Result<ProcessDefinitionResponse> save(@Valid @RequestBody ProcessDefinitionSaveRequest request) {
         String operator = SecurityUtils.getCurrentUsername();
-        ProcessDefinition definition = processDefinitionService.save(request, operator);
-        return Result.success(definition);
+        ProcessDefinitionResponse response = processDefinitionService.save(request, operator);
+        return Result.success(response);
     }
 
     @ApiOperation("更新流程定义")
     @PutMapping("/definition/{id}")
-    public Result<ProcessDefinition> update(@PathVariable Long id,
-                                            @Valid @RequestBody ProcessDefinitionSaveRequest request) {
+    public Result<ProcessDefinitionResponse> update(@PathVariable Long id,
+                                                    @Valid @RequestBody ProcessDefinitionSaveRequest request) {
         String operator = SecurityUtils.getCurrentUsername();
-        ProcessDefinition definition = processDefinitionService.update(id, request, operator);
-        return Result.success(definition);
+        ProcessDefinitionResponse response = processDefinitionService.update(id, request, operator);
+        return Result.success(response);
     }
 
     @ApiOperation("删除流程定义")
@@ -71,37 +69,68 @@ public class WorkflowController {
 
     @ApiOperation("流程定义列表")
     @GetMapping("/definition/list")
-    public Result<List<ProcessDefinition>> list(
+    public Result<List<ProcessDefinitionResponse>> list(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer status) {
-        List<ProcessDefinition> list = processDefinitionService.list(category, keyword, status);
+        List<ProcessDefinitionResponse> list = processDefinitionService.list(category, keyword, status);
         return Result.success(list);
     }
 
     @ApiOperation("获取流程定义详情")
     @GetMapping("/definition/{id}")
     public Result<ProcessDefinitionResponse> getById(@PathVariable Long id) {
-        ProcessDefinitionResponse detail = processEngineService.getProcessDefinitionDetail(id);
+        ProcessDefinitionResponse detail = processDefinitionService.getById(id);
         return Result.success(detail);
     }
 
+    @ApiOperation("获取 BPMN XML")
+    @GetMapping("/definition/{id}/bpmn")
+    public Result<String> getBpmnXml(@PathVariable Long id) {
+        return Result.success(processDefinitionService.getBpmnXml(id));
+    }
+
+    // ==================== 流程实例管理 ====================
+
     @ApiOperation("发起流程")
     @PostMapping("/instance/start")
-    public Result<ProcessInstance> startProcess(@Valid @RequestBody StartProcessRequest request) {
+    public Result<ProcessInstanceResponse> startProcess(@Valid @RequestBody StartProcessRequest request) {
         String operator = SecurityUtils.getCurrentUsername();
-        ProcessInstance instance = processEngineService.startProcess(request, operator);
+        ProcessInstanceResponse instance = processEngineService.startProcess(request, operator);
         return Result.success(instance);
     }
 
     @ApiOperation("终止流程")
-    @PostMapping("/instance/{id}/terminate")
-    public Result<Void> terminateProcess(@PathVariable Long id,
+    @PostMapping("/instance/{processInstanceId}/terminate")
+    public Result<Void> terminateProcess(@PathVariable String processInstanceId,
                                          @RequestParam(required = false) String comment) {
         String operator = SecurityUtils.getCurrentUsername();
-        processEngineService.terminateProcess(id, operator, comment);
+        processEngineService.terminateProcess(processInstanceId, operator, comment);
         return Result.success();
     }
+
+    @ApiOperation("获取流程实例详情")
+    @GetMapping("/instance/{processInstanceId}")
+    public Result<ProcessInstanceResponse> getInstanceDetail(@PathVariable String processInstanceId) {
+        ProcessInstanceResponse instance = processEngineService.getProcessInstanceDetail(processInstanceId);
+        return Result.success(instance);
+    }
+
+    @ApiOperation("获取流程历史")
+    @GetMapping("/instance/{processInstanceId}/history")
+    public Result<List<ProcessHistoryResponse>> getProcessHistory(@PathVariable String processInstanceId) {
+        List<ProcessHistoryResponse> history = processEngineService.getProcessHistory(processInstanceId);
+        return Result.success(history);
+    }
+
+    @ApiOperation("获取当前任务列表")
+    @GetMapping("/instance/{processInstanceId}/tasks")
+    public Result<List<TaskResponse>> getCurrentTasks(@PathVariable String processInstanceId) {
+        List<TaskResponse> tasks = processEngineService.getCurrentTasks(processInstanceId);
+        return Result.success(tasks);
+    }
+
+    // ==================== 任务处理 ====================
 
     @ApiOperation("获取我的待办任务")
     @GetMapping("/my/tasks")
@@ -113,9 +142,9 @@ public class WorkflowController {
 
     @ApiOperation("获取我发起的流程")
     @GetMapping("/my/initiated")
-    public Result<List<ProcessInstance>> getMyInitiated() {
+    public Result<List<ProcessInstanceResponse>> getMyInitiated() {
         String operator = SecurityUtils.getCurrentUsername();
-        List<ProcessInstance> list = processEngineService.getMyInitiatedProcesses(operator);
+        List<ProcessInstanceResponse> list = processEngineService.getMyInitiatedProcesses(operator);
         return Result.success(list);
     }
 
@@ -141,26 +170,5 @@ public class WorkflowController {
         String operator = SecurityUtils.getCurrentUsername();
         processEngineService.delegateTask(request, operator);
         return Result.success();
-    }
-
-    @ApiOperation("获取流程历史")
-    @GetMapping("/instance/{id}/history")
-    public Result<List<ProcessHistory>> getProcessHistory(@PathVariable Long id) {
-        List<ProcessHistory> history = processEngineService.getProcessHistory(id);
-        return Result.success(history);
-    }
-
-    @ApiOperation("获取当前任务列表")
-    @GetMapping("/instance/{id}/tasks")
-    public Result<List<ProcessTask>> getCurrentTasks(@PathVariable Long id) {
-        List<ProcessTask> tasks = processEngineService.getCurrentTasks(id);
-        return Result.success(tasks);
-    }
-
-    @ApiOperation("获取流程实例详情")
-    @GetMapping("/instance/{id}")
-    public Result<ProcessInstance> getInstanceDetail(@PathVariable Long id) {
-        ProcessInstance instance = processEngineService.getProcessInstanceDetail(id);
-        return Result.success(instance);
     }
 }

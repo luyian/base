@@ -22,7 +22,7 @@
       <el-table :data="tableData" style="width: 100%" v-loading="loading">
         <el-table-column prop="title" label="流程标题" min-width="200" show-overflow-tooltip />
         <el-table-column prop="processName" label="流程名称" width="150" />
-        <el-table-column prop="currentNodeName" label="当前节点" width="150" />
+        <el-table-column prop="currentActivityName" label="当前节点" width="150" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusTagType(row.status)">
@@ -45,7 +45,7 @@
       <el-descriptions :column="2" border>
         <el-descriptions-item label="流程标题">{{ currentRow?.title }}</el-descriptions-item>
         <el-descriptions-item label="流程名称">{{ currentRow?.processName }}</el-descriptions-item>
-        <el-descriptions-item label="当前节点">{{ currentRow?.currentNodeName || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="当前节点">{{ currentRow?.currentActivityName || '-' }}</el-descriptions-item>
         <el-descriptions-item label="状态">
           <el-tag :type="getStatusTagType(currentRow?.status)">
             {{ getStatusText(currentRow?.status) }}
@@ -57,15 +57,15 @@
 
       <el-divider>审批历史</el-divider>
       <el-table :data="historyData" style="width: 100%">
-        <el-table-column prop="nodeName" label="节点" width="150" />
-        <el-table-column prop="operatorName" label="操作人" width="120" />
+        <el-table-column prop="activityName" label="节点" width="150" />
+        <el-table-column prop="assigneeName" label="操作人" width="120" />
         <el-table-column prop="action" label="操作" width="100">
           <template #default="{ row }">
             {{ getActionText(row.action) }}
           </template>
         </el-table-column>
         <el-table-column prop="comment" label="意见" min-width="200" />
-        <el-table-column prop="createTime" label="时间" width="180" />
+        <el-table-column prop="endTime" label="时间" width="180" />
       </el-table>
     </el-dialog>
   </div>
@@ -112,7 +112,7 @@ const handleReset = () => {
 const handleView = async (row) => {
   currentRow.value = row
   try {
-    const res = await getProcessHistory(row.id)
+    const res = await getProcessHistory(row.processInstanceId)
     historyData.value = res.data || []
   } catch (e) {
     historyData.value = []
@@ -123,7 +123,7 @@ const handleView = async (row) => {
 const handleTerminate = async (row) => {
   try {
     await ElMessageBox.confirm('确定要终止此流程吗？', '提示', { type: 'warning' })
-    await terminateProcess(row.id)
+    await terminateProcess(row.processInstanceId)
     ElMessage.success('终止成功')
     getList()
   } catch (e) {

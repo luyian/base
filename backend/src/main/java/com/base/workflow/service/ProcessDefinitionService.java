@@ -1,7 +1,7 @@
 package com.base.workflow.service;
 
+import com.base.workflow.dto.ProcessDefinitionResponse;
 import com.base.workflow.dto.ProcessDefinitionSaveRequest;
-import com.base.workflow.entity.ProcessDefinition;
 
 import java.util.List;
 
@@ -11,14 +11,14 @@ import java.util.List;
 public interface ProcessDefinitionService {
 
     /**
-     * 创建流程定义
+     * 保存流程定义（草稿）
      */
-    ProcessDefinition save(ProcessDefinitionSaveRequest request, String operator);
+    ProcessDefinitionResponse save(ProcessDefinitionSaveRequest request, String operator);
 
     /**
      * 更新流程定义
      */
-    ProcessDefinition update(Long id, ProcessDefinitionSaveRequest request, String operator);
+    ProcessDefinitionResponse update(Long id, ProcessDefinitionSaveRequest request, String operator);
 
     /**
      * 删除流程定义
@@ -26,27 +26,27 @@ public interface ProcessDefinitionService {
     void delete(Long id);
 
     /**
-     * 发布流程定义
+     * 发布流程定义（部署到 Flowable 引擎）
      */
     void publish(Long id);
 
     /**
-     * 禁用流程定义
+     * 禁用流程定义（挂起 Flowable 流程定义）
      */
     void disable(Long id);
 
     /**
      * 获取流程定义列表
      */
-    List<ProcessDefinition> list(String category, String keyword, Integer status);
+    List<ProcessDefinitionResponse> list(String category, String keyword, Integer status);
 
     /**
-     * 获取流程定义详情
+     * 获取流程定义详情（含 BPMN XML）
      */
-    ProcessDefinition getById(Long id);
+    ProcessDefinitionResponse getById(Long id);
 
     /**
-     * 根据流程Key获取最新发布的流程定义
+     * 获取 BPMN XML 内容
      */
-    ProcessDefinition getLatestPublished(String processKey);
+    String getBpmnXml(Long id);
 }

@@ -22,7 +22,7 @@
       <el-table :data="tableData" style="width: 100%" v-loading="loading">
         <el-table-column prop="title" label="流程标题" min-width="200" show-overflow-tooltip />
         <el-table-column prop="processName" label="流程名称" width="150" />
-        <el-table-column prop="nodeName" label="当前节点" width="150" />
+        <el-table-column prop="activityName" label="当前节点" width="150" />
         <el-table-column prop="createTime" label="到达时间" width="180" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">

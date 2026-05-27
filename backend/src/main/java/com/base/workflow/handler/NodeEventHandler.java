@@ -1,9 +1,5 @@
 package com.base.workflow.handler;
 
-import com.base.workflow.entity.ProcessInstance;
-import com.base.workflow.entity.ProcessNode;
-import com.base.workflow.entity.ProcessTask;
-
 /**
  * 节点事件处理器接口
  */

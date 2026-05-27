@@ -8,7 +8,7 @@ spring:
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${DB_HOST:127.0.0.1}:${DB_PORT:13306}/${DB_NAME:base_system}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://${DB_HOST:mysql}:${DB_PORT:3306}/${DB_NAME:base_system}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:NiCaiCai@@}
     druid:
@@ -25,7 +25,7 @@ spring:
 
   # Redis 配置
   redis:
-    host: ${REDIS_HOST:127.0.0.1}
+    host: ${REDIS_HOST:redis}
     port: ${REDIS_PORT:6379}
     password: ${REDIS_PASSWORD:}
     database: 0
@@ -45,6 +45,7 @@ logging:
   file:
     name: /app/logs/base-system.log
   timezone: GMT+8
+
 # 验证码配置
 captcha:
   enabled: true
@@ -69,45 +70,35 @@ export:
     max-size: 5
     queue-capacity: 100
     thread-name-prefix: export-
+
 # 股票同步配置
 stock:
   sync:
-    # 每个线程需要的Token数量
     tokens-per-thread: 6
-    # 最大线程数
     max-threads: 10
-    # 获取Token的超时时间（毫秒）
     token-acquire-timeout: 30000
-    # 失败最大重试次数
     max-retry-count: 3
-    # 批量同步阈值（超过此数量使用批量接口）
     batch-threshold: 100
-    # 批量请求大小
     batch-size: 100
-  # 报价数据源配置
   quote:
-    # 主数据源: eastmoney / itick / tencent
     source: tencent
-    # 是否启用降级
     fallback-enabled: false
-    # 降级数据源
     fallback-source: eastmoney
 
-# OAuth 第三方登录配置
 # 飞书配置
 feishu:
   enabled: true
-  app-id: cli_a906a4c972f99bcc
-  app-secret: x7RQFPRqzVKNnurLmrq5CgXESbDItgmM
+  app-id: ${FEISHU_APP_ID:cli_a906a4c972f99bcc}
+  app-secret: ${FEISHU_APP_SECRET:x7RQFPRqzVKNnurLmrq5CgXESbDItgmM}
   base-url: https://open.feishu.cn/open-apis
   timeout: 30000
   retry: 3
-  redirect-uri: http://119.45.176.101/oauth/callback?platform=feishu
+  redirect-uri: ${FEISHU_REDIRECT_URI:http://localhost/oauth/callback?platform=feishu}
 
 oauth:
   enabled: false
   github:
-    client-id: your-github-client-id
-    client-secret: your-github-client-secret
-    redirect-uri: http://localhost:3000/oauth/callback
+    client-id: ${GITHUB_CLIENT_ID:your-github-client-id}
+    client-secret: ${GITHUB_CLIENT_SECRET:your-github-client-secret}
+    redirect-uri: http://localhost/oauth/callback
   default-role-id: 2

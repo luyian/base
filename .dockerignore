@@ -1,5 +1,6 @@
 # 依赖目录
 frontend/node_modules
+backend/target
 
 # IDE
 .idea
@@ -24,3 +25,6 @@ docs/
 
 # Claude
 .claude
+
+# 环境文件
+.env

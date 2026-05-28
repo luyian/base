@@ -2,7 +2,7 @@ package com.base.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.base.common.util.FastDFSClient;
+import com.base.common.service.CosService;
 import com.base.system.entity.SysFile;
 import com.base.system.entity.SysFileLog;
 import com.base.system.mapper.SysFileLogMapper;
@@ -19,11 +19,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -39,6 +36,9 @@ public class FileServiceImpl implements FileService {
 
     @Autowired
     private SysFileLogMapper sysFileLogMapper;
+
+    @Autowired
+    private CosService cosService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -63,16 +63,12 @@ public class FileServiceImpl implements FileService {
             Long currentUserId = SecurityUtils.getCurrentUserId();
             String currentUsername = SecurityUtils.getCurrentUsername();
 
-            // 上传到 FastDFS
+            // 上传到 COS
             String originalName = file.getOriginalFilename();
-            String filePath = FastDFSClient.uploadFile(file.getBytes(), originalName);
-            
-            if (filePath == null) {
-                throw new RuntimeException("文件上传到FastDFS失败");
-            }
+            String fileExt = getFileExt(originalName);
+            String filePath = cosService.uploadFile(file.getBytes(), fileGroup, fileExt);
 
             // 获取文件信息
-            String fileExt = getFileExt(originalName);
             long fileSize = file.getSize();
             String fileType = file.getContentType();
 
@@ -84,7 +80,7 @@ public class FileServiceImpl implements FileService {
             sysFile.setFileSize(fileSize);
             sysFile.setFileType(fileType);
             sysFile.setFilePath(filePath);
-            sysFile.setFileUrl(FastDFSClient.getFileUrl(filePath));
+            sysFile.setFileUrl(filePath);
             sysFile.setFileGroup(fileGroup);
             sysFile.setFileDesc(fileDesc);
             sysFile.setStatus(1);
@@ -106,7 +102,7 @@ public class FileServiceImpl implements FileService {
             fileLog.setFileName(originalName);
             fileLog.setFilePath(filePath);
             fileLog.setFileSize(fileSize);
-            fileLog.setOperationType(1); // 上传
+            fileLog.setOperationType(1);
             fileLog.setStatus(1);
             fileLog.setExecuteTime((int) executeTime);
             fileLog.setCreateTime(LocalDateTime.now());
@@ -119,7 +115,6 @@ public class FileServiceImpl implements FileService {
             long executeTime = System.currentTimeMillis() - startTime;
             logger.error("文件上传失败", e);
 
-            // 记录失败日志
             fileLog.setOperationType(1);
             fileLog.setStatus(0);
             fileLog.setErrorMsg(e.getMessage());
@@ -147,16 +142,12 @@ public class FileServiceImpl implements FileService {
         fileLog.setLocation("");
 
         try {
-            // 上传到 FastDFS
+            // 上传到 COS
             String originalName = file.getOriginalFilename();
-            String filePath = FastDFSClient.uploadFile(file.getBytes(), originalName);
-
-            if (filePath == null) {
-                throw new RuntimeException("文件上传到FastDFS失败");
-            }
+            String fileExt = getFileExt(originalName);
+            String filePath = cosService.uploadFile(file.getBytes(), fileGroup, fileExt);
 
             // 获取文件信息
-            String fileExt = getFileExt(originalName);
             long fileSize = file.getSize();
             String fileType = file.getContentType();
 
@@ -168,7 +159,7 @@ public class FileServiceImpl implements FileService {
             sysFile.setFileSize(fileSize);
             sysFile.setFileType(fileType);
             sysFile.setFilePath(filePath);
-            sysFile.setFileUrl(FastDFSClient.getFileUrl(filePath));
+            sysFile.setFileUrl(filePath);
             sysFile.setFileGroup(fileGroup);
             sysFile.setFileDesc(fileDesc);
             sysFile.setUploadUserName(uploaderName);
@@ -216,23 +207,40 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public SysFile getFileById(Long id) {
-        return sysFileMapper.selectById(id);
+        SysFile file = sysFileMapper.selectById(id);
+        resolveFileUrl(file);
+        return file;
+    }
+
+    @Override
+    public SysFile getFileByCosKey(String cosKey) {
+        if (cosKey == null || cosKey.isEmpty()) {
+            return null;
+        }
+        LambdaQueryWrapper<SysFile> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysFile::getFilePath, cosKey);
+        wrapper.last("LIMIT 1");
+        SysFile file = sysFileMapper.selectOne(wrapper);
+        resolveFileUrl(file);
+        return file;
     }
 
     @Override
     public Page<SysFile> pageFiles(Long pageNum, Long pageSize, String fileName, String fileGroup) {
         Page<SysFile> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<SysFile> wrapper = new LambdaQueryWrapper<>();
-        
+
         if (fileName != null && !fileName.isEmpty()) {
             wrapper.like(SysFile::getOriginalName, fileName);
         }
         if (fileGroup != null && !fileGroup.isEmpty()) {
             wrapper.eq(SysFile::getFileGroup, fileGroup);
         }
-        
+
         wrapper.orderByDesc(SysFile::getCreateTime);
-        return sysFileMapper.selectPage(page, wrapper);
+        Page<SysFile> result = sysFileMapper.selectPage(page, wrapper);
+        result.getRecords().forEach(this::resolveFileUrl);
+        return result;
     }
 
     @Override
@@ -243,11 +251,8 @@ public class FileServiceImpl implements FileService {
             throw new RuntimeException("文件不存在");
         }
 
-        // 从 FastDFS 删除
-        boolean deleted = FastDFSClient.deleteFile(sysFile.getFilePath());
-        if (!deleted) {
-            logger.warn("从FastDFS删除文件失败: {}", sysFile.getFilePath());
-        }
+        // 从 COS 删除
+        cosService.deleteFile(sysFile.getFilePath());
 
         // 删除数据库记录
         sysFileMapper.deleteById(id);
@@ -281,11 +286,8 @@ public class FileServiceImpl implements FileService {
                 throw new RuntimeException("文件不存在");
             }
 
-            // 从 FastDFS 下载
-            byte[] fileBytes = FastDFSClient.downloadFile(sysFile.getFilePath());
-            if (fileBytes == null) {
-                throw new RuntimeException("从FastDFS下载文件失败");
-            }
+            // 从 COS 下载
+            byte[] fileBytes = cosService.downloadFile(sysFile.getFilePath());
 
             // 设置响应头
             response.setContentType(sysFile.getFileType());
@@ -351,8 +353,8 @@ public class FileServiceImpl implements FileService {
 
             for (SysFile sysFile : fileList) {
                 try {
-                    // 通过 HTTP 从 fileUrl 下载，与单文件下载走同一通道
-                    byte[] fileBytes = downloadFileFromUrl(sysFile.getFileUrl());
+                    // 从 COS 下载文件
+                    byte[] fileBytes = cosService.downloadFile(sysFile.getFilePath());
                     if (fileBytes == null || fileBytes.length == 0) {
                         logger.warn("批量下载跳过文件（下载失败）: {}", sysFile.getOriginalName());
                         continue;
@@ -418,7 +420,7 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public String getFileUrl(String filePath) {
-        return FastDFSClient.getFileUrl(filePath);
+        return cosService.getFileUrl(filePath);
     }
 
     @Override
@@ -452,41 +454,11 @@ public class FileServiceImpl implements FileService {
     }
 
     /**
-     * 通过 HTTP 从 URL 下载文件内容
-     *
-     * @param fileUrl 文件访问URL
-     * @return 文件字节数组，失败返回 null
+     * 将 SysFile 中的 COS Key 转为预签名访问 URL
      */
-    private byte[] downloadFileFromUrl(String fileUrl) {
-        if (fileUrl == null || fileUrl.isEmpty()) {
-            return null;
-        }
-        try {
-            // 确保使用 HTTPS 或 HTTP
-            java.net.URL url = new java.net.URL(fileUrl);
-            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(10000);
-            conn.setReadTimeout(30000);
-
-            int responseCode = conn.getResponseCode();
-            if (responseCode != 200) {
-                logger.warn("HTTP下载文件失败，状态码: {}, URL: {}", responseCode, fileUrl);
-                return null;
-            }
-
-            try (java.io.InputStream is = conn.getInputStream();
-                 java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream()) {
-                byte[] buffer = new byte[8192];
-                int len;
-                while ((len = is.read(buffer)) != -1) {
-                    baos.write(buffer, 0, len);
-                }
-                return baos.toByteArray();
-            }
-        } catch (Exception e) {
-            logger.error("HTTP下载文件失败, URL: {}, 原因: {}", fileUrl, e.getMessage());
-            return null;
+    private void resolveFileUrl(SysFile file) {
+        if (file != null && file.getFileUrl() != null && !file.getFileUrl().startsWith("http")) {
+            file.setFileUrl(cosService.getFileUrl(file.getFileUrl()));
         }
     }
 

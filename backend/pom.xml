@@ -146,6 +146,13 @@
             <version>3.3.2</version>
         </dependency>
 
+        <!-- 腾讯云 COS SDK -->
+        <dependency>
+            <groupId>com.qcloud</groupId>
+            <artifactId>cos_api</artifactId>
+            <version>5.6.227</version>
+        </dependency>
+
         <!-- Flowable 工作流引擎 -->
         <dependency>
             <groupId>org.flowable</groupId>

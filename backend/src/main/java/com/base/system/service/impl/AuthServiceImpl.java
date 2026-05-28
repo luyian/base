@@ -1,5 +1,6 @@
 package com.base.system.service.impl;
 
+import com.base.common.service.CosService;
 import com.base.common.exception.BusinessException;
 import com.base.common.result.ResultCode;
 import com.base.common.util.HttpClientUtil;
@@ -85,6 +86,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Autowired
     private UserRoleMapper userRoleMapper;
+
+    @Autowired
+    private CosService cosService;
 
     /**
      * 微信小程序是否启用
@@ -601,7 +605,12 @@ public class AuthServiceImpl implements AuthService {
         response.setEmail(user.getEmail());
         response.setPhone(user.getPhone());
         response.setGender(user.getGender());
-        response.setAvatar(user.getAvatar());
+        String avatar = user.getAvatar();
+        if (avatar != null && !avatar.isEmpty() && !avatar.startsWith("http")) {
+            response.setAvatar(cosService.getFileUrl(avatar));
+        } else {
+            response.setAvatar(avatar);
+        }
         response.setDeptId(user.getDeptId());
 
         // 查询部门名称

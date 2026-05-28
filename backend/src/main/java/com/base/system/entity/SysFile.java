@@ -45,7 +45,7 @@ public class SysFile {
     private String fileType;
 
     /**
-     * 文件存储路径（FastDFS路径）
+     * 文件存储路径（COS Key）
      */
     private String filePath;
 

@@ -13,6 +13,7 @@ import com.base.system.mapper.DepartmentMapper;
 import com.base.system.mapper.RoleMapper;
 import com.base.system.mapper.UserMapper;
 import com.base.system.service.UserProfileService;
+import com.base.common.service.CosService;
 import com.base.system.util.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +39,7 @@ public class UserProfileServiceImpl implements UserProfileService {
     private final RoleMapper roleMapper;
     private final PasswordEncoder passwordEncoder;
     private final FileUploadUtil fileUploadUtil;
+    private final CosService cosService;
 
     @Override
     public UserProfileResponse getCurrentUserProfile() {
@@ -52,6 +54,12 @@ public class UserProfileServiceImpl implements UserProfileService {
 
         // 转换为响应对象
         UserProfileResponse response = BeanUtil.copyProperties(user, UserProfileResponse.class);
+
+        // 将头像 COS key 转为预签名 URL
+        String avatar = user.getAvatar();
+        if (avatar != null && !avatar.isEmpty() && !avatar.startsWith("http")) {
+            response.setAvatar(cosService.getFileUrl(avatar));
+        }
 
         // 查询部门名称
         if (user.getDeptId() != null) {

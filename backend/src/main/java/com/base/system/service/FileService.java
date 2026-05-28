@@ -71,6 +71,14 @@ public interface FileService {
     void batchDownloadFiles(List<Long> ids, HttpServletResponse response, HttpServletRequest request);
 
     /**
+     * 根据 COS Key 获取文件信息
+     *
+     * @param cosKey COS 对象 key（即 filePath 字段）
+     * @return 文件信息（fileUrl 已转为预签名 URL），不存在返回 null
+     */
+    SysFile getFileByCosKey(String cosKey);
+
+    /**
      * 获取文件访问URL
      */
     String getFileUrl(String filePath);

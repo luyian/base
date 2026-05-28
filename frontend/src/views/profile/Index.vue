@@ -267,7 +267,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
-import { getProfile, updateProfile, updatePassword } from '@/api/profile'
+import { getProfile, updateProfile, updatePassword, updateAvatar } from '@/api/profile'
 import { startProcess } from '@/api/workflow'
 import { uploadAvatar } from '@/api/file'
 import { listOauthBindings, unbindOauth } from '@/api/oauth'
@@ -526,6 +526,10 @@ const handleAvatarChange = async (event) => {
   try {
     const res = await uploadAvatar(file)
     if (res.code === 200) {
+      const cosKey = res.data?.filePath
+      if (cosKey) {
+        await updateAvatar(cosKey)
+      }
       ElMessage.success('头像上传成功')
       await loadProfile()
     } else {

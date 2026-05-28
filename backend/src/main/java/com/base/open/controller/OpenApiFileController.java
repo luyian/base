@@ -1,6 +1,7 @@
 package com.base.open.controller;
 
 import com.base.common.result.Result;
+import com.base.common.service.CosService;
 import com.base.open.context.OpenApiContext;
 import com.base.open.dto.OpenApiFileUploadRequest;
 import com.base.open.dto.OpenApiFileUploadResponse;
@@ -29,6 +30,9 @@ public class OpenApiFileController {
     @Autowired
     private FileService fileService;
 
+    @Autowired
+    private CosService cosService;
+
     /**
      * 上传文件
      */
@@ -51,7 +55,7 @@ public class OpenApiFileController {
                     .fileName(sysFile.getFileName())
                     .originalName(sysFile.getOriginalName())
                     .fileSize(sysFile.getFileSize())
-                    .fileUrl(sysFile.getFileUrl())
+                    .fileUrl(cosService.getFileUrl(sysFile.getFileUrl()))
                     .build();
 
             return Result.success(response);

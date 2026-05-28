@@ -61,8 +61,8 @@ public class UserProfileController {
     @ApiOperation(value = "更新头像URL")
     @Log(title = "个人中心", content = "更新头像URL")
     @PutMapping("/avatar")
-    public Result<Void> updateAvatar(@RequestParam String avatarUrl) {
-        userProfileService.updateAvatar(avatarUrl);
+    public Result<Void> updateAvatar(@RequestBody java.util.Map<String, String> body) {
+        userProfileService.updateAvatar(body.get("avatarUrl"));
         return Result.success();
     }
 }

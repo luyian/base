@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * 文件上传服务
@@ -24,6 +25,7 @@ import java.io.IOException;
 public class FileUploadService {
 
     private final FileUploadConfig fileUploadConfig;
+    private final CosService cosService;
 
     /**
      * 上传文件
@@ -40,23 +42,22 @@ public class FileUploadService {
                     "文件大小超过限制，最大允许" + FileUtils.formatFileSize(fileUploadConfig.getMaxSize()));
         }
 
-        // 验证文件类型
+        // 验证文件类型（按扩展名校验）
         String contentType = file.getContentType();
-        if (!FileUtils.isAllowedType(contentType, fileUploadConfig.getAllowedTypes())) {
-            throw new BusinessException(ResultCode.PARAM_ERROR, "不支持的文件类型：" + contentType);
+        String fileExt = getFileExt(file.getOriginalFilename());
+        if (!isAllowedExt(fileExt, fileUploadConfig.getAllowedTypes())) {
+            throw new BusinessException(ResultCode.PARAM_ERROR, "不支持的文件类型：" + fileExt);
         }
 
         try {
-            // 保存文件
-            String relativePath = FileUtils.saveFile(file, fileUploadConfig.getPath());
-
-            // 构建文件访问URL
-            String fileUrl = fileUploadConfig.getPrefix() + "/" + relativePath;
+            // 上传到 COS
+            String cosKey = cosService.uploadFile(file.getBytes(), "common", fileExt);
+            String fileUrl = cosService.getFileUrl(cosKey);
 
             // 返回响应
             FileUploadResponse response = new FileUploadResponse();
             response.setFilename(file.getOriginalFilename());
-            response.setFilePath(relativePath);
+            response.setFilePath(cosKey);
             response.setFileUrl(fileUrl);
             response.setFileSize(file.getSize());
             response.setContentType(contentType);
@@ -101,16 +102,32 @@ public class FileUploadService {
         if (filePath == null || filePath.isEmpty()) {
             return false;
         }
-
-        String fullPath = fileUploadConfig.getPath() + filePath;
-        boolean deleted = FileUtils.deleteFile(fullPath);
-
-        if (deleted) {
+        try {
+            cosService.deleteFile(filePath);
             log.info("文件删除成功：{}", filePath);
-        } else {
-            log.warn("文件删除失败：{}", filePath);
+            return true;
+        } catch (Exception e) {
+            log.warn("文件删除失败：{}", filePath, e);
+            return false;
         }
+    }
 
-        return deleted;
+    private String getFileExt(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
+            return "";
+        }
+        return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+    }
+
+    private boolean isAllowedExt(String ext, String[] allowedTypes) {
+        if (ext == null || ext.isEmpty() || allowedTypes == null) {
+            return false;
+        }
+        for (String allowed : allowedTypes) {
+            if (ext.equalsIgnoreCase(allowed.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

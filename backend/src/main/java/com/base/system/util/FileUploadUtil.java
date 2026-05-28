@@ -2,21 +2,15 @@ package com.base.system.util;
 
 import com.base.common.exception.BusinessException;
 import com.base.common.result.ResultCode;
+import com.base.common.service.CosService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * 文件上传工具类
@@ -25,17 +19,17 @@ import java.util.UUID;
 @Component
 public class FileUploadUtil {
 
-    @Value("${file.upload.path}")
-    private String uploadPath;
-
-    @Value("${file.upload.prefix}")
-    private String uploadPrefix;
+    private final CosService cosService;
 
     @Value("${file.upload.max-size}")
     private Long maxSize;
 
     @Value("${file.upload.allowed-types}")
     private List<String> allowedTypes;
+
+    public FileUploadUtil(CosService cosService) {
+        this.cosService = cosService;
+    }
 
     /**
      * 上传头像文件
@@ -107,51 +101,22 @@ public class FileUploadUtil {
     }
 
     /**
-     * 保存文件
+     * 保存文件到 COS
      *
-     * @param file 文件
-     * @param subDir 子目录
+     * @param file   文件
+     * @param subDir 子目录（作为 COS fileGroup）
      * @return 文件访问URL
      */
     private String saveFile(MultipartFile file, String subDir) {
         try {
-            // 获取原始文件名
             String originalFilename = file.getOriginalFilename();
+            String fileExt = getFileExt(originalFilename);
+            String cosKey = cosService.uploadFile(file.getBytes(), subDir, fileExt);
+            String fileUrl = cosService.getFileUrl(cosKey);
 
-            // 获取文件扩展名
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-
-            // 生成唯一文件名：UUID + 扩展名
-            String fileName = UUID.randomUUID().toString().replace("-", "") + extension;
-
-            // 按日期创建子目录：yyyy/MM/dd
-            String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
-
-            // 完整的文件保存路径
-            String fileDir = uploadPath + File.separator + subDir + File.separator + datePath;
-            Path dirPath = Paths.get(fileDir);
-
-            // 创建目录（如果不存在）
-            if (!Files.exists(dirPath)) {
-                Files.createDirectories(dirPath);
-            }
-
-            // 保存文件
-            String filePath = fileDir + File.separator + fileName;
-            File dest = new File(filePath);
-            file.transferTo(dest);
-
-            // 返回文件访问URL：/upload/avatar/yyyy/MM/dd/文件名
-            String fileUrl = uploadPrefix + "/" + subDir + "/" + datePath.replace("\\", "/") + "/" + fileName;
-
-            log.info("文件上传成功，原始文件名: {}, 保存路径: {}, 访问URL: {}",
-                originalFilename, filePath, fileUrl);
-
+            log.info("文件上传成功，原始文件名: {}, COS Key: {}, 访问URL: {}",
+                    originalFilename, cosKey, fileUrl);
             return fileUrl;
-
         } catch (IOException e) {
             log.error("文件上传失败", e);
             throw new BusinessException(ResultCode.ERROR.getCode(), "文件上传失败：" + e.getMessage());
@@ -161,34 +126,35 @@ public class FileUploadUtil {
     /**
      * 删除文件
      *
-     * @param fileUrl 文件URL
+     * @param fileUrl 文件URL（COS 完整 URL 或 COS key）
      * @return 是否删除成功
      */
     public boolean deleteFile(String fileUrl) {
         if (fileUrl == null || fileUrl.trim().isEmpty()) {
             return false;
         }
-
         try {
-            // 将URL转换为文件路径
-            String filePath = fileUrl.replace(uploadPrefix, uploadPath).replace("/", File.separator);
-            File file = new File(filePath);
-
-            if (file.exists() && file.isFile()) {
-                boolean deleted = file.delete();
-                if (deleted) {
-                    log.info("文件删除成功，文件路径: {}", filePath);
-                } else {
-                    log.warn("文件删除失败，文件路径: {}", filePath);
+            // 如果是完整 URL，提取 key 部分
+            String cosKey = fileUrl;
+            if (fileUrl.startsWith("https://") || fileUrl.startsWith("http://")) {
+                int idx = fileUrl.indexOf(".com/");
+                if (idx > 0) {
+                    cosKey = fileUrl.substring(idx + 5);
                 }
-                return deleted;
-            } else {
-                log.warn("文件不存在，文件路径: {}", filePath);
-                return false;
             }
+            cosService.deleteFile(cosKey);
+            log.info("文件删除成功，COS Key: {}", cosKey);
+            return true;
         } catch (Exception e) {
             log.error("文件删除失败，文件URL: {}", fileUrl, e);
             return false;
         }
+    }
+
+    private String getFileExt(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
+            return "";
+        }
+        return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
     }
 }

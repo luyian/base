@@ -16,3 +16,13 @@
 - 修复后端启动时 Flowable 查询 `ACT_GE_PROPERTY` 报表不存在的问题。
 - MySQL 连接 URL 增加 `nullCatalogMeansCurrent=true`，限制 JDBC 元数据表检查只针对当前数据库，避免被其他库中的 `ACT_*` 表误导。
 - 涉及配置：`application-dev.yml`、`application-test.yml`、`application-docker.yml`、`application-prod.yml`；影响 Flowable 引擎表自动建表与启动校验，不改变业务接口逻辑。
+
+## 文件管理模块 FastDFS → 腾讯云 COS 迁移（2026-05-28）
+
+- 新建 `CosService`，从 `sys_config` 读取 COS 配置，延迟初始化 `COSClient`
+- `FileServiceImpl` 替换所有 `FastDFSClient` 调用为 `CosService`，数据库存 COS key，读时通过 `resolveFileUrl()` 转预签名 URL
+- `FileUploadService`/`FileUploadUtil` 改用 COS 上传替代本地磁盘存储
+- `UserProfileServiceImpl`/`AuthServiceImpl`/`UserServiceImpl` 返回用户信息时将头像 COS key 转为预签名 URL
+- `OpenApiFileController` 上传文件后返回预签名 URL
+- 删除 `FastDFSClient.java` 和 `FastDFSConfig.java`
+- 批量下载改用 `cosService.downloadFile()` 直接从 COS 下载，移除 HTTP 下载方法

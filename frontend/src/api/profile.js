@@ -39,6 +39,6 @@ export function updateAvatar(avatarUrl) {
   return request({
     url: '/system/profile/avatar',
     method: 'put',
-    params: { avatarUrl }
+    data: { avatarUrl }
   })
 }

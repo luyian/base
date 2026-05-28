@@ -1,6 +1,7 @@
 package com.base.system.service.impl;
 
 import com.base.common.annotation.DataScope;
+import com.base.common.service.CosService;
 import com.base.system.exception.BusinessException;
 import com.base.common.result.ResultCode;
 import com.base.system.dto.*;
@@ -40,6 +41,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private CosService cosService;
 
     @Override
     @DataScope(deptAlias = "", userAlias = "")
@@ -90,6 +94,9 @@ public class UserServiceImpl implements UserService {
             // 设置状态名称
             response.setStatusName(user.getStatus() == 1 ? "启用" : "禁用");
 
+            // 转换头像 COS key 为预签名 URL
+            resolveAvatar(user, response);
+
             // TODO: 查询部门名称
             // TODO: 查询角色列表
 
@@ -118,6 +125,9 @@ public class UserServiceImpl implements UserService {
 
         // 设置状态名称
         response.setStatusName(user.getStatus() == 1 ? "启用" : "禁用");
+
+        // 转换头像 COS key 为预签名 URL
+        resolveAvatar(user, response);
 
         // 查询用户角色
         List<Long> roleIds = getUserRoleIds(id);
@@ -363,5 +373,15 @@ public class UserServiceImpl implements UserService {
         return userRoles.stream()
                 .map(SysUserRole::getRoleId)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 将用户头像 COS key 转为预签名 URL
+     */
+    private void resolveAvatar(SysUser user, UserResponse response) {
+        String avatar = user.getAvatar();
+        if (avatar != null && !avatar.isEmpty() && !avatar.startsWith("http")) {
+            response.setAvatar(cosService.getFileUrl(avatar));
+        }
     }
 }

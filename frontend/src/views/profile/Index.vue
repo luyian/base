@@ -149,6 +149,33 @@
                   <el-button @click="handleResetPassword">重置</el-button>
                 </el-form-item>
               </el-form>
+
+              <el-divider content-position="left">密码变更申请（需审批）</el-divider>
+              <div class="password-apply-section">
+                <el-form
+                  ref="applyFormRef"
+                  :model="applyForm"
+                  :rules="applyRules"
+                  label-width="100px"
+                  class="apply-form"
+                >
+                  <el-form-item label="申请原因" prop="reason">
+                    <el-input
+                      v-model="applyForm.reason"
+                      type="textarea"
+                      :rows="3"
+                      placeholder="请输入密码变更原因"
+                      maxlength="200"
+                      show-word-limit
+                    />
+                  </el-form-item>
+                  <el-form-item>
+                    <el-button type="warning" @click="handleApplyPasswordChange" :loading="applyLoading">
+                      提交审批
+                    </el-button>
+                  </el-form-item>
+                </el-form>
+              </div>
             </el-tab-pane>
 
             <!-- 第三方账号标签页 -->
@@ -241,6 +268,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Upload } from '@element-plus/icons-vue'
 import { getProfile, updateProfile, updatePassword } from '@/api/profile'
+import { startProcess } from '@/api/workflow'
 import { uploadAvatar } from '@/api/file'
 import { listOauthBindings, unbindOauth } from '@/api/oauth'
 import { getGithubAuthUrl } from '@/api/oauth'
@@ -331,6 +359,19 @@ const passwordRules = {
 
 const saveLoading = ref(false)
 const passwordLoading = ref(false)
+const applyLoading = ref(false)
+
+// 密码变更申请表单
+const applyFormRef = ref(null)
+const applyForm = reactive({
+  reason: ''
+})
+const applyRules = {
+  reason: [
+    { required: true, message: '请输入申请原因', trigger: 'blur' },
+    { min: 2, max: 200, message: '原因长度必须在2-200个字符之间', trigger: 'blur' }
+  ]
+}
 
 // 头像输入框引用
 const avatarInputRef = ref(null)
@@ -415,6 +456,35 @@ const handleUpdatePassword = async () => {
         ElMessage.error(error.message || '密码修改失败')
       } finally {
         passwordLoading.value = false
+      }
+    }
+  })
+}
+
+// 提交密码变更申请
+const handleApplyPasswordChange = async () => {
+  if (!applyFormRef.value) return
+
+  await applyFormRef.value.validate(async (valid) => {
+    if (valid) {
+      applyLoading.value = true
+      try {
+        await startProcess({
+          processKey: 'password_change',
+          businessKey: `pwd_change_${userInfo.id}_${Date.now()}`,
+          businessType: 'PASSWORD_CHANGE',
+          title: `${userInfo.nickname || userInfo.username} 申请修改密码`,
+          variables: {
+            reason: applyForm.reason
+          }
+        })
+        ElMessage.success('密码变更申请已提交，请等待管理员审核。可在"流程管理 - 我发起的"中查看进度')
+        applyForm.reason = ''
+        applyFormRef.value?.clearValidate()
+      } catch (error) {
+        ElMessage.error(error.message || '提交申请失败')
+      } finally {
+        applyLoading.value = false
       }
     }
   })
@@ -658,9 +728,14 @@ const handleUnbindFeishu = async () => {
 }
 
 .profile-form,
-.password-form {
+.password-form,
+.apply-form {
   max-width: 600px;
   padding: 20px;
+}
+
+.password-apply-section {
+  margin-top: 10px;
 }
 
 /* ========== 第三方账号管理 ========== */

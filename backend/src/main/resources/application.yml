@@ -82,6 +82,26 @@ file:
       - application/vnd.ms-excel
       - application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
 
+# Flowable 工作流配置
+flowable:
+  database-schema-update: true
+  async-executor-activate: false
+  history-level: audit
+  idm:
+    enabled: false
+  cmmn:
+    enabled: false
+  dmn:
+    enabled: false
+  form:
+    enabled: false
+  content:
+    enabled: false
+  app:
+    enabled: false
+  eventregistry:
+    enabled: false
+
 # 股票数据配置
 stock:
   itick:

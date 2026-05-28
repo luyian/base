@@ -10,6 +10,12 @@ const constantRoutes = [
     meta: { title: '登录' }
   },
   {
+    path: '/404',
+    name: 'NotFound',
+    component: () => import('@/views/NotFound.vue'),
+    meta: { title: '页面不存在' }
+  },
+  {
     path: '/oauth/callback',
     name: 'OauthCallback',
     component: () => import('@/views/OauthCallback.vue'),
@@ -23,6 +29,7 @@ const constantRoutes = [
   },
   {
     path: '/',
+    name: 'Layout',
     component: () => import('@/layout/Index.vue'),
     redirect: '/dashboard',
     children: [
@@ -43,6 +50,12 @@ const constantRoutes = [
         name: 'MyNotice',
         component: () => import('@/views/system/MyNotice.vue'),
         meta: { title: '我的通知', icon: 'Bell' }
+      },
+      {
+        path: 'workflow/design',
+        name: 'ProcessDesign',
+        component: () => import('@/views/workflow/ProcessDesign.vue'),
+        meta: { title: '流程设计', hidden: true }
       },
       // 股票模块路由
       {
@@ -153,13 +166,9 @@ router.beforeEach(async (to, from, next) => {
         dynamicRoutes.forEach(route => {
           // 路径已经是完整路径（如 /system/user），需要去掉开头的 / 作为子路由
           const routePath = route.path.startsWith('/') ? route.path.substring(1) : route.path
-          router.addRoute({
-            path: '/',
-            component: () => import('@/layout/Index.vue'),
-            children: [{
-              ...route,
-              path: routePath
-            }]
+          router.addRoute('Layout', {
+            ...route,
+            path: routePath
           })
         })
       }

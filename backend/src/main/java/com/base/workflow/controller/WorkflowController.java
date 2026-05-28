@@ -1,6 +1,11 @@
 package com.base.workflow.controller;
 
 import com.base.common.result.Result;
+import com.base.system.dto.department.DepartmentQueryRequest;
+import com.base.system.dto.department.DepartmentResponse;
+import com.base.system.dto.role.RoleResponse;
+import com.base.system.service.DepartmentService;
+import com.base.system.service.RoleService;
 import com.base.workflow.dto.*;
 import com.base.workflow.service.ProcessDefinitionService;
 import com.base.workflow.service.ProcessEngineService;
@@ -26,6 +31,12 @@ public class WorkflowController {
 
     @Autowired
     private ProcessEngineService processEngineService;
+
+    @Autowired
+    private RoleService roleService;
+
+    @Autowired
+    private DepartmentService departmentService;
 
     // ==================== 流程定义管理 ====================
 
@@ -170,5 +181,19 @@ public class WorkflowController {
         String operator = SecurityUtils.getCurrentUsername();
         processEngineService.delegateTask(request, operator);
         return Result.success();
+    }
+
+    // ==================== 候选人配置辅助接口 ====================
+
+    @ApiOperation("获取角色列表（候选人配置用）")
+    @GetMapping("/candidates/roles")
+    public Result<List<RoleResponse>> getCandidateRoles() {
+        return Result.success(roleService.listAllRoles());
+    }
+
+    @ApiOperation("获取部门树（候选人配置用）")
+    @GetMapping("/candidates/departments")
+    public Result<List<DepartmentResponse>> getCandidateDepartments() {
+        return Result.success(departmentService.getAllDepartmentTree());
     }
 }

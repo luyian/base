@@ -133,3 +133,17 @@ export function getBpmnXml(id) {
     method: 'get'
   })
 }
+
+export function getCandidateRoles() {
+  return request({
+    url: '/workflow/candidates/roles',
+    method: 'get'
+  })
+}
+
+export function getCandidateDepartments() {
+  return request({
+    url: '/workflow/candidates/departments',
+    method: 'get'
+  })
+}

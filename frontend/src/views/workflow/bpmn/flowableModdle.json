@@ -1,0 +1,58 @@
+{
+  "name": "Flowable",
+  "uri": "http://flowable.org/bpmn",
+  "prefix": "flowable",
+  "xml": {
+    "tagAlias": "lowerCase"
+  },
+  "types": [
+    {
+      "name": "Properties",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": ["bpmn:ExtensionElements"]
+      },
+      "properties": [
+        {
+          "name": "values",
+          "isMany": true,
+          "type": "Property"
+        }
+      ]
+    },
+    {
+      "name": "Property",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "name", "isAttr": true, "type": "String" },
+        { "name": "value", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "TaskListener",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": ["bpmn:ExtensionElements"]
+      },
+      "properties": [
+        { "name": "event", "isAttr": true, "type": "String" },
+        { "name": "class", "isAttr": true, "type": "String" },
+        { "name": "delegateExpression", "isAttr": true, "type": "String" },
+        { "name": "expression", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "ExecutionListener",
+      "superClass": ["Element"],
+      "meta": {
+        "allowedIn": ["bpmn:ExtensionElements"]
+      },
+      "properties": [
+        { "name": "event", "isAttr": true, "type": "String" },
+        { "name": "class", "isAttr": true, "type": "String" },
+        { "name": "delegateExpression", "isAttr": true, "type": "String" },
+        { "name": "expression", "isAttr": true, "type": "String" }
+      ]
+    }
+  ]
+}

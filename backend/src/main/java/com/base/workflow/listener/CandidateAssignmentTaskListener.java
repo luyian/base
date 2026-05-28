@@ -6,6 +6,11 @@ import com.base.system.entity.SysUserRole;
 import com.base.system.mapper.SysUserMapper;
 import com.base.system.mapper.SysUserRoleMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import org.flowable.bpmn.model.BpmnModel;
+import org.flowable.bpmn.model.ExtensionElement;
+import org.flowable.bpmn.model.FlowElement;
+import org.flowable.bpmn.model.UserTask;
+import org.flowable.engine.RepositoryService;
 import org.flowable.engine.delegate.TaskListener;
 import org.flowable.task.service.delegate.DelegateTask;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,11 +35,19 @@ public class CandidateAssignmentTaskListener implements TaskListener {
     @Autowired
     private SysUserRoleMapper userRoleMapper;
 
+    @Autowired
+    private RepositoryService repositoryService;
+
     @Override
     public void notify(DelegateTask delegateTask) {
         String activityId = delegateTask.getTaskDefinitionKey();
-        String candidateType = (String) delegateTask.getVariable("candidateType_" + activityId);
-        String candidateConfig = (String) delegateTask.getVariable("candidateConfig_" + activityId);
+
+        // 优先从 BPMN 扩展属性读取，流程变量作为后备
+        Map<String, String> extProps = getExtensionProperties(delegateTask);
+        String candidateType = extProps.getOrDefault("candidateType",
+                (String) delegateTask.getVariable("candidateType_" + activityId));
+        String candidateConfig = extProps.getOrDefault("candidateConfig",
+                (String) delegateTask.getVariable("candidateConfig_" + activityId));
 
         if (candidateType == null || candidateType.isEmpty()) {
             return;
@@ -52,6 +65,43 @@ public class CandidateAssignmentTaskListener implements TaskListener {
                 delegateTask.addCandidateUser(candidate);
             }
         }
+    }
+
+    /**
+     * 从 UserTask BPMN 模型的 flowable:properties 中读取扩展属性
+     */
+    private Map<String, String> getExtensionProperties(DelegateTask delegateTask) {
+        Map<String, String> result = new HashMap<>();
+        try {
+            String processDefinitionId = delegateTask.getProcessDefinitionId();
+            String activityId = delegateTask.getTaskDefinitionKey();
+            BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinitionId);
+            FlowElement flowElement = bpmnModel.getFlowElement(activityId);
+            if (!(flowElement instanceof UserTask)) {
+                return result;
+            }
+            UserTask userTask = (UserTask) flowElement;
+            List<ExtensionElement> propsList = userTask.getExtensionElements().get("properties");
+            if (propsList == null || propsList.isEmpty()) {
+                return result;
+            }
+            for (ExtensionElement props : propsList) {
+                List<ExtensionElement> propertyList = props.getChildElements().get("property");
+                if (propertyList == null) {
+                    continue;
+                }
+                for (ExtensionElement property : propertyList) {
+                    String name = property.getAttributeValue(null, "name");
+                    String value = property.getAttributeValue(null, "value");
+                    if (name != null && value != null) {
+                        result.put(name, value);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 读取扩展属性失败时降级到流程变量
+        }
+        return result;
     }
 
     @SuppressWarnings("unchecked")

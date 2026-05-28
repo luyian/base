@@ -23,15 +23,22 @@
       </div>
     </div>
 
-    <!-- BPMN 画布 -->
+    <!-- BPMN 画布 + 属性面板 -->
     <div class="design-container">
       <div ref="bpmnCanvas" class="bpmn-canvas"></div>
+      <NodePropertiesPanel
+        :visible="panelVisible"
+        :selected-element="selectedElement"
+        :modeler="bpmnModeler"
+        :is-view="isView"
+        @close="panelVisible = false"
+      />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onBeforeUnmount, ref, reactive, nextTick } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, shallowRef, reactive, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import BpmnModeler from 'bpmn-js/lib/Modeler'
@@ -40,6 +47,8 @@ import 'bpmn-js/dist/assets/bpmn-js.css'
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css'
 import getDefaultDiagram from './bpmn/defaultDiagram'
 import customTranslate from './bpmn/zh-CN'
+import flowableModdle from './bpmn/flowableModdle.json'
+import NodePropertiesPanel from './NodePropertiesPanel.vue'
 import {
     getProcessDefinition,
     getBpmnXml,
@@ -52,7 +61,9 @@ const router = useRouter()
 
 const bpmnCanvas = ref(null)
 const saving = ref(false)
-let bpmnModeler = null
+const panelVisible = ref(false)
+const selectedElement = ref(null)
+const bpmnModeler = shallowRef(null)
 
 const form = reactive({
     processKey: '',
@@ -85,25 +96,38 @@ onMounted(async () => {
 })
 
 onBeforeUnmount(() => {
-    if (bpmnModeler) {
-        bpmnModeler.destroy()
-        bpmnModeler = null
+    if (bpmnModeler.value) {
+        bpmnModeler.value.destroy()
+        bpmnModeler.value = null
     }
 })
 
 function initModeler() {
-    bpmnModeler = new BpmnModeler({
+    bpmnModeler.value = new BpmnModeler({
         container: bpmnCanvas.value,
         additionalModules: [translateModule],
-        moddleExtensions: {}
+        moddleExtensions: { flowable: flowableModdle }
+    })
+
+    // 监听节点选中事件
+    const eventBus = bpmnModeler.value.get('eventBus')
+    eventBus.on('selection.changed', (e) => {
+        const { newSelection } = e
+        if (newSelection.length === 1 && newSelection[0].type === 'bpmn:UserTask') {
+            selectedElement.value = newSelection[0]
+            panelVisible.value = true
+        } else {
+            selectedElement.value = null
+            panelVisible.value = false
+        }
     })
 }
 
 async function loadDefaultDiagram() {
     const xml = getDefaultDiagram(form.processKey || 'process_1', form.processName || '新流程')
     try {
-        await bpmnModeler.importXML(xml)
-        bpmnModeler.get('canvas').zoom('fit-viewport')
+        await bpmnModeler.value.importXML(xml)
+        bpmnModeler.value.get('canvas').zoom('fit-viewport')
     } catch (err) {
         console.error('加载默认流程图失败', err)
     }
@@ -124,8 +148,8 @@ async function loadDefinition() {
         }
 
         if (xmlRes.code === 200 && xmlRes.data) {
-            await bpmnModeler.importXML(xmlRes.data)
-            bpmnModeler.get('canvas').zoom('fit-viewport')
+            await bpmnModeler.value.importXML(xmlRes.data)
+            bpmnModeler.value.get('canvas').zoom('fit-viewport')
         } else {
             await loadDefaultDiagram()
         }
@@ -148,7 +172,7 @@ async function handleSave() {
 
     saving.value = true
     try {
-        const { xml } = await bpmnModeler.saveXML({ format: true })
+        const { xml } = await bpmnModeler.value.saveXML({ format: true })
 
         const payload = {
             processKey: form.processKey,
@@ -175,7 +199,7 @@ async function handleSave() {
 
 async function handleDownloadXml() {
     try {
-        const { xml } = await bpmnModeler.saveXML({ format: true })
+        const { xml } = await bpmnModeler.value.saveXML({ format: true })
         const blob = new Blob([xml], { type: 'application/xml' })
         const url = URL.createObjectURL(blob)
         const link = document.createElement('a')
@@ -230,11 +254,13 @@ function handleBack() {
     flex: 1;
     position: relative;
     overflow: hidden;
+    display: flex;
 }
 
 .bpmn-canvas {
-    width: 100%;
+    flex: 1;
     height: 100%;
+    min-width: 0;
 }
 
 /* bpmn.js 工具栏样式适配 */

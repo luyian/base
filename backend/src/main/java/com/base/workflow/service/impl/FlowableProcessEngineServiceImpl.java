@@ -3,7 +3,14 @@ package com.base.workflow.service.impl;
 import com.base.system.entity.SysUser;
 import com.base.system.mapper.SysUserMapper;
 import com.base.workflow.dto.*;
+import com.base.workflow.handler.NodeEventHandlerManager;
+import com.base.workflow.handler.ProcessContext;
 import com.base.workflow.service.ProcessEngineService;
+import org.flowable.bpmn.model.BpmnModel;
+import org.flowable.bpmn.model.ExtensionElement;
+import org.flowable.bpmn.model.FlowElement;
+import org.flowable.bpmn.model.UserTask;
+import org.flowable.engine.RepositoryService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import org.flowable.engine.HistoryService;
 import org.flowable.engine.RuntimeService;
@@ -39,6 +46,12 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
 
     @Autowired
     private SysUserMapper userMapper;
+
+    @Autowired
+    private RepositoryService repositoryService;
+
+    @Autowired
+    private NodeEventHandlerManager eventHandlerManager;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -82,6 +95,8 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
         }
 
         String processInstanceId = task.getProcessInstanceId();
+        String processDefinitionId = task.getProcessDefinitionId();
+        String activityId = task.getTaskDefinitionKey();
 
         if (request.getComment() != null && !request.getComment().isEmpty()) {
             taskService.addComment(task.getId(), processInstanceId,
@@ -97,8 +112,6 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
             variables.put("approveResult", "REJECT");
             taskService.complete(task.getId(), variables);
 
-            // 检查流程是否有条件网关根据 approveResult 处理
-            // 如果没有，手动终止流程
             try {
                 ProcessInstance instance = runtimeService.createProcessInstanceQuery()
                         .processInstanceId(processInstanceId)
@@ -107,9 +120,87 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
                     runtimeService.deleteProcessInstance(processInstanceId, "审批拒绝");
                 }
             } catch (Exception ignored) {
-                // 流程可能已经因为条件网关自动结束
             }
         }
+
+        // 触发节点事件回调
+        triggerAfterApprove(processInstanceId, processDefinitionId, activityId, operator, request);
+    }
+
+    /**
+     * 审批完成后触发事件处理器回调
+     */
+    private void triggerAfterApprove(String processInstanceId, String processDefinitionId,
+                                     String activityId, String operator,
+                                     ApproveTaskRequest request) {
+        Map<String, Object> allVariables;
+        try {
+            List<HistoricProcessInstance> list = historyService.createHistoricProcessInstanceQuery()
+                    .processInstanceId(processInstanceId)
+                    .includeProcessVariables()
+                    .list();
+            if (list.isEmpty()) {
+                return;
+            }
+            allVariables = list.get(0).getProcessVariables();
+        } catch (Exception e) {
+            return;
+        }
+
+        // 优先从 BPMN 扩展属性读取，流程变量作为后备
+        String handlerKey = getExtensionProperty(processDefinitionId, activityId, "eventHandler");
+        if (handlerKey == null || handlerKey.isEmpty()) {
+            handlerKey = (String) allVariables.get("eventHandler_" + activityId);
+        }
+        if (handlerKey == null || handlerKey.isEmpty()) {
+            return;
+        }
+
+        ProcessContext context = new ProcessContext();
+        context.setProcessInstanceId(processInstanceId);
+        context.setActivityId(activityId);
+        context.setOperator(operator);
+        context.setAction(request.getApproveResult());
+        context.setComment(request.getComment());
+        context.setInitiator((String) allVariables.get("initiator"));
+        context.setBusinessKey((String) allVariables.get("businessKey"));
+        context.setVariables(allVariables);
+
+        String eventType = "REJECT".equals(request.getApproveResult()) ? "terminate" : "end";
+        eventHandlerManager.trigger(handlerKey, eventType, context);
+    }
+
+    /**
+     * 从 BPMN 模型的 flowable:properties 中读取指定属性
+     */
+    private String getExtensionProperty(String processDefinitionId, String activityId, String propertyName) {
+        try {
+            BpmnModel bpmnModel = repositoryService.getBpmnModel(processDefinitionId);
+            FlowElement flowElement = bpmnModel.getFlowElement(activityId);
+            if (!(flowElement instanceof UserTask)) {
+                return null;
+            }
+            UserTask userTask = (UserTask) flowElement;
+            List<ExtensionElement> propsList = userTask.getExtensionElements().get("properties");
+            if (propsList == null) {
+                return null;
+            }
+            for (ExtensionElement props : propsList) {
+                List<ExtensionElement> propertyList = props.getChildElements().get("property");
+                if (propertyList == null) {
+                    continue;
+                }
+                for (ExtensionElement property : propertyList) {
+                    String name = property.getAttributeValue(null, "name");
+                    if (propertyName.equals(name)) {
+                        return property.getAttributeValue(null, "value");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // 读取失败降级到流程变量
+        }
+        return null;
     }
 
     @Override
@@ -173,12 +264,32 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
 
     @Override
     public List<TaskResponse> getMyPendingTasks(String assignee) {
-        List<Task> tasks = taskService.createTaskQuery()
+        // 已分配给当前用户的任务
+        List<Task> assignedTasks = taskService.createTaskQuery()
                 .taskAssignee(assignee)
                 .orderByTaskCreateTime().desc()
                 .list();
 
-        return tasks.stream()
+        // 当前用户是候选人的任务（多审批人场景）
+        List<Task> candidateTasks = taskService.createTaskQuery()
+                .taskCandidateUser(assignee)
+                .orderByTaskCreateTime().desc()
+                .list();
+
+        Set<String> taskIds = new HashSet<>();
+        List<Task> allTasks = new ArrayList<>();
+        for (Task task : assignedTasks) {
+            if (taskIds.add(task.getId())) {
+                allTasks.add(task);
+            }
+        }
+        for (Task task : candidateTasks) {
+            if (taskIds.add(task.getId())) {
+                allTasks.add(task);
+            }
+        }
+
+        return allTasks.stream()
                 .map(this::convertToTaskResponse)
                 .collect(Collectors.toList());
     }

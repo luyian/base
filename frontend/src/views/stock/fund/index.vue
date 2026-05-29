@@ -113,10 +113,16 @@
       @close="fetchFundList"
     >
       <div class="detail-header">
-        <el-descriptions :column="4" border>
+        <el-descriptions :column="3" border>
           <el-descriptions-item label="基金名称">{{ currentFund.fundName }}</el-descriptions-item>
           <el-descriptions-item label="基金代码">{{ currentFund.fundCode || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="估算涨跌幅">
+          <el-descriptions-item label="持仓计算">
+            <span :class="getChangeClass(currentFund.rawWeightedChange)">
+              {{ formatChangePercent(currentFund.rawWeightedChange) }}
+            </span>
+          </el-descriptions-item>
+          <el-descriptions-item label="持仓占比">{{ currentFund.totalWeight ? currentFund.totalWeight.toFixed(2) + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="整体估算">
             <span :class="getChangeClass(currentFund.estimatedChangePercent)">
               {{ formatChangePercent(currentFund.estimatedChangePercent) }}
             </span>
@@ -409,6 +415,8 @@ const handleViewDetail = async (fund) => {
     fundCode: fund.fundCode,
     description: fund.description,
     estimatedChangePercent: fund.estimatedChangePercent,
+    rawWeightedChange: fund.rawWeightedChange,
+    totalWeight: fund.totalWeight,
     holdingCount: fund.holdingCount,
     quotes: fund.quotes || [],
     cacheTime: fund.cacheTime

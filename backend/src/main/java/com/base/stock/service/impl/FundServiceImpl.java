@@ -218,6 +218,7 @@ public class FundServiceImpl implements FundService {
             record.setFundId(fundId);
             record.setTradeDate(today);
             record.setEstimatedChangePercent(response.getEstimatedChangePercent());
+            record.setRawWeightedChange(response.getRawWeightedChange());
             record.setHoldingCount(response.getHoldingCount());
             record.setSuccessCount(response.getSuccessCount());
             record.setFailCount(response.getFailCount());
@@ -366,6 +367,7 @@ public class FundServiceImpl implements FundService {
         FundValuationResponse response = new FundValuationResponse();
         response.setFundId(record.getFundId());
         response.setEstimatedChangePercent(record.getEstimatedChangePercent());
+        response.setRawWeightedChange(record.getRawWeightedChange());
         response.setHoldingCount(record.getHoldingCount());
         response.setSuccessCount(record.getSuccessCount());
         response.setFailCount(record.getFailCount());
@@ -448,6 +450,7 @@ public class FundServiceImpl implements FundService {
         FundValuationResponse response = new FundValuationResponse();
         response.setFundId(record.getFundId());
         response.setEstimatedChangePercent(record.getEstimatedChangePercent());
+        response.setRawWeightedChange(record.getRawWeightedChange());
         response.setHoldingCount(record.getHoldingCount());
         response.setSuccessCount(record.getSuccessCount());
         response.setFailCount(record.getFailCount());
@@ -588,14 +591,17 @@ public class FundServiceImpl implements FundService {
         response.setSuccessCount(successCount);
         response.setFailCount(failCount);
         response.setTotalWeight(totalWeight);
-        
-        // 计算实际涨跌幅：直接使用加权变化（已归一化到100%权重）
-        // weightedChange = changePercent * weight / 100
-        // 例如：1% * 15% / 100 = 0.15
-        // 所有股票加权变化的总和即为基金涨跌幅
-        BigDecimal estimatedChangePercent = totalWeightedChange;
-        
-        log.info("基金估值计算: fundId={}, totalWeight={}, totalWeightedChange={}, estimatedChangePercent={}", 
+        response.setRawWeightedChange(totalWeightedChange);
+
+        // 按已知权重等比放大：estimatedChange = totalWeightedChange / totalWeight * 100
+        BigDecimal estimatedChangePercent = BigDecimal.ZERO;
+        if (totalWeight.compareTo(BigDecimal.ZERO) > 0) {
+            estimatedChangePercent = totalWeightedChange
+                    .multiply(BigDecimal.valueOf(100))
+                    .divide(totalWeight, 6, RoundingMode.HALF_UP);
+        }
+
+        log.info("基金估值计算: fundId={}, totalWeight={}, rawWeightedChange={}, estimatedChangePercent={}",
                 fund.getId(), totalWeight, totalWeightedChange, estimatedChangePercent);
         response.setEstimatedChangePercent(estimatedChangePercent);
         response.setAllSuccess(failCount == 0);

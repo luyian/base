@@ -40,9 +40,14 @@ public class FundValuationResponse {
     private Integer holdingCount;
 
     /**
-     * 估算涨跌幅(%)
+     * 估算涨跌幅(%)，按已知权重等比放大后的值
      */
     private BigDecimal estimatedChangePercent;
+
+    /**
+     * 持仓计算涨跌幅(%)，仅覆盖已配置持仓的加权涨跌幅
+     */
+    private BigDecimal rawWeightedChange;
 
     /**
      * 成功获取报价的股票数量

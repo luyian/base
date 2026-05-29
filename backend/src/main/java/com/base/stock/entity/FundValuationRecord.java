@@ -37,9 +37,14 @@ public class FundValuationRecord implements Serializable {
     private LocalDate tradeDate;
 
     /**
-     * 估算涨跌幅(%)
+     * 估算涨跌幅(%)，按已知权重等比放大后的值
      */
     private BigDecimal estimatedChangePercent;
+
+    /**
+     * 持仓计算涨跌幅(%)，仅覆盖已配置持仓的加权涨跌幅
+     */
+    private BigDecimal rawWeightedChange;
 
     /**
      * 持仓数量

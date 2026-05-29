@@ -10,6 +10,22 @@
       <view class="change {{fund.estimatedChangePercent > 0 ? 'up' : 'down'}}">
         <text class="value">{{fund.estimatedChangePercent > 0 ? '+' : ''}}{{fund.estimatedChangePercent || 0}}%</text>
       </view>
+      <view class="valuation-detail">
+        <view class="valuation-item">
+          <text class="valuation-label">持仓计算</text>
+          <text class="valuation-value {{fund.rawWeightedChange > 0 ? 'up' : 'down'}}">{{fund.rawWeightedChange > 0 ? '+' : ''}}{{fund.rawWeightedChange || 0}}%</text>
+        </view>
+        <view class="valuation-divider"></view>
+        <view class="valuation-item">
+          <text class="valuation-label">持仓占比</text>
+          <text class="valuation-value">{{fund.totalWeight || 0}}%</text>
+        </view>
+        <view class="valuation-divider"></view>
+        <view class="valuation-item">
+          <text class="valuation-label">整体估算</text>
+          <text class="valuation-value {{fund.estimatedChangePercent > 0 ? 'up' : 'down'}}">{{fund.estimatedChangePercent > 0 ? '+' : ''}}{{fund.estimatedChangePercent || 0}}%</text>
+        </view>
+      </view>
     </view>
     
     <view class="section-title">持仓明细</view>

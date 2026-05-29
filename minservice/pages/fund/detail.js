@@ -36,9 +36,13 @@ Page({
     this.setData({ loading: true });
     fundApi.getFundDetail(fundId)
       .then(res => {
+        const fund = res.data;
+        fund.estimatedChangePercent = parseFloat(fund.estimatedChangePercent || 0).toFixed(3);
+        fund.rawWeightedChange = parseFloat(fund.rawWeightedChange || 0).toFixed(3);
+        fund.totalWeight = parseFloat(fund.totalWeight || 0).toFixed(2);
         this.setData({
-          fund: res.data,
-          holdings: res.data.quotes || [],
+          fund: fund,
+          holdings: fund.quotes || [],
           loading: false
         });
       })

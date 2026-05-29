@@ -20,6 +20,11 @@
           <text class="valuation-label">持仓占比</text>
           <text class="valuation-value">{{fund.totalWeight || 0}}%</text>
         </view>
+        <view class="valuation-divider" wx:if="{{fund.benchmarkCode}}"></view>
+        <view class="valuation-item" wx:if="{{fund.benchmarkCode}}">
+          <text class="valuation-label">基准({{fund.benchmarkCode}})</text>
+          <text class="valuation-value {{fund.benchmarkChangePercent > 0 ? 'up' : 'down'}}">{{fund.benchmarkChangePercent > 0 ? '+' : ''}}{{fund.benchmarkChangePercent || 0}}%</text>
+        </view>
         <view class="valuation-divider"></view>
         <view class="valuation-item">
           <text class="valuation-label">整体估算</text>

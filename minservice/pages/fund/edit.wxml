@@ -20,6 +20,12 @@
       <textarea class="textarea" value="{{form.description}}" placeholder="请输入描述（可选）" bindinput="onDescChange" />
     </view>
 
+    <!-- Benchmark Index -->
+    <view class="form-item">
+      <text class="label">基准指数</text>
+      <input class="input" value="{{form.benchmarkCode}}" placeholder="指数代码（如000300，可选）" bindinput="onBenchmarkChange" />
+    </view>
+
     <!-- Holdings -->
     <view class="form-item">
       <text class="label">持仓配置 *</text>

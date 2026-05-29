@@ -91,6 +91,7 @@ public class FundServiceImpl implements FundService {
         fund.setFundName(request.getFundName());
         fund.setFundCode(request.getFundCode());
         fund.setDescription(request.getDescription());
+        fund.setBenchmarkCode(request.getBenchmarkCode());
         fund.setStatus(request.getStatus() != null ? request.getStatus() : 1);
         fundConfigMapper.insert(fund);
         saveHoldings(fund.getId(), request.getHoldings());
@@ -107,6 +108,7 @@ public class FundServiceImpl implements FundService {
         fund.setFundName(request.getFundName());
         fund.setFundCode(request.getFundCode());
         fund.setDescription(request.getDescription());
+        fund.setBenchmarkCode(request.getBenchmarkCode());
         if (request.getStatus() != null) {
             fund.setStatus(request.getStatus());
         }
@@ -219,6 +221,8 @@ public class FundServiceImpl implements FundService {
             record.setTradeDate(today);
             record.setEstimatedChangePercent(response.getEstimatedChangePercent());
             record.setRawWeightedChange(response.getRawWeightedChange());
+            record.setBenchmarkCode(response.getBenchmarkCode());
+            record.setBenchmarkChangePercent(response.getBenchmarkChangePercent());
             record.setHoldingCount(response.getHoldingCount());
             record.setSuccessCount(response.getSuccessCount());
             record.setFailCount(response.getFailCount());
@@ -333,6 +337,10 @@ public class FundServiceImpl implements FundService {
             for (FundHolding h : holdings) {
                 allStockCodes.add(h.getStockCode());
             }
+            // 收集基准指数代码
+            if (fund.getBenchmarkCode() != null && !fund.getBenchmarkCode().isEmpty()) {
+                allStockCodes.add(fund.getBenchmarkCode());
+            }
         }
 
         List<String> distinctCodes = new ArrayList<>(allStockCodes);
@@ -368,6 +376,8 @@ public class FundServiceImpl implements FundService {
         response.setFundId(record.getFundId());
         response.setEstimatedChangePercent(record.getEstimatedChangePercent());
         response.setRawWeightedChange(record.getRawWeightedChange());
+        response.setBenchmarkCode(record.getBenchmarkCode());
+        response.setBenchmarkChangePercent(record.getBenchmarkChangePercent());
         response.setHoldingCount(record.getHoldingCount());
         response.setSuccessCount(record.getSuccessCount());
         response.setFailCount(record.getFailCount());
@@ -451,6 +461,8 @@ public class FundServiceImpl implements FundService {
         response.setFundId(record.getFundId());
         response.setEstimatedChangePercent(record.getEstimatedChangePercent());
         response.setRawWeightedChange(record.getRawWeightedChange());
+        response.setBenchmarkCode(record.getBenchmarkCode());
+        response.setBenchmarkChangePercent(record.getBenchmarkChangePercent());
         response.setHoldingCount(record.getHoldingCount());
         response.setSuccessCount(record.getSuccessCount());
         response.setFailCount(record.getFailCount());
@@ -510,6 +522,19 @@ public class FundServiceImpl implements FundService {
         }
         Map<String, List<FundHolding>> marketGroups = groupByMarket(holdings);
         Map<String, StockQuote> quoteMap = fetchQuotesConcurrently(marketGroups);
+
+        // 拉取基准指数行情
+        String benchmarkCode = fund.getBenchmarkCode();
+        if (benchmarkCode != null && !benchmarkCode.isEmpty() && !quoteMap.containsKey(benchmarkCode)) {
+            String benchmarkMarket = inferMarketByStockCode(benchmarkCode);
+            try {
+                Map<String, StockQuote> benchmarkQuotes = fetchBatchQuotes(benchmarkMarket, Collections.singletonList(benchmarkCode));
+                quoteMap.putAll(benchmarkQuotes);
+            } catch (Exception e) {
+                log.error("获取基准指数报价失败: benchmarkCode={}", benchmarkCode, e);
+            }
+        }
+
         return buildValuationResponse(fund, quoteMap);
     }
 
@@ -593,16 +618,48 @@ public class FundServiceImpl implements FundService {
         response.setTotalWeight(totalWeight);
         response.setRawWeightedChange(totalWeightedChange);
 
-        // 按已知权重等比放大：estimatedChange = totalWeightedChange / totalWeight * 100
+        // 基准指数填充未覆盖仓位
+        String benchmarkCode = fund.getBenchmarkCode();
         BigDecimal estimatedChangePercent = BigDecimal.ZERO;
-        if (totalWeight.compareTo(BigDecimal.ZERO) > 0) {
-            estimatedChangePercent = totalWeightedChange
-                    .multiply(BigDecimal.valueOf(100))
-                    .divide(totalWeight, 6, RoundingMode.HALF_UP);
+
+        if (benchmarkCode != null && !benchmarkCode.isEmpty()) {
+            StockQuote benchmarkQuote = quoteMap.get(benchmarkCode);
+            if (benchmarkQuote != null && benchmarkQuote.getSuccess()
+                    && benchmarkQuote.getChangePercent() != null) {
+                BigDecimal benchmarkChange = benchmarkQuote.getChangePercent();
+                response.setBenchmarkCode(benchmarkCode);
+                response.setBenchmarkChangePercent(benchmarkChange);
+                // 估算涨跌 = 持仓加权涨跌 + (100 - 持仓总权重) × 基准指数涨跌 / 100
+                BigDecimal remainingWeight = BigDecimal.valueOf(100).subtract(totalWeight);
+                BigDecimal benchmarkContribution = remainingWeight.multiply(benchmarkChange)
+                        .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
+                estimatedChangePercent = totalWeightedChange.add(benchmarkContribution);
+                log.info("基金估值(基准指数填充): fundId={}, totalWeight={}, rawWeightedChange={}, " +
+                                "benchmarkCode={}, benchmarkChange={}%, remainingWeight={}, estimatedChangePercent={}",
+                        fund.getId(), totalWeight, totalWeightedChange,
+                        benchmarkCode, benchmarkChange, remainingWeight, estimatedChangePercent);
+            } else {
+                // 基准指数获取失败，降级为等比放大
+                response.setBenchmarkCode(benchmarkCode);
+                if (totalWeight.compareTo(BigDecimal.ZERO) > 0) {
+                    estimatedChangePercent = totalWeightedChange
+                            .multiply(BigDecimal.valueOf(100))
+                            .divide(totalWeight, 6, RoundingMode.HALF_UP);
+                }
+                log.warn("基准指数 {} 获取失败，降级为等比放大: fundId={}, estimatedChangePercent={}",
+                        benchmarkCode, fund.getId(), estimatedChangePercent);
+            }
+        } else {
+            // 未配置基准指数，使用等比放大
+            if (totalWeight.compareTo(BigDecimal.ZERO) > 0) {
+                estimatedChangePercent = totalWeightedChange
+                        .multiply(BigDecimal.valueOf(100))
+                        .divide(totalWeight, 6, RoundingMode.HALF_UP);
+            }
+            log.info("基金估值(等比放大): fundId={}, totalWeight={}, rawWeightedChange={}, estimatedChangePercent={}",
+                    fund.getId(), totalWeight, totalWeightedChange, estimatedChangePercent);
         }
 
-        log.info("基金估值计算: fundId={}, totalWeight={}, rawWeightedChange={}, estimatedChangePercent={}",
-                fund.getId(), totalWeight, totalWeightedChange, estimatedChangePercent);
         response.setEstimatedChangePercent(estimatedChangePercent);
         response.setAllSuccess(failCount == 0);
         return response;
@@ -965,7 +1022,7 @@ public class FundServiceImpl implements FundService {
             return;
         }
 
-        // Step 1: 加载每个基金的持仓，并收集所有股票代码去重
+        // Step 1: 加载每个基金的持仓，并收集所有股票代码（含基准指数）去重
         Set<String> allStockCodes = new LinkedHashSet<>();
         int totalHoldingCount = 0;
         for (FundConfig fund : funds) {
@@ -975,10 +1032,14 @@ public class FundServiceImpl implements FundService {
                 allStockCodes.add(h.getStockCode());
             }
             totalHoldingCount += holdings.size();
+            // 收集基准指数代码
+            if (fund.getBenchmarkCode() != null && !fund.getBenchmarkCode().isEmpty()) {
+                allStockCodes.add(fund.getBenchmarkCode());
+            }
         }
 
         List<String> distinctCodes = new ArrayList<>(allStockCodes);
-        log.info("基金估值批量刷新: 共 {} 个基金, {} 只股票(去重前 {}), 分批拉取报价",
+        log.info("基金估值批量刷新: 共 {} 个基金, {} 只股票/指数(去重前 {}), 分批拉取报价",
                 funds.size(), distinctCodes.size(), totalHoldingCount);
 
         if (distinctCodes.isEmpty()) {

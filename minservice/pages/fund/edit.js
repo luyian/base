@@ -12,6 +12,7 @@ Page({
       fundName: '',
       fundCode: '',
       description: '',
+      benchmarkCode: '',
       holdings: []
     },
     loading: false,
@@ -57,6 +58,7 @@ Page({
             fundName: fund.fundName || '',
             fundCode: fund.fundCode || '',
             description: fund.description || '',
+            benchmarkCode: fund.benchmarkCode || '',
             holdings: (fund.holdings || []).map(h => ({
               stockCode: h.stockCode,
               stockName: h.stockName,
@@ -82,6 +84,10 @@ Page({
 
   onDescChange(e) {
     this.setData({ 'form.description': e.detail.value });
+  },
+
+  onBenchmarkChange(e) {
+    this.setData({ 'form.benchmarkCode': e.detail.value });
   },
 
   onStockSearch(e) {
@@ -171,6 +177,7 @@ Page({
       fundName: form.fundName,
       fundCode: form.fundCode,
       description: form.description,
+      benchmarkCode: form.benchmarkCode || null,
       holdings: validHoldings
     };
     

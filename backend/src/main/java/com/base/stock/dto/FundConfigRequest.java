@@ -38,6 +38,12 @@ public class FundConfigRequest {
     private String description;
 
     /**
+     * 基准指数代码（可选，如 000300）
+     */
+    @Size(max = 20, message = "基准指数代码长度不能超过20个字符")
+    private String benchmarkCode;
+
+    /**
      * 状态：0-禁用，1-启用
      */
     private Integer status = 1;

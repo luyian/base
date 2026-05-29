@@ -33,4 +33,10 @@ public class StockQueryRequest extends BasePageRequest {
      */
     @ApiModelProperty(value = "关键词（匹配代码或名称）")
     private String keyword;
+
+    /**
+     * 股票类型（stock-股票, index-指数）
+     */
+    @ApiModelProperty(value = "股票类型（stock-股票, index-指数）")
+    private String stockType;
 }

@@ -75,6 +75,16 @@ public class FundValuationResponse {
     private FundConfig fundConfig;
 
     /**
+     * 基准指数代码
+     */
+    private String benchmarkCode;
+
+    /**
+     * 基准指数涨跌幅(%)
+     */
+    private BigDecimal benchmarkChangePercent;
+
+    /**
      * 是否全部获取成功
      */
     private Boolean allSuccess;

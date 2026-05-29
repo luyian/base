@@ -47,6 +47,16 @@ public class FundValuationRecord implements Serializable {
     private BigDecimal rawWeightedChange;
 
     /**
+     * 基准指数代码
+     */
+    private String benchmarkCode;
+
+    /**
+     * 基准指数涨跌幅(%)
+     */
+    private BigDecimal benchmarkChangePercent;
+
+    /**
      * 持仓数量
      */
     private Integer holdingCount;

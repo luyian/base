@@ -40,6 +40,9 @@ Page({
         fund.estimatedChangePercent = parseFloat(fund.estimatedChangePercent || 0).toFixed(3);
         fund.rawWeightedChange = parseFloat(fund.rawWeightedChange || 0).toFixed(3);
         fund.totalWeight = parseFloat(fund.totalWeight || 0).toFixed(2);
+        if (fund.benchmarkChangePercent != null) {
+          fund.benchmarkChangePercent = parseFloat(fund.benchmarkChangePercent).toFixed(3);
+        }
         this.setData({
           fund: fund,
           holdings: fund.quotes || [],

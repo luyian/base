@@ -122,6 +122,11 @@
             </span>
           </el-descriptions-item>
           <el-descriptions-item label="持仓占比">{{ currentFund.totalWeight ? currentFund.totalWeight.toFixed(2) + '%' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="基准指数" v-if="currentFund.benchmarkCode">
+            <span :class="getChangeClass(currentFund.benchmarkChangePercent)">
+              {{ currentFund.benchmarkCode }} {{ formatChangePercent(currentFund.benchmarkChangePercent) }}
+            </span>
+          </el-descriptions-item>
           <el-descriptions-item label="整体估算">
             <span :class="getChangeClass(currentFund.estimatedChangePercent)">
               {{ formatChangePercent(currentFund.estimatedChangePercent) }}
@@ -207,6 +212,26 @@
             placeholder="请输入描述（可选）"
             maxlength="500"
           />
+        </el-form-item>
+        <el-form-item label="基准指数" prop="benchmarkCode">
+          <el-select
+            v-model="formData.benchmarkCode"
+            filterable
+            clearable
+            remote
+            reserve-keyword
+            placeholder="搜索指数（可选，用于填充未覆盖仓位）"
+            :remote-method="searchBenchmark"
+            :loading="benchmarkSearchLoading"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="idx in benchmarkOptions"
+              :key="idx.stockCode"
+              :label="`${idx.stockCode} - ${idx.stockName}`"
+              :value="idx.stockCode"
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="持仓配置" prop="holdings">
           <div class="holdings-container">
@@ -328,8 +353,29 @@ const formData = reactive({
   fundName: '',
   fundCode: '',
   description: '',
+  benchmarkCode: '',
   holdings: []
 })
+
+// 基准指数搜索
+const benchmarkOptions = ref([])
+const benchmarkSearchLoading = ref(false)
+
+const searchBenchmark = async (query) => {
+  if (!query || query.length < 1) {
+    benchmarkOptions.value = []
+    return
+  }
+  benchmarkSearchLoading.value = true
+  try {
+    const res = await listStocks({ keyword: query, stockType: 'index', page: 1, size: 20 })
+    benchmarkOptions.value = res.data?.records || []
+  } catch (error) {
+    console.error('搜索指数失败', error)
+  } finally {
+    benchmarkSearchLoading.value = false
+  }
+}
 
 // 表单校验规则
 const formRules = {
@@ -481,7 +527,9 @@ const handleAdd = () => {
   formData.fundName = ''
   formData.fundCode = ''
   formData.description = ''
+  formData.benchmarkCode = ''
   formData.holdings = [{ stockCode: '', weight: null }]
+  benchmarkOptions.value = []
   editDialogVisible.value = true
 }
 
@@ -495,6 +543,11 @@ const handleEdit = async (fund) => {
     formData.fundName = fundDetail.fundName
     formData.fundCode = fundDetail.fundCode
     formData.description = fundDetail.description
+    formData.benchmarkCode = fundDetail.benchmarkCode || ''
+    // 预填充基准指数选项
+    if (fundDetail.benchmarkCode) {
+      benchmarkOptions.value = [{ stockCode: fundDetail.benchmarkCode, stockName: fundDetail.benchmarkCode }]
+    }
     formData.holdings = (fundDetail.holdings || []).map(h => ({
       stockCode: h.stockCode,
       stockName: h.stockName,
@@ -581,6 +634,7 @@ const handleSubmit = async () => {
       fundName: formData.fundName,
       fundCode: formData.fundCode,
       description: formData.description,
+      benchmarkCode: formData.benchmarkCode || null,
       holdings: formData.holdings.filter(h => h.stockCode && h.weight !== null)
     }
 

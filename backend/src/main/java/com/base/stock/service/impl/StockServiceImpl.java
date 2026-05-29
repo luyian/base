@@ -52,9 +52,12 @@ public class StockServiceImpl implements StockService {
         String industry = request.getIndustry();
         String keyword = request.getKeyword();
 
+        String stockType = request.getStockType();
+
         wrapper.eq(StockInfo::getDeleted, 0)
                 .eq(market != null && !market.isEmpty(), StockInfo::getMarket, market)
-                .eq(industry != null && !industry.isEmpty(), StockInfo::getIndustry, industry);
+                .eq(industry != null && !industry.isEmpty(), StockInfo::getIndustry, industry)
+                .eq(stockType != null && !stockType.isEmpty(), StockInfo::getStockType, stockType);
 
         // 支持简繁体互查
         if (keyword != null && !keyword.isEmpty()) {

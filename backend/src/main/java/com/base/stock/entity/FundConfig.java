@@ -41,6 +41,11 @@ public class FundConfig implements Serializable {
     private String description;
 
     /**
+     * 基准指数代码（如 000300 沪深300），用于填充未覆盖仓位的涨跌估算
+     */
+    private String benchmarkCode;
+
+    /**
      * 状态：0-禁用，1-启用
      */
     private Integer status;

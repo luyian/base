@@ -8,6 +8,7 @@
             <el-option label="港股" value="HK" />
             <el-option label="沪市" value="SH" />
             <el-option label="深市" value="SZ" />
+            <el-option label="北证" value="BJ" />
           </el-select>
         </el-form-item>
         <el-form-item label="所属行业">
@@ -44,6 +45,7 @@
             <el-tag v-if="row.market === 'HK'" type="danger" size="small">港股</el-tag>
             <el-tag v-else-if="row.market === 'SH'" type="primary" size="small">沪市</el-tag>
             <el-tag v-else-if="row.market === 'SZ'" type="success" size="small">深市</el-tag>
+            <el-tag v-else-if="row.market === 'BJ'" type="warning" size="small">北证</el-tag>
             <el-tag v-else type="info" size="small">{{ row.market }}</el-tag>
           </template>
         </el-table-column>
@@ -106,6 +108,7 @@
             <el-option label="港股" value="HK" />
             <el-option label="沪市" value="SH" />
             <el-option label="深市" value="SZ" />
+            <el-option label="北证" value="BJ" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -124,6 +127,7 @@
             <el-option label="港股" value="HK" />
             <el-option label="沪市" value="SH" />
             <el-option label="深市" value="SZ" />
+            <el-option label="北证" value="BJ" />
           </el-select>
         </el-form-item>
         <el-form-item label="时间范围">
@@ -214,6 +218,7 @@
             <el-option label="港股" value="HK" />
             <el-option label="沪市" value="SH" />
             <el-option label="深市" value="SZ" />
+            <el-option label="北证" value="BJ" />
           </el-select>
         </el-form-item>
         <el-form-item>

@@ -19,6 +19,7 @@ import com.base.stock.mapper.FundValuationRecordMapper;
 import com.base.stock.mapper.FundWatchlistMapper;
 import com.base.stock.service.FundService;
 import com.base.stock.mapper.StockInfoMapper;
+import com.base.stock.util.MarketUtil;
 import com.base.system.service.ConfigService;
 import com.base.system.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
@@ -703,16 +704,10 @@ public class FundServiceImpl implements FundService {
     }
 
     /**
-     * 根据股票代码推断市场
+     * 根据股票代码推断市场（含沪市/深市/北证/港股）
      */
     private String inferMarketByStockCode(String stockCode) {
-        if (stockCode.startsWith("60") || stockCode.startsWith("68")) {
-            return "SH";
-        }
-        if (stockCode.startsWith("00") || stockCode.startsWith("30")) {
-            return "SZ";
-        }
-        return "HK";
+        return MarketUtil.inferMarket(stockCode);
     }
 
     private static final String CONFIG_KEY_QUOTE_THREAD_COUNT = "fund.quote.thread.count";

@@ -36,9 +36,9 @@ public class StockInfo extends BaseEntity {
     private String stockName;
 
     /**
-     * 市场（SH-沪市, SZ-深市, HK-港股）
+     * 市场（SH-沪市, SZ-深市, BJ-北证, HK-港股）
      */
-    @ApiModelProperty("市场（SH-沪市, SZ-深市, HK-港股）")
+    @ApiModelProperty("市场（SH-沪市, SZ-深市, BJ-北证, HK-港股）")
     private String market;
 
     /**

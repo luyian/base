@@ -34,9 +34,9 @@
           </div>
           <div class="card-title">{{ doc.title }}</div>
           <div class="card-summary">{{ getSummary(doc.content) }}</div>
-          <div class="card-tags" v-if="doc.tags && doc.tags.length > 0">
+          <div class="card-tags" v-if="doc.tags && doc.tags.filter(Boolean).length > 0">
             <el-tag
-              v-for="tag in doc.tags"
+              v-for="tag in doc.tags.filter(Boolean)"
               :key="tag"
               size="small"
               :disable-transitions="true"
@@ -224,5 +224,37 @@ onMounted(loadData)
   padding: 12px 20px;
   background: #fff;
   border-top: 1px solid #e4e7ed;
+}
+
+/* ==================== 暗色主题 ==================== */
+[data-theme="dark"] .doc-square {
+  background: var(--dk-bg-1);
+}
+
+[data-theme="dark"] .square-header {
+  background: var(--dk-bg-2);
+  border-bottom-color: var(--dk-border);
+}
+
+[data-theme="dark"] .square-header h2 {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .card-title {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .card-summary {
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .card-footer {
+  color: var(--dk-text-3);
+  border-top-color: var(--dk-border);
+}
+
+[data-theme="dark"] .square-pagination {
+  background: var(--dk-bg-2);
+  border-top-color: var(--dk-border);
 }
 </style>

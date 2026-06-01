@@ -409,7 +409,7 @@ CREATE TABLE `stk_stock_info` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `stock_code` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '股票代码',
   `stock_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '股票名称',
-  `market` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '市场（SH-沪市, SZ-深市, HK-港股）',
+  `market` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NOT NULL COMMENT '市场（SH-沪市, SZ-深市, BJ-北证, HK-港股）',
   `exchange` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '交易所',
   `currency` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '交易货币（CNY/HKD）',
   `status` tinyint NOT NULL DEFAULT '1' COMMENT '状态（0-退市, 1-正常）',

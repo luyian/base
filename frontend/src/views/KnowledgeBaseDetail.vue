@@ -110,9 +110,9 @@
               <el-icon class="doc-icon"><Document /></el-icon>
               <span class="doc-title">{{ doc.title }}</span>
             </div>
-            <div class="doc-tags" v-if="doc.tags && doc.tags.length > 0">
+            <div class="doc-tags" v-if="doc.tags && doc.tags.filter(Boolean).length > 0">
               <el-tag
-                v-for="tag in doc.tags.slice(0, 2)"
+                v-for="tag in doc.tags.filter(Boolean).slice(0, 2)"
                 :key="tag"
                 :color="getTagColor(tag)"
                 :style="{ color: textColorOf(getTagColor(tag)) }"
@@ -121,7 +121,7 @@
               >
                 {{ tag }}
               </el-tag>
-              <span v-if="doc.tags.length > 2" class="more-tags">+{{ doc.tags.length - 2 }}</span>
+              <span v-if="doc.tags.filter(Boolean).length > 2" class="more-tags">+{{ doc.tags.filter(Boolean).length - 2 }}</span>
             </div>
             <div class="doc-actions" @click.stop>
               <el-dropdown trigger="click">
@@ -169,7 +169,7 @@
           <!-- 文档标签 -->
           <div class="doc-tags-edit">
             <el-tag
-              v-for="tag in currentDocument.tags"
+              v-for="tag in (currentDocument.tags || []).filter(Boolean)"
               :key="tag"
               closable
               :color="getTagColor(tag)"
@@ -187,7 +187,10 @@
                     :key="tag.id"
                     :command="tag"
                   >
-                    <el-tag :color="tag.color" :style="{ color: textColorOf(tag.color) }" size="small">{{ tag.name }}</el-tag>
+                    <div class="tag-dropdown-item">
+                      <el-tag :color="tag.color" :style="{ color: textColorOf(tag.color) }" size="small">{{ tag.name }}</el-tag>
+                      <el-icon class="tag-delete-icon" @click.stop="handleDeleteTag(tag)"><Delete /></el-icon>
+                    </div>
                   </el-dropdown-item>
                   <el-dropdown-item divided @click="handleCreateTag">
                     <el-icon><Plus /></el-icon> 新建标签
@@ -317,7 +320,8 @@ import {
   updateDocument,
   deleteDocument,
   getTagList,
-  createTag
+  createTag,
+  deleteTag
 } from '@/api/knowledge'
 import MarkdownIt from 'markdown-it'
 
@@ -333,6 +337,7 @@ const directoryTree = ref([])
 const documentList = ref([])
 const tagList = ref([])
 const currentDocument = ref(null)
+const selectedDirectoryId = ref(null)
 const docListLoading = ref(false)
 const saving = ref(false)
 
@@ -507,6 +512,9 @@ const loadDocumentDetail = async (doc) => {
   try {
     const res = await getDocumentDetail(doc.id)
     currentDocument.value = res.data
+    if (currentDocument.value.tags) {
+      currentDocument.value.tags = currentDocument.value.tags.filter(Boolean)
+    }
     editingTitle.value = res.data.title
     editingContent.value = res.data.content || ''
   } catch (error) {
@@ -517,6 +525,7 @@ const loadDocumentDetail = async (doc) => {
 
 // 点击目录
 const handleDirectoryClick = (data) => {
+  selectedDirectoryId.value = data.id
   loadDocumentListByDirectory(data.id)
 }
 
@@ -576,10 +585,18 @@ const handleTitleBlur = () => {
   }
 }
 
+// 同步文档列表中对应文档的标签
+const syncDocListTags = (tags) => {
+  const doc = documentList.value.find(d => d.id === currentDocument.value.id)
+  if (doc) {
+    doc.tags = [...tags]
+  }
+}
+
 // 添加标签
 const handleAddTag = async (tag) => {
   if (!currentDocument.value) return
-  const tags = [...(currentDocument.value.tags || []), tag.name]
+  const tags = [...(currentDocument.value.tags || []).filter(Boolean), tag.name]
   currentDocument.value.tags = tags
   await updateDocument({
     id: currentDocument.value.id,
@@ -588,13 +605,14 @@ const handleAddTag = async (tag) => {
     content: editingContent.value,
     tags
   })
+  syncDocListTags(tags)
   ElMessage.success('添加标签成功')
 }
 
 // 移除标签
 const handleRemoveTag = async (tagName) => {
   if (!currentDocument.value) return
-  const tags = currentDocument.value.tags.filter(t => t !== tagName)
+  const tags = currentDocument.value.tags.filter(t => t && t !== tagName)
   currentDocument.value.tags = tags
   await updateDocument({
     id: currentDocument.value.id,
@@ -603,6 +621,7 @@ const handleRemoveTag = async (tagName) => {
     content: editingContent.value,
     tags
   })
+  syncDocListTags(tags)
   ElMessage.success('移除标签成功')
 }
 
@@ -682,10 +701,15 @@ const handleSubmitDirectory = async () => {
 // 导入文档（读取 .md/.txt 文件内容创建为新文档）
 const importInputRef = ref(null)
 const triggerImport = () => {
+  if (!selectedDirectoryId.value) {
+    ElMessage.warning('请先在左侧选择一个目录')
+    return
+  }
   importInputRef.value?.click()
 }
 const handleImportFiles = async (event) => {
-  const files = Array.from(event.target.files || [])
+  const fileInput = event.target
+  const files = Array.from(fileInput?.files || [])
   if (files.length === 0) {
     return
   }
@@ -698,25 +722,30 @@ const handleImportFiles = async (event) => {
         knowledgeBaseId: knowledgeBaseId.value,
         title,
         content,
-        directoryId: 0
+        directoryId: selectedDirectoryId.value || 0
       })
       successCount++
     } catch (error) {
       console.error('导入文档失败:', file.name, error)
     }
   }
-  // 清空选择，允许再次选择同名文件
-  event.target.value = ''
+  if (fileInput) {
+    fileInput.value = ''
+  }
   ElMessage.success(`成功导入 ${successCount}/${files.length} 个文档`)
   loadDocumentList()
 }
 
 // 创建文档
 const handleCreateDocument = () => {
+  if (!selectedDirectoryId.value) {
+    ElMessage.warning('请先在左侧选择一个目录')
+    return
+  }
   isEditDocument.value = false
   documentForm.id = null
   documentForm.title = ''
-  documentForm.directoryId = 0
+  documentForm.directoryId = selectedDirectoryId.value
   documentDialogVisible.value = true
 }
 
@@ -810,6 +839,22 @@ const handleSubmitTag = async () => {
   } finally {
     tagLoading.value = false
   }
+}
+
+// 删除标签
+const handleDeleteTag = (tag) => {
+  ElMessageBox.confirm(`确定删除标签「${tag.name}」？删除后已关联文档的该标签也会移除。`, '提示', {
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await deleteTag(tag.id)
+      ElMessage.success('删除成功')
+      loadTagList()
+    } catch (error) {
+      console.error('删除标签失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }).catch(() => {})
 }
 
 // 初始化
@@ -1038,6 +1083,29 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
+.doc-tags-edit .el-tag :deep(.el-tag__close) {
+  color: inherit;
+}
+
+.tag-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 8px;
+}
+
+.tag-delete-icon {
+  color: #c0c4cc;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.tag-delete-icon:hover {
+  color: #f56c6c;
+}
+
 .editor-tabs {
   padding: 8px 16px;
   border-bottom: 1px solid #e4e7ed;
@@ -1101,5 +1169,104 @@ onMounted(async () => {
 
 .editor-preview :deep(img) {
   max-width: 100%;
+}
+
+/* ==================== 暗色主题 ==================== */
+[data-theme="dark"] .knowledge-base-detail {
+  background: var(--dk-bg-1);
+}
+
+[data-theme="dark"] .detail-header {
+  background: var(--dk-bg-2);
+  border-bottom-color: var(--dk-border);
+}
+
+[data-theme="dark"] .detail-header h2 {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .sidebar-left {
+  background: var(--dk-bg-2);
+  border-right-color: var(--dk-border);
+}
+
+[data-theme="dark"] .sidebar-header {
+  color: var(--dk-text-1);
+  border-bottom-color: var(--dk-border);
+}
+
+[data-theme="dark"] .sidebar-middle {
+  background: var(--dk-bg-2);
+  border-right-color: var(--dk-border);
+}
+
+[data-theme="dark"] .tag-filter {
+  border-bottom-color: var(--dk-border);
+}
+
+[data-theme="dark"] .document-item:hover {
+  background: var(--dk-bg-3);
+}
+
+[data-theme="dark"] .document-item.active {
+  background: rgba(64, 158, 255, 0.12);
+}
+
+[data-theme="dark"] .doc-icon {
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .doc-title {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .more-tags {
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .editor-panel {
+  background: var(--dk-bg-2);
+}
+
+[data-theme="dark"] .editor-header {
+  border-bottom-color: var(--dk-border);
+}
+
+[data-theme="dark"] .title-input :deep(.el-input__inner) {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .doc-tags-edit {
+  border-bottom-color: var(--dk-border);
+}
+
+[data-theme="dark"] .tag-delete-icon {
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .tag-delete-icon:hover {
+  color: #f56c6c;
+}
+
+[data-theme="dark"] .editor-tabs {
+  border-bottom-color: var(--dk-border);
+}
+
+[data-theme="dark"] .md-editor {
+  background: var(--dk-bg-2);
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .editor-preview {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .editor-preview :deep(code) {
+  background: var(--dk-bg-3);
+  color: #e0e4ea;
+}
+
+[data-theme="dark"] .editor-preview :deep(pre) {
+  background: var(--dk-bg-1);
 }
 </style>

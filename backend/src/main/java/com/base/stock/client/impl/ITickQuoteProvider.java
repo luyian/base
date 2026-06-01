@@ -7,6 +7,7 @@ import com.base.stock.client.QuoteProvider;
 import com.base.stock.config.ITickConfig;
 import com.base.stock.dto.StockQuote;
 import com.base.stock.entity.ApiToken;
+import com.base.stock.util.MarketUtil;
 import com.base.stock.service.TokenManagerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,16 +86,7 @@ public class ITickQuoteProvider implements QuoteProvider {
     }
 
     private String inferMarket(String code) {
-        if (code == null || code.isEmpty()) {
-            return "SZ";
-        }
-        if (code.startsWith("60") || code.startsWith("68")) {
-            return "SH";
-        }
-        if (code.startsWith("00") || code.startsWith("30")) {
-            return "SZ";
-        }
-        return "SZ";
+        return MarketUtil.inferMarket(code);
     }
 
     private Map<String, StockQuote> fetchBatchQuotes(String market, List<String> codes) {

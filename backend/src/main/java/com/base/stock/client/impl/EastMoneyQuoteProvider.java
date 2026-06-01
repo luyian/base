@@ -6,6 +6,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.base.common.util.HttpClientUtil;
 import com.base.stock.client.QuoteProvider;
 import com.base.stock.dto.StockQuote;
+import com.base.stock.util.MarketUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -86,16 +87,7 @@ public class EastMoneyQuoteProvider implements QuoteProvider {
      * 根据股票代码推断市场
      */
     private String inferMarket(String code) {
-        if (code == null || code.isEmpty()) {
-            return "SZ";
-        }
-        if (code.startsWith("60") || code.startsWith("68")) {
-            return "SH";
-        }
-        if (code.startsWith("00") || code.startsWith("30")) {
-            return "SZ";
-        }
-        return "SZ";
+        return MarketUtil.inferMarket(code);
     }
 
     /**
@@ -105,8 +97,8 @@ public class EastMoneyQuoteProvider implements QuoteProvider {
         Map<String, StockQuote> result = new HashMap<>();
 
         // 构建 secids 参数：市场代码.股票代码
-        // 1=上海，0=深圳
-        String secidPrefix = "SH".equalsIgnoreCase(market) ? "1." : "0.";
+        // 1=上海，0=深圳/北京（北证 secid 同样使用 0. 前缀）
+        String secidPrefix = MarketUtil.toEastMoneySecidPrefix(market);
         String secids = codes.stream()
                 .map(code -> secidPrefix + code)
                 .reduce((a, b) -> a + "," + b)
@@ -137,7 +129,7 @@ public class EastMoneyQuoteProvider implements QuoteProvider {
                         if (diff != null) {
                             for (int i = 0; i < diff.size(); i++) {
                                 JSONObject item = diff.getJSONObject(i);
-                                StockQuote quote = parseQuote(item);
+                                StockQuote quote = parseQuote(item, market);
                                 if (quote != null && quote.getStockCode() != null) {
                                     result.put(quote.getStockCode(), quote);
                                 }
@@ -197,7 +189,7 @@ public class EastMoneyQuoteProvider implements QuoteProvider {
     /**
      * 解析报价数据
      */
-    private StockQuote parseQuote(JSONObject item) {
+    private StockQuote parseQuote(JSONObject item, String defaultMarket) {
         if (item == null) {
             return null;
         }
@@ -214,12 +206,12 @@ public class EastMoneyQuoteProvider implements QuoteProvider {
         // 股票名称
         quote.setStockName(item.getString("f14"));
 
-        // 市场代码：1=上海，0=深圳
+        // 市场代码：1=上海，0=深圳/北京；北证与深市同为 0 无法区分，按分组传入的市场回填
         String marketCode = item.getString("f13");
         if ("1".equals(marketCode)) {
-            quote.setMarket("SH");
-        } else if ("0".equals(marketCode)) {
-            quote.setMarket("SZ");
+            quote.setMarket(MarketUtil.SH);
+        } else {
+            quote.setMarket(defaultMarket);
         }
 
         // f2: 最新价（-表示停牌或无成交）

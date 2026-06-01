@@ -20,6 +20,7 @@
           <el-tag v-if="stockInfo.market === 'HK'" type="danger" size="small">港股</el-tag>
           <el-tag v-else-if="stockInfo.market === 'SH'" type="primary" size="small">沪市</el-tag>
           <el-tag v-else-if="stockInfo.market === 'SZ'" type="success" size="small">深市</el-tag>
+          <el-tag v-else-if="stockInfo.market === 'BJ'" type="warning" size="small">北证</el-tag>
           <el-tag v-else type="info" size="small">{{ stockInfo.market }}</el-tag>
         </el-descriptions-item>
         <el-descriptions-item label="交易所">{{ stockInfo.exchange }}</el-descriptions-item>

@@ -74,7 +74,24 @@
 - 通用文件关联表 file_link_obj（area_type/link_type 用枚举 FileAreaTypeEnum/FileLinkTypeEnum 区分业务域与关联类型），附件复用 /system/file/upload + CosService.getFileUrl 预签名下载
 - 文档附件后端：FileLinkObj/Mapper、附件 DTO、AttachmentController(/attachments)、Service 绑定/列表/删除
 - 文档评论 kb_comment 支持一级回复：KbComment/Mapper、CommentController(/comments)；评论人用 SecurityUtils 显式存（MyMetaObjectHandler 的 createBy 填 "system" 不可用）
-- 全局文档广场（独立顶级菜单 /document-square，非知识库内入口）：/documents/all 分页(Page)，DocumentResponse 加 knowledgeBaseId/knowledgeBaseName；前端 DocumentSquare.vue 卡片墙 + el-pagination
+- 全局文档广场（/document-square，作为二级菜单挂在知识库目录 ID=8 下）：/documents/all 分页(Page)，DocumentResponse 加 knowledgeBaseId/knowledgeBaseName；前端 DocumentSquare.vue 卡片墙 + el-pagination
 - 文档详情页 KnowledgeDocDetail.vue（/document/:docId）：markdown-it 正文 + 附件上传/下载/删除 + 评论/一级回复
 - 菜单 SQL：init_document_square_menu.sql（sys_permission ID 910/911，分配角色 1/2）
 - 建表 SQL：init_knowledge_tables.sql 追加 file_link_obj、kb_comment
+
+## 股票/基金新增北证（BJ）支持（2026-06-01）
+
+- 新建 `MarketUtil` 工具类（stock/util）统一市场推断：4(43)/8(83/87/88)/920 开头识别为北证 BJ，纯 5 位数字为港股 HK
+- 替换 5 处分散的 inferMarket：StockServiceImpl.createStock、FundServiceImpl.inferMarketByStockCode、东财/腾讯/iTick 三个 QuoteProvider 均改为委托 MarketUtil
+- 腾讯接口：BJ 用 `bj` 前缀拼接（如 bj430047），解析新增 `v_bj` 前缀；修复原 9 开头/5 位一律判港股导致 920xxx 北证误判的 bug
+- 东财接口：BJ 复用 `0.` secid 前缀；东财/腾讯 parseQuote 因北证与深市市场码同为 0 无法区分，改为按分组传入的市场回填（新增 defaultMarket 参数）
+- StockInfo 实体与 tables.sql 的 market 注释补充 BJ-北证
+- 前端 5 个页面（stock 列表/详情/自选/推荐/基金持仓）市场标签新增北证（warning 色），列表/同步弹窗筛选下拉新增「北证 BJ」选项
+- 小程序 stock 页面补充北证支持：markets 数组加 BJ、列表标签支持北证显示与样式（亮/暗主题）
+
+## 知识库标签与文档详情优化（2026-06-01）
+
+- 修复自定义色标签关闭按钮（×）显示为灰色方块：`:deep(.el-tag__close)` 继承文字色
+- 修复 tags 数组含空值导致空白标签：KnowledgeBaseDetail（列表+编辑区+加载时）、DocumentSquare 卡片标签均加 `.filter(Boolean)` 过滤
+- 文档详情页新增目录大纲侧边栏：从 Markdown 标题（h1-h6）自动生成 TOC，点击跳转对应章节，IntersectionObserver 高亮当前可视标题，el-switch 开关控制展开/收起
+- 暗色主题适配：KnowledgeDocDetail（详情页+TOC侧栏+评论区）、DocumentSquare（卡片+分页）、KnowledgeBaseDetail（目录树+文档列表+编辑器）三个页面基于全局 `--dk-*` 变量覆盖硬编码颜色

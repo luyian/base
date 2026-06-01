@@ -22,7 +22,7 @@ Page({
       market: '',
       industry: ''
     },
-    markets: ['SH', 'SZ', 'HK'],
+    markets: ['SH', 'SZ', 'BJ', 'HK'],
     marketIndex: 0,
     showEditModal: false,
     originalStockCode: '',

@@ -226,15 +226,16 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public DocumentResponse createDocument(DocumentSaveRequest request) {
+        List<String> cleanTags = filterBlankTags(request.getTags());
         KbDocument entity = new KbDocument();
         entity.setKnowledgeBaseId(request.getKnowledgeBaseId());
         entity.setTitle(request.getTitle());
         entity.setContent(request.getContent() != null ? request.getContent() : "");
         entity.setDirectoryId(request.getDirectoryId());
-        entity.setTags(request.getTags());
+        entity.setTags(cleanTags);
         documentMapper.insert(entity);
         // 同步文档-标签关联表，供按标签筛选使用
-        syncDocumentTags(entity.getId(), entity.getKnowledgeBaseId(), request.getTags());
+        syncDocumentTags(entity.getId(), entity.getKnowledgeBaseId(), cleanTags);
         return toDocumentResponse(entity);
     }
 
@@ -255,12 +256,12 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
             entity.setDirectoryId(request.getDirectoryId());
         }
         if (request.getTags() != null) {
-            entity.setTags(request.getTags());
-        }
-        documentMapper.updateById(entity);
-        // 仅当请求显式传入标签时才重建关联表，避免仅改标题/目录时误清空标签
-        if (request.getTags() != null) {
-            syncDocumentTags(entity.getId(), entity.getKnowledgeBaseId(), request.getTags());
+            List<String> cleanTags = filterBlankTags(request.getTags());
+            entity.setTags(cleanTags);
+            documentMapper.updateById(entity);
+            syncDocumentTags(entity.getId(), entity.getKnowledgeBaseId(), cleanTags);
+        } else {
+            documentMapper.updateById(entity);
         }
     }
 
@@ -512,6 +513,18 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         resp.setUpdateTime(entity.getUpdateTime());
         resp.setCreateTime(entity.getCreateTime());
         return resp;
+    }
+
+    /**
+     * 过滤空白标签名
+     */
+    private List<String> filterBlankTags(List<String> tags) {
+        if (tags == null) {
+            return new ArrayList<>();
+        }
+        return tags.stream()
+                .filter(t -> t != null && !t.trim().isEmpty())
+                .collect(Collectors.toList());
     }
 
     private TagResponse toTagResponse(KbTag entity) {

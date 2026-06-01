@@ -6,15 +6,40 @@
         <el-button :icon="ArrowLeft" circle @click="goBack" />
         <h2>{{ doc?.title || '文档详情' }}</h2>
       </div>
-      <span class="kb-name" v-if="doc?.knowledgeBaseName">
-        <el-icon><Collection /></el-icon> {{ doc.knowledgeBaseName }}
-      </span>
+      <div class="header-right">
+        <div class="toc-toggle" v-if="tocList.length > 0">
+          <el-icon><List /></el-icon>
+          <span class="toc-label">目录</span>
+          <el-switch v-model="showToc" size="small" />
+        </div>
+        <span class="kb-name" v-if="doc?.knowledgeBaseName">
+          <el-icon><Collection /></el-icon> {{ doc.knowledgeBaseName }}
+        </span>
+      </div>
     </div>
 
-    <div class="detail-body" v-if="doc">
+    <div class="detail-main" v-if="doc">
+      <!-- 目录大纲侧边栏 -->
+      <div class="toc-sidebar" :class="{ collapsed: !showToc }">
+        <div class="toc-title">目录大纲</div>
+        <div class="toc-list">
+          <div
+            v-for="item in tocList"
+            :key="item.id"
+            class="toc-item"
+            :class="{ active: activeHeading === item.id }"
+            :style="{ paddingLeft: (item.level - 1) * 16 + 12 + 'px' }"
+            @click="scrollToHeading(item.id)"
+          >
+            {{ item.text }}
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-body" ref="detailBodyRef">
       <!-- 标签 -->
-      <div class="doc-tags" v-if="doc.tags && doc.tags.length > 0">
-        <el-tag v-for="tag in doc.tags" :key="tag" size="small" :disable-transitions="true">
+      <div class="doc-tags" v-if="doc.tags && doc.tags.filter(Boolean).length > 0">
+        <el-tag v-for="tag in doc.tags.filter(Boolean)" :key="tag" size="small" :disable-transitions="true">
           {{ tag }}
         </el-tag>
       </div>
@@ -106,15 +131,16 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Document, Upload, Collection } from '@element-plus/icons-vue'
+import { ArrowLeft, Document, Upload, Collection, List } from '@element-plus/icons-vue'
 import MarkdownIt from 'markdown-it'
 import { useUserStore } from '@/store/user'
 import { uploadFile } from '@/api/file'
@@ -144,8 +170,78 @@ const replyContent = ref('')
 const uploading = ref(false)
 const fileInputRef = ref(null)
 
+const detailBodyRef = ref(null)
+const showToc = ref(true)
+const activeHeading = ref(null)
+let headingObserver = null
+
 const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
+
+// 为渲染的标题注入 id 锚点
+const defaultHeadingOpen = md.renderer.rules.heading_open ||
+  function (tokens, idx, options, env, self) { return self.renderToken(tokens, idx, options) }
+md.renderer.rules.heading_open = function (tokens, idx, options, env, self) {
+  tokens[idx].attrSet('id', 'heading-' + idx)
+  return defaultHeadingOpen(tokens, idx, options, env, self)
+}
+
+// 从 Markdown 内容提取标题列表
+const tocList = computed(() => {
+  if (!doc.value?.content) {
+    return []
+  }
+  const tokens = md.parse(doc.value.content, {})
+  const headings = []
+  for (let i = 0; i < tokens.length; i++) {
+    if (tokens[i].type === 'heading_open') {
+      const level = parseInt(tokens[i].tag.slice(1))
+      const text = tokens[i + 1]?.content || ''
+      headings.push({ id: 'heading-' + i, text, level })
+    }
+  }
+  return headings
+})
+
 const renderedContent = computed(() => (doc.value?.content ? md.render(doc.value.content) : ''))
+
+// 点击 TOC 项滚动到对应标题
+const scrollToHeading = (id) => {
+  const el = document.getElementById(id)
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+}
+
+// 监听滚动，高亮当前可视标题
+const setupObserver = () => {
+  if (headingObserver) {
+    headingObserver.disconnect()
+  }
+  const container = detailBodyRef.value
+  if (!container) {
+    return
+  }
+  headingObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          activeHeading.value = entry.target.id
+        }
+      }
+    },
+    { root: container, rootMargin: '0px 0px -80% 0px', threshold: 0 }
+  )
+  tocList.value.forEach((item) => {
+    const el = document.getElementById(item.id)
+    if (el) {
+      headingObserver.observe(el)
+    }
+  })
+}
+
+watch(renderedContent, () => {
+  nextTick(() => setupObserver())
+})
 
 // 评论总数（顶级 + 回复）
 const commentCount = computed(() =>
@@ -299,6 +395,12 @@ onMounted(async () => {
   await loadDoc()
   await Promise.all([loadAttachments(), loadComments()])
 })
+
+onBeforeUnmount(() => {
+  if (headingObserver) {
+    headingObserver.disconnect()
+  }
+})
 </script>
 
 <style scoped>
@@ -328,6 +430,24 @@ onMounted(async () => {
   margin: 0;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.toc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #606266;
+}
+
+.toc-label {
+  white-space: nowrap;
+}
+
 .kb-name {
   display: flex;
   align-items: center;
@@ -336,11 +456,71 @@ onMounted(async () => {
   color: #909399;
 }
 
+.detail-main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.toc-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: #fff;
+  border-right: 1px solid #e4e7ed;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.25s ease, min-width 0.25s ease;
+}
+
+.toc-sidebar.collapsed {
+  width: 0;
+  min-width: 0;
+  border-right: none;
+}
+
+.toc-title {
+  padding: 14px 16px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #909399;
+}
+
+.toc-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.toc-item {
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #606266;
+  cursor: pointer;
+  line-height: 1.5;
+  border-left: 2px solid transparent;
+  transition: all 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toc-item:hover {
+  color: #409eff;
+  background: #f5f7fa;
+}
+
+.toc-item.active {
+  color: #409eff;
+  border-left-color: #409eff;
+  background: #ecf5ff;
+}
+
 .detail-body {
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  max-width: 900px;
+  max-width: 1200px;
   width: 100%;
   margin: 0 auto;
 }
@@ -496,5 +676,117 @@ onMounted(async () => {
 
 .reply-main {
   flex: 1;
+}
+
+/* ==================== 暗色主题 ==================== */
+[data-theme="dark"] .doc-detail {
+  background: var(--dk-bg-1);
+}
+
+[data-theme="dark"] .detail-header {
+  background: var(--dk-bg-2);
+  border-bottom-color: var(--dk-border);
+}
+
+[data-theme="dark"] .header-left h2 {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .toc-toggle {
+  color: var(--dk-text-2);
+}
+
+[data-theme="dark"] .kb-name {
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .toc-sidebar {
+  background: var(--dk-bg-2);
+  border-right-color: var(--dk-border);
+}
+
+[data-theme="dark"] .toc-title {
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .toc-item {
+  color: var(--dk-text-2);
+}
+
+[data-theme="dark"] .toc-item:hover {
+  color: #62b2ff;
+  background: var(--dk-bg-3);
+}
+
+[data-theme="dark"] .toc-item.active {
+  color: #62b2ff;
+  border-left-color: #409eff;
+  background: rgba(64, 158, 255, 0.12);
+}
+
+[data-theme="dark"] .doc-content {
+  background: var(--dk-bg-2);
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .doc-content :deep(code) {
+  background: var(--dk-bg-3);
+  color: #e0e4ea;
+}
+
+[data-theme="dark"] .doc-content :deep(pre) {
+  background: var(--dk-bg-1);
+}
+
+[data-theme="dark"] .doc-content :deep(blockquote) {
+  border-left-color: var(--dk-border);
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .doc-content :deep(table td),
+[data-theme="dark"] .doc-content :deep(table th) {
+  border-color: var(--dk-border);
+}
+
+[data-theme="dark"] .doc-content :deep(h1),
+[data-theme="dark"] .doc-content :deep(h2),
+[data-theme="dark"] .doc-content :deep(h3) {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .section {
+  background: var(--dk-bg-2);
+}
+
+[data-theme="dark"] .section-title {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .attach-item {
+  background: var(--dk-bg-3);
+}
+
+[data-theme="dark"] .attach-name {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .attach-size {
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .comment-text {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .commenter {
+  color: var(--dk-text-1);
+}
+
+[data-theme="dark"] .time {
+  color: var(--dk-text-3);
+}
+
+[data-theme="dark"] .reply-list {
+  border-left-color: var(--dk-border);
 }
 </style>

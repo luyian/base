@@ -15,6 +15,7 @@ import com.base.stock.mapper.StockInfoMapper;
 import com.base.stock.mapper.StockKlineMapper;
 import com.base.stock.service.StockService;
 import com.base.stock.service.StockSyncService;
+import com.base.stock.util.MarketUtil;
 import com.base.system.dto.enums.EnumResponse;
 import com.base.system.service.EnumService;
 import lombok.RequiredArgsConstructor;
@@ -157,18 +158,9 @@ public class StockServiceImpl implements StockService {
         if (existing != null) {
             throw new BusinessException("股票代码已存在");
         }
-        // 设置默认值
-        if (stockInfo.getMarket() == null) {
-            String code = stockInfo.getStockCode();
-            if (code != null) {
-                if (code.startsWith("6")) {
-                    stockInfo.setMarket("SH");
-                } else if (code.startsWith("0") || code.startsWith("3")) {
-                    stockInfo.setMarket("SZ");
-                } else if (code.startsWith("HK") || code.startsWith("0")) {
-                    stockInfo.setMarket("HK");
-                }
-            }
+        // 设置默认值：未指定市场时根据代码推断（含沪市/深市/北证/港股）
+        if (stockInfo.getMarket() == null && stockInfo.getStockCode() != null) {
+            stockInfo.setMarket(MarketUtil.inferMarket(stockInfo.getStockCode()));
         }
         stockInfoMapper.insert(stockInfo);
         return stockInfo;

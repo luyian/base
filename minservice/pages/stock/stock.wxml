@@ -31,8 +31,8 @@
         <view class="stock-industry">{{item.industry || '--'}}</view>
       </view>
       <view class="stock-right">
-        <view class="market-tag {{item.market === 'SH' ? 'sh' : item.market === 'SZ' ? 'sz' : 'hk'}}">
-          {{item.market === 'SH' ? '沪市' : item.market === 'SZ' ? '深市' : '港股'}}
+        <view class="market-tag {{item.market === 'SH' ? 'sh' : item.market === 'SZ' ? 'sz' : item.market === 'BJ' ? 'bj' : 'hk'}}">
+          {{item.market === 'SH' ? '沪市' : item.market === 'SZ' ? '深市' : item.market === 'BJ' ? '北证' : '港股'}}
         </view>
         <view class="edit-btn" wx:if="{{isAdmin}}" bindtap="showEditModal" data-stock="{{item}}">编辑</view>
       </view>

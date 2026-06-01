@@ -3,6 +3,7 @@ package com.base.stock.client.impl;
 import com.base.common.util.HttpClientUtil;
 import com.base.stock.client.QuoteProvider;
 import com.base.stock.dto.StockQuote;
+import com.base.stock.util.MarketUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -95,23 +96,7 @@ public class TencentQuoteProvider implements QuoteProvider {
      * 根据股票代码推断市场
      */
     private String inferMarket(String code) {
-        if (code == null || code.isEmpty()) {
-            return "SZ";
-        }
-        // 港股: 5位数代码 (如 00189, 00700, 09988)
-        if (code.length() == 5) {
-            return "HK";
-        }
-        if (code.startsWith("60") || code.startsWith("68")) {
-            return "SH";
-        }
-        if (code.startsWith("00") || code.startsWith("30")) {
-            return "SZ";
-        }
-        if (code.startsWith("HK") || code.startsWith("9")) {
-            return "HK";
-        }
-        return "SZ";
+        return MarketUtil.inferMarket(code);
     }
 
     /**
@@ -121,15 +106,8 @@ public class TencentQuoteProvider implements QuoteProvider {
     private Map<String, StockQuote> fetchBatchQuotes(String market, List<String> codes) {
         Map<String, StockQuote> result = new HashMap<>();
 
-        // 构建腾讯API的股票代码格式: sh600000, sz000001
-        String prefix;
-        if ("SH".equalsIgnoreCase(market)) {
-            prefix = "sh";
-        } else if ("HK".equalsIgnoreCase(market)) {
-            prefix = "hk";
-        } else {
-            prefix = "sz";
-        }
+        // 构建腾讯API的股票代码格式: sh600000, sz000001, bj430047
+        String prefix = MarketUtil.toTencentPrefix(market);
         String codesParam = codes.stream()
                 .map(code -> prefix + code)
                 .reduce((a, b) -> a + "," + b)
@@ -166,13 +144,10 @@ public class TencentQuoteProvider implements QuoteProvider {
                     value = value.substring(1, value.length() - 1);
                 }
                 
-                // 提取股票代码: v_sh600000 -> 600000, v_sz000001 -> 000001, v_hk00700 -> 00700
+                // 提取股票代码: v_sh600000 -> 600000, v_bj430047 -> 430047, v_hk00700 -> 00700
                 String stockCode = key;
-                if (stockCode.startsWith("v_sh")) {
-                    stockCode = stockCode.substring(4);
-                } else if (stockCode.startsWith("v_sz")) {
-                    stockCode = stockCode.substring(4);
-                } else if (stockCode.startsWith("v_hk")) {
+                if (stockCode.startsWith("v_sh") || stockCode.startsWith("v_sz")
+                        || stockCode.startsWith("v_bj") || stockCode.startsWith("v_hk")) {
                     stockCode = stockCode.substring(4);
                 } else {
                     continue;
@@ -228,14 +203,12 @@ public class TencentQuoteProvider implements QuoteProvider {
 
             StockQuote quote = new StockQuote();
 
-            // 0: 市场代码 0=深圳, 1=上海, 3=港股
+            // 0: 市场代码 1=上海, 3=港股；0=深圳，北证亦可能返回 0 无法区分，按分组传入市场回填
             String marketCode = fields[0];
             if ("1".equals(marketCode)) {
-                quote.setMarket("SH");
-            } else if ("0".equals(marketCode)) {
-                quote.setMarket("SZ");
+                quote.setMarket(MarketUtil.SH);
             } else if ("3".equals(marketCode)) {
-                quote.setMarket("HK");
+                quote.setMarket(MarketUtil.HK);
             } else {
                 quote.setMarket(defaultMarket);
             }

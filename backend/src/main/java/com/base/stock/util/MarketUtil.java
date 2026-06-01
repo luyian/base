@@ -48,9 +48,9 @@ public final class MarketUtil {
         if (c.length() == 5 && isAllDigits(c)) {
             return HK;
         }
-        // 北证：43 开头（基础层）、83/87/88 开头（创新层）、920 开头（新发）
+        // 北证：43 开头（基础层）、83/87/88/89 开头（创新层/指数）、920 开头（新发）
         if (c.startsWith("43") || c.startsWith("83") || c.startsWith("87")
-                || c.startsWith("88") || c.startsWith("920")) {
+                || c.startsWith("88") || c.startsWith("89") || c.startsWith("920")) {
             return BJ;
         }
         // 沪市：60(主板)、68(科创板)

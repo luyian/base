@@ -1007,6 +1007,12 @@ public class FundServiceImpl implements FundService {
         return quoteMap;
     }
 
+    @Override
+    public Map<String, StockQuote> getStockQuotes(List<String> codes) {
+        Map<String, List<String>> marketCodeGroups = groupStockCodesByMarket(codes);
+        return fetchAllQuotesConcurrently(marketCodeGroups);
+    }
+
     // ========== 批量刷新（定时任务） ==========
 
     @Override

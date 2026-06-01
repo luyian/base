@@ -4,7 +4,7 @@ import com.base.common.result.Result;
 import com.base.stock.dto.MinuteKlineResponse;
 import com.base.stock.dto.StockQuote;
 import com.base.stock.entity.Watchlist;
-import com.base.stock.factory.QuoteProviderFactory;
+import com.base.stock.service.FundService;
 import com.base.stock.service.ScoreService;
 import com.base.stock.service.WatchlistService;
 import com.base.system.util.SecurityUtils;
@@ -34,7 +34,7 @@ public class WatchlistController {
 
     private final WatchlistService watchlistService;
     private final ScoreService scoreService;
-    private final QuoteProviderFactory quoteProviderFactory;
+    private final FundService fundService;
 
     /**
      * 查询自选股票列表
@@ -137,7 +137,7 @@ public class WatchlistController {
     }
 
     /**
-     * 批量获取股票实时行情
+     * 批量获取股票实时行情（复用基金估值的行情获取逻辑，从数据库查市场信息）
      */
     @ApiOperation("批量获取股票实时行情")
     @PostMapping("/quotes")
@@ -145,7 +145,7 @@ public class WatchlistController {
         if (codes == null || codes.isEmpty()) {
             return Result.success(Collections.emptyMap());
         }
-        Map<String, StockQuote> quotes = quoteProviderFactory.getPrimaryProvider().getQuotes(codes);
+        Map<String, StockQuote> quotes = fundService.getStockQuotes(codes);
         return Result.success(quotes);
     }
 }

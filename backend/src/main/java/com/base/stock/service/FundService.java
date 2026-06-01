@@ -2,9 +2,11 @@ package com.base.stock.service;
 
 import com.base.stock.dto.FundConfigRequest;
 import com.base.stock.dto.FundValuationResponse;
+import com.base.stock.dto.StockQuote;
 import com.base.stock.entity.FundConfig;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 基金服务接口
@@ -121,4 +123,12 @@ public interface FundService {
      * 先收集所有基金持仓股票去重，批量拉取报价，再逐个基金计算估值并缓存/持久化
      */
     void refreshAllFundValuation();
+
+    /**
+     * 批量获取股票实时行情（复用基金估值的行情获取逻辑，从数据库查市场信息）
+     *
+     * @param codes 股票代码列表
+     * @return 股票代码 -> 报价
+     */
+    Map<String, StockQuote> getStockQuotes(List<String> codes);
 }

@@ -1,21 +1,58 @@
 <!--pages/watchlist/watchlist.wxml-->
 <view class="container {{themeClass}}">
   <nav-bar title="自选" />
-  <view class="loading" wx:if="{{loading}}">加载中...</view>
-  
-  <view class="watchlist" wx:else>
-    <view class="stock-item" wx:for="{{watchlist}}" wx:key="id">
-      <view class="stock-info">
-        <text class="name">{{item.stockName}}</text>
-        <text class="code">{{item.market}}-{{item.stockCode}}</text>
+
+  <!-- Header with refresh -->
+  <view class="header">
+    <view class="header-left">
+      <text class="header-title">我的自选</text>
+      <text class="header-count" wx:if="{{watchlist.length > 0}}">{{watchlist.length}}只</text>
+    </view>
+    <view class="refresh-btn {{refreshing ? 'spinning' : ''}}" bindtap="onRefresh">
+      <text class="refresh-icon">↻</text>
+    </view>
+  </view>
+
+  <!-- Update time -->
+  <view class="update-time" wx:if="{{updateTime}}">
+    <text>更新于 {{updateTime}}</text>
+  </view>
+
+  <!-- Loading -->
+  <view class="loading" wx:if="{{loading && watchlist.length === 0}}">
+    <view class="loading-dot"></view>
+    <view class="loading-dot"></view>
+    <view class="loading-dot"></view>
+  </view>
+
+  <!-- Watchlist -->
+  <view class="watchlist" wx:elif="{{watchlist.length > 0}}">
+    <view class="stock-card" wx:for="{{watchlist}}" wx:key="id">
+      <view class="card-left">
+        <text class="stock-name">{{item.stockName}}</text>
+        <text class="stock-code">{{item.market}}-{{item.stockCode}}</text>
       </view>
-      <view class="actions">
-        <text class="delete" bindtap="removeStock" data-id="{{item.id}}">删除</text>
+      <view class="card-center">
+        <text class="stock-price {{item.changePercent > 0 ? 'up' : item.changePercent < 0 ? 'down' : ''}}">
+          {{item.price || '--'}}
+        </text>
+      </view>
+      <view class="card-right">
+        <view class="change-badge {{item.changePercent > 0 ? 'up' : item.changePercent < 0 ? 'down' : 'flat'}}">
+          <text>{{item.changePercent > 0 ? '+' : ''}}{{item.changePercentStr || '--'}}</text>
+        </view>
+        <text class="change-val">{{item.change > 0 ? '+' : ''}}{{item.changeStr || '--'}}</text>
+      </view>
+      <view class="card-action">
+        <text class="delete-icon" catchtap="removeStock" data-id="{{item.id}}">×</text>
       </view>
     </view>
-    
-    <view wx:if="{{watchlist.length === 0}}" class="empty">
-      <text>暂无自选股</text>
-    </view>
+  </view>
+
+  <!-- Empty -->
+  <view class="empty-state" wx:elif="{{!loading}}">
+    <view class="empty-icon">☆</view>
+    <text class="empty-title">暂无自选股</text>
+    <text class="empty-desc">在股票列表中点击 ☆ 添加自选</text>
   </view>
 </view>

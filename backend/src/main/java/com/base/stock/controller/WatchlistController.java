@@ -2,7 +2,9 @@ package com.base.stock.controller;
 
 import com.base.common.result.Result;
 import com.base.stock.dto.MinuteKlineResponse;
+import com.base.stock.dto.StockQuote;
 import com.base.stock.entity.Watchlist;
+import com.base.stock.factory.QuoteProviderFactory;
 import com.base.stock.service.ScoreService;
 import com.base.stock.service.WatchlistService;
 import com.base.system.util.SecurityUtils;
@@ -15,7 +17,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 自选股票控制器
@@ -30,6 +34,7 @@ public class WatchlistController {
 
     private final WatchlistService watchlistService;
     private final ScoreService scoreService;
+    private final QuoteProviderFactory quoteProviderFactory;
 
     /**
      * 查询自选股票列表
@@ -129,5 +134,18 @@ public class WatchlistController {
         }
         scoreService.executeStockScore(stockCode, scoreDate);
         return Result.success();
+    }
+
+    /**
+     * 批量获取股票实时行情
+     */
+    @ApiOperation("批量获取股票实时行情")
+    @PostMapping("/quotes")
+    public Result<Map<String, StockQuote>> getQuotes(@RequestBody List<String> codes) {
+        if (codes == null || codes.isEmpty()) {
+            return Result.success(Collections.emptyMap());
+        }
+        Map<String, StockQuote> quotes = quoteProviderFactory.getPrimaryProvider().getQuotes(codes);
+        return Result.success(quotes);
     }
 }

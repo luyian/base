@@ -2,16 +2,16 @@
 const request = require('../utils/request');
 
 module.exports = {
-  // Get user's watchlist
-  getWatchlist: () => request.get('/stock/watchlist'),
-  
-  // Add stock to watchlist
-  addToWatchlist: (stockCode, stockName, market) => 
-    request.post('/stock/watchlist', { stockCode, stockName, market }),
-  
-  // Remove stock from watchlist
-  removeFromWatchlist: (id) => request.delete(`/stock/watchlist/${id}`),
-  
-  // Get real-time quote for watchlist
-  getQuotes: (codes) => request.post('/stock/quotes', { codes })
+    // 查询自选列表
+    getWatchlist: () => request.get('/stock/watchlist'),
+
+    // 添加自选（后端接收 @RequestParam）
+    addToWatchlist: (stockCode) =>
+        request.post('/stock/watchlist?stockCode=' + encodeURIComponent(stockCode)),
+
+    // 删除自选
+    removeFromWatchlist: (id) => request.delete('/stock/watchlist/' + id),
+
+    // 批量获取实时行情（复用基金估值的 QuoteProvider）
+    getQuotes: (codes) => request.post('/stock/watchlist/quotes', codes)
 };

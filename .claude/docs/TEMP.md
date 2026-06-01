@@ -95,3 +95,10 @@
 - 修复 tags 数组含空值导致空白标签：KnowledgeBaseDetail（列表+编辑区+加载时）、DocumentSquare 卡片标签均加 `.filter(Boolean)` 过滤
 - 文档详情页新增目录大纲侧边栏：从 Markdown 标题（h1-h6）自动生成 TOC，点击跳转对应章节，IntersectionObserver 高亮当前可视标题，el-switch 开关控制展开/收起
 - 暗色主题适配：KnowledgeDocDetail（详情页+TOC侧栏+评论区）、DocumentSquare（卡片+分页）、KnowledgeBaseDetail（目录树+文档列表+编辑器）三个页面基于全局 `--dk-*` 变量覆盖硬编码颜色
+
+## 小程序股票自选功能 + 自选页实时行情（2026-06-01）
+
+- 股票列表页新增自选星标按钮：加载时获取用户自选列表构建 watchlistMap，点击星标切换自选状态
+- 自选页重构：展示实时行情（现价、涨跌额、涨跌幅），支持手动刷新按钮和下拉刷新
+- 后端 WatchlistController 新增 `/stock/watchlist/quotes` 接口，注入 QuoteProviderFactory 复用基金估值的行情数据源
+- 小程序 api/watchlist.js 新增 getQuotes 方法调用实时行情接口

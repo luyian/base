@@ -58,6 +58,11 @@ page {
 .stock-industry { font-size: 22rpx; color: var(--text-tertiary); margin-left: 16rpx; background: var(--bg); padding: 4rpx 12rpx; border-radius: 6rpx; white-space: nowrap; }
 .stock-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12rpx; margin-left: 12rpx; flex-shrink: 0; }
 .market-tag { padding: 8rpx 16rpx; border-radius: 8rpx; font-size: 22rpx; font-weight: 500; display: flex; align-items: center; justify-content: center; }
+.stock-actions { display: flex; align-items: center; gap: 12rpx; }
+.watchlist-btn { width: 56rpx; height: 56rpx; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+.watchlist-btn .star-icon { font-size: 36rpx; color: var(--text-tertiary); transition: all 0.3s ease; }
+.watchlist-btn.active .star-icon { color: #F59E0B; transform: scale(1.1); }
+.watchlist-btn:active { transform: scale(0.85); }
 .edit-btn { padding: 8rpx 20rpx; background: var(--primary-light); color: var(--primary); border-radius: 8rpx; font-size: 22rpx; font-weight: 500; display: flex; align-items: center; justify-content: center; }
 .market-tag.sh { background: var(--primary-light); color: var(--primary); }
 .market-tag.sz { background: #ECFEFF; color: #06B6D4; }

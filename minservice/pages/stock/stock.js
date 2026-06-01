@@ -1,12 +1,13 @@
 // pages/stock/stock.js
 const stockApi = require('../../api/stock');
+const watchlistApi = require('../../api/watchlist');
 const app = getApp();
 
 Page({
   data: {
     stocks: [],
     loading: true,
-    page: 1,
+  page: 1,
     size: 20,
     hasMore: true,
     keyword: '',
@@ -16,6 +17,7 @@ Page({
     isAdmin: false,
     showAddModal: false,
     submitting: false,
+    watchlistMap: {},
     newStock: {
       stockCode: '',
       stockName: '',
@@ -40,13 +42,14 @@ Page({
     this.setData({ isAdmin: app.isAdmin() });
     this.loadStocks();
     this.loadIndustryOptions();
+    this.loadWatchlistStatus();
   },
 
   onShow() {
     this.applyTheme();
+    this.loadWatchlistStatus();
   },
 
-  // 应用主题
   applyTheme() {
     const theme = app.getTheme();
     this.setData({
@@ -54,7 +57,6 @@ Page({
     });
   },
 
-  // 页面样式设置（供 app.js 调用）
   setTheme(theme) {
     this.applyTheme();
   },
@@ -67,23 +69,74 @@ Page({
       .catch(() => {});
   },
 
+  loadWatchlistStatus() {
+    const token = wx.getStorageSync('token');
+    if (!token) return;
+
+    watchlistApi.getWatchlist()
+      .then(res => {
+        const list = res.data || [];
+        const watchlistMap = {};
+        list.forEach(item => {
+          watchlistMap[item.stockCode] = item.id;
+        });
+        this.setData({ watchlistMap });
+      })
+      .catch(() => {});
+  },
+
+  toggleWatchlist(e) {
+    const token = wx.getStorageSync('token');
+    if (!token) {
+      wx.showToast({ title: '请先登录', icon: 'none' });
+      return;
+    }
+
+    const { code, name, market } = e.currentTarget.dataset;
+    const isInWatchlist = this.data.watchlistMap[code];
+
+    if (isInWatchlist) {
+      watchlistApi.removeFromWatchlist(isInWatchlist)
+        .then(() => {
+          const watchlistMap = { ...this.data.watchlistMap };
+          delete watchlistMap[code];
+          this.setData({ watchlistMap });
+          wx.showToast({ title: '已取消自选', icon: 'success' });
+        })
+        .catch(err => {
+          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+        });
+    } else {
+      watchlistApi.addToWatchlist(code)
+        .then(res => {
+          const watchlistMap = { ...this.data.watchlistMap };
+          watchlistMap[code] = res.data || true;
+          this.setData({ watchlistMap });
+          wx.showToast({ title: '已添加自选', icon: 'success' });
+        })
+        .catch(err => {
+          wx.showToast({ title: err.message || '操作失败', icon: 'none' });
+        });
+    }
+  },
+
   loadStocks(loadMore = false) {
     if (!loadMore) {
       this.setData({ loading: true, page: 1 });
     }
-    
+
     const data = {
       page: this.data.page,
       size: this.data.size
     };
-    
+
     if (this.data.keyword) {
       data.keyword = this.data.keyword;
     }
     if (this.data.industry) {
       data.industry = this.data.industry;
     }
-    
+
     return stockApi.getStockList(data)
       .then(res => {
         const list = res.data?.records || [];
@@ -127,10 +180,8 @@ Page({
     wx.navigateTo({ url: `/pages/stock/detail?code=${stockCode}` });
   },
 
-  // 阻止事件冒泡
   stopPropagation() {},
 
-  // 新增股票
   showAddModal() {
     this.setData({
       showAddModal: true,
@@ -161,7 +212,6 @@ Page({
     this.setData({ 'newStock.industry': e.detail.value });
   },
 
-  // 编辑股票
   showEditModal(e) {
     const stock = e.currentTarget.dataset.stock;
     const editMarketIndex = this.data.markets.indexOf(stock.market);

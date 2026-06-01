@@ -1,14 +1,11 @@
 <!--pages/stock/stock.wxml-->
 <view class="container {{themeClass}}">
   <nav-bar title="股票列表" back="{{true}}" />
-  <!-- Search Bar -->
   <view class="search-bar" style="top: {{navBarTotalHeight}}px;">
     <input class="search-input" placeholder="搜索股票代码/名称" bindconfirm="onSearch" />
     <view class="add-btn" bindtap="showAddModal" wx:if="{{isAdmin}}">+ 新增</view>
   </view>
 
-
-  <!-- Industry Filter -->
   <view class="filter-bar" wx:if="{{industries.length > 0}}">
     <picker bindchange="onIndustryChange" value="{{industryIndex}}" range="{{industries}}" range-key="name">
       <view class="filter-picker">
@@ -18,9 +15,8 @@
     </picker>
   </view>
 
-  <!-- Stock List -->
   <view class="loading" wx:if="{{loading && stocks.length === 0}}">加载中...</view>
-  
+
   <view class="stock-list" wx:else>
     <view class="stock-item" wx:for="{{stocks}}" wx:key="stockCode">
       <view class="stock-main" bindtap="goToDetail" data-code="{{item.stockCode}}">
@@ -34,23 +30,25 @@
         <view class="market-tag {{item.market === 'SH' ? 'sh' : item.market === 'SZ' ? 'sz' : item.market === 'BJ' ? 'bj' : 'hk'}}">
           {{item.market === 'SH' ? '沪市' : item.market === 'SZ' ? '深市' : item.market === 'BJ' ? '北证' : '港股'}}
         </view>
-        <view class="edit-btn" wx:if="{{isAdmin}}" bindtap="showEditModal" data-stock="{{item}}">编辑</view>
+        <view class="stock-actions">
+          <view class="watchlist-btn {{watchlistMap[item.stockCode] ? 'active' : ''}}" catchtap="toggleWatchlist" data-code="{{item.stockCode}}" data-name="{{item.stockName}}" data-market="{{item.market}}">
+            <text class="star-icon">{{watchlistMap[item.stockCode] ? '★' : '☆'}}</text>
+          </view>
+          <view class="edit-btn" wx:if="{{isAdmin}}" catchtap="showEditModal" data-stock="{{item}}">编辑</view>
+        </view>
       </view>
     </view>
-    
-    <!-- Load More -->
+
     <view class="load-more" wx:if="{{stocks.length > 0}}">
       <text wx:if="{{loading}}">加载中...</text>
       <text wx:elif="{{!hasMore}}">没有更多了</text>
     </view>
   </view>
 
-  <!-- Empty -->
   <view class="empty" wx:if="{{!loading && stocks.length === 0}}">
     <text>暂无股票数据</text>
   </view>
 
-  <!-- Add Stock Modal -->
   <view class="modal-mask" wx:if="{{showAddModal}}" bindtap="hideAddModal">
     <view class="modal" catchtap="stopPropagation">
       <view class="modal-title">新增股票</view>
@@ -81,7 +79,6 @@
     </view>
   </view>
 
-  <!-- Edit Stock Modal -->
   <view class="modal-mask" wx:if="{{showEditModal}}" bindtap="hideEditModal">
     <view class="modal" catchtap="stopPropagation">
       <view class="modal-title">编辑股票</view>

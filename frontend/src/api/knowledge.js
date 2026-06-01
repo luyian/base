@@ -69,6 +69,18 @@ export function getDocumentList(params) {
 }
 
 /**
+ * 分页获取全部文档（跨知识库，文档维度）
+ * @param {Object} params - { pageNum, pageSize, keyword }
+ */
+export function getAllDocuments(params) {
+  return request({
+    url: '/documents/all',
+    method: 'get',
+    params
+  })
+}
+
+/**
  * 获取文档详情
  */
 export function getDocumentDetail(id) {
@@ -198,6 +210,74 @@ export function updateTag(data) {
 export function deleteTag(id) {
   return request({
     url: `/tags/${id}`,
+    method: 'delete'
+  })
+}
+
+// ==================== 附件 API ====================
+
+/**
+ * 获取文档附件列表
+ */
+export function getAttachmentList(documentId) {
+  return request({
+    url: '/attachments',
+    method: 'get',
+    params: { documentId }
+  })
+}
+
+/**
+ * 绑定文档附件（先上传文件得到 fileId 再绑定）
+ */
+export function bindAttachment(data) {
+  return request({
+    url: '/attachments',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 删除文档附件
+ */
+export function deleteAttachment(id) {
+  return request({
+    url: `/attachments/${id}`,
+    method: 'delete'
+  })
+}
+
+// ==================== 评论 API ====================
+
+/**
+ * 获取文档评论列表
+ */
+export function getCommentList(documentId) {
+  return request({
+    url: '/comments',
+    method: 'get',
+    params: { documentId }
+  })
+}
+
+/**
+ * 发表评论
+ */
+export function addComment(data) {
+  return request({
+    url: '/comments',
+    method: 'post',
+    data
+  })
+}
+
+/**
+ * 删除评论
+ */
+export function deleteComment(id) {
+  return request({
+    url: `/comments/${id}`,
     method: 'delete'
   })
 }

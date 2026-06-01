@@ -45,3 +45,36 @@
 - 前端编辑弹窗新增基准指数搜索选择器，详情弹窗展示基准指数涨跌
 - 小程序编辑页新增基准指数代码输入，详情页展示基准指数涨跌
 - `alter_fund_benchmark.sql` 包含表结构变更和常用指数基础数据插入
+
+## 知识库功能开发（2026-05-27）
+
+- 新建知识库模块后端，包含 Entity / DTO / Mapper / Service / Controller 全套代码
+- 支持知识库 CRUD、多级目录树、Markdown 文档编辑/预览、标签管理、按目录/标签筛选
+- API 接口：`/knowledge-base`、`/directories`、`/documents`、`/tags`
+- 前端 `KnowledgeBaseList.vue` 和 `KnowledgeBaseDetail.vue` 已对接
+- 前端路由新增 `/knowledge-base` 和 `/knowledge-base/:id`
+- 菜单初始化 SQL：`init_knowledge_permission.sql`（ID 8/801/80101-80107）
+- 已分配给超级管理员和系统管理员角色
+
+## 知识库标签筛选修复（2026-05-29）
+
+- 修复按标签筛选文档永远返回空的 bug：原先写文档只存 `kb_document.tags` JSON，筛选却查空的 `kb_document_tag` 关联表
+- 采用方案 B：保留 JSON 字段供前端展示标签名，新增维护 `kb_document_tag` 关联表（存 tagId）供按 tagId 筛选
+- 新增 `syncDocumentTags()`：按「知识库ID+标签名」反查 tagId，先清后建重建关联；创建/更新文档时调用（更新仅在显式传 tags 时同步）
+- 创建/更新文档方法加 `@Transactional`
+- 删除知识库时物理清理其下文档的标签关联；删除标签时清理引用该标签的关联
+- 前端 `updateDocument` 三处调用（保存/加标签/移标签）补传 `knowledgeBaseId`，修复 `@NotNull` 校验报「知识库ID不能为空」
+- 遗留权衡：改标签名后旧文档 JSON 仍显示旧名（展示走 JSON，筛选走关联表不受影响）
+
+## 知识库增强：附件 + 文档广场 + 评论（2026-06-01）
+
+- 标签展示修复：四处 el-tag 按背景亮度自适应文字色（textColorOf），彩色底也能看清标签名
+- Markdown 渲染改用 markdown-it（替换手写正则），支持代码块/加粗/列表/表格等
+- 文档导入：详情页「导入文档」读取 .md/.txt 文件内容创建为新文档（纯前端）
+- 通用文件关联表 file_link_obj（area_type/link_type 用枚举 FileAreaTypeEnum/FileLinkTypeEnum 区分业务域与关联类型），附件复用 /system/file/upload + CosService.getFileUrl 预签名下载
+- 文档附件后端：FileLinkObj/Mapper、附件 DTO、AttachmentController(/attachments)、Service 绑定/列表/删除
+- 文档评论 kb_comment 支持一级回复：KbComment/Mapper、CommentController(/comments)；评论人用 SecurityUtils 显式存（MyMetaObjectHandler 的 createBy 填 "system" 不可用）
+- 全局文档广场（独立顶级菜单 /document-square，非知识库内入口）：/documents/all 分页(Page)，DocumentResponse 加 knowledgeBaseId/knowledgeBaseName；前端 DocumentSquare.vue 卡片墙 + el-pagination
+- 文档详情页 KnowledgeDocDetail.vue（/document/:docId）：markdown-it 正文 + 附件上传/下载/删除 + 评论/一级回复
+- 菜单 SQL：init_document_square_menu.sql（sys_permission ID 910/911，分配角色 1/2）
+- 建表 SQL：init_knowledge_tables.sql 追加 file_link_obj、kb_comment

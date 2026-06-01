@@ -99,6 +99,31 @@ const constantRoutes = [
         name: 'MessageCenter',
         component: () => import('@/views/message/index.vue'),
         meta: { title: '消息中心', icon: 'Bell' }
+      },
+      // 知识库模块路由
+      {
+        path: 'knowledge-base',
+        name: 'KnowledgeBaseList',
+        component: () => import('@/views/KnowledgeBaseList.vue'),
+        meta: { title: '知识库', icon: 'Collection' }
+      },
+      {
+        path: 'knowledge-base/:id',
+        name: 'KnowledgeBaseDetail',
+        component: () => import('@/views/KnowledgeBaseDetail.vue'),
+        meta: { title: '知识库详情', hidden: true }
+      },
+      {
+        path: 'document-square',
+        name: 'DocumentSquare',
+        component: () => import('@/views/DocumentSquare.vue'),
+        meta: { title: '文档广场', icon: 'Files' }
+      },
+      {
+        path: 'document/:docId',
+        name: 'KnowledgeDocDetail',
+        component: () => import('@/views/KnowledgeDocDetail.vue'),
+        meta: { title: '文档详情', hidden: true }
       }
     ]
   }

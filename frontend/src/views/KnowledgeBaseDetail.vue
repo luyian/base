@@ -13,6 +13,17 @@
         <el-button type="primary" :icon="DocumentAdd" @click="handleCreateDocument">
           新建文档
         </el-button>
+        <el-button :icon="Upload" @click="triggerImport">
+          导入文档
+        </el-button>
+        <input
+          ref="importInputRef"
+          type="file"
+          accept=".md,.markdown,.txt"
+          multiple
+          style="display: none"
+          @change="handleImportFiles"
+        />
       </div>
     </div>
 
@@ -80,7 +91,7 @@
               :label="tag.name"
               :value="tag.id"
             >
-              <el-tag :color="tag.color" size="small">{{ tag.name }}</el-tag>
+              <el-tag :color="tag.color" :style="{ color: textColorOf(tag.color) }" size="small">{{ tag.name }}</el-tag>
             </el-option>
           </el-select>
         </div>
@@ -104,6 +115,7 @@
                 v-for="tag in doc.tags.slice(0, 2)"
                 :key="tag"
                 :color="getTagColor(tag)"
+                :style="{ color: textColorOf(getTagColor(tag)) }"
                 size="small"
                 :disable-transitions="true"
               >
@@ -161,6 +173,7 @@
               :key="tag"
               closable
               :color="getTagColor(tag)"
+              :style="{ color: textColorOf(getTagColor(tag)) }"
               @close="handleRemoveTag(tag)"
             >
               {{ tag }}
@@ -174,7 +187,7 @@
                     :key="tag.id"
                     :command="tag"
                   >
-                    <el-tag :color="tag.color" size="small">{{ tag.name }}</el-tag>
+                    <el-tag :color="tag.color" :style="{ color: textColorOf(tag.color) }" size="small">{{ tag.name }}</el-tag>
                   </el-dropdown-item>
                   <el-dropdown-item divided @click="handleCreateTag">
                     <el-icon><Plus /></el-icon> 新建标签
@@ -289,7 +302,8 @@ import {
   Delete,
   Plus,
   Check,
-  MoreFilled
+  MoreFilled,
+  Upload
 } from '@element-plus/icons-vue'
 import {
   getKnowledgeBaseDetail,
@@ -305,6 +319,7 @@ import {
   getTagList,
   createTag
 } from '@/api/knowledge'
+import MarkdownIt from 'markdown-it'
 
 const route = useRoute()
 const router = useRouter()
@@ -354,7 +369,7 @@ const docFormRef = ref(null)
 const documentForm = reactive({
   id: null,
   title: '',
-  directoryId: null
+  directoryId: 0
 })
 const documentRules = {
   title: [{ required: true, message: '请输入文档标题', trigger: 'blur' }]
@@ -369,7 +384,7 @@ const directoryTreeSelect = computed(() => {
       children: item.children ? convert(item.children) : []
     }))
   }
-  return [{ value: null, label: '根目录', children: convert(directoryTree.value) }]
+  return [{ value: 0, label: '根目录', children: convert(directoryTree.value) }]
 })
 const treeSelectProps = {
   value: 'value',
@@ -399,38 +414,39 @@ const availableTags = computed(() => {
   return tagList.value.filter(t => !docTags.includes(t.name))
 })
 
-// 渲染 Markdown（简单实现）
+// Markdown 渲染器：禁用原始 HTML 防 XSS，自动识别链接，软换行转 <br>
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  breaks: true
+})
+
+// 渲染 Markdown
 const renderedContent = computed(() => {
-  if (!editingContent.value) return ''
-  let html = editingContent.value
-  // 标题
-  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>')
-  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>')
-  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>')
-  // 粗体
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-  // 斜体
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>')
-  // 代码块
-  html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-  // 行内代码
-  html = html.replace(/`(.*?)`/g, '<code>$1</code>')
-  // 链接
-  html = html.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>')
-  // 图片
-  html = html.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%">')
-  // 列表
-  html = html.replace(/^\s*[-*]\s+(.*$)/gim, '<li>$1</li>')
-  html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-  // 换行
-  html = html.replace(/\n/g, '<br>')
-  return html
+  if (!editingContent.value) {
+    return ''
+  }
+  return md.render(editingContent.value)
 })
 
 // 获取标签颜色
 const getTagColor = (tagName) => {
   const tag = tagList.value.find(t => t.name === tagName)
   return tag?.color || '#909399'
+}
+
+// 根据背景色亮度自动返回可读的文字颜色（深底用白字，浅底用深字）
+const textColorOf = (bg) => {
+  const hex = (bg || '').replace('#', '')
+  if (hex.length !== 6) {
+    return '#ffffff'
+  }
+  const r = parseInt(hex.slice(0, 2), 16)
+  const g = parseInt(hex.slice(2, 4), 16)
+  const b = parseInt(hex.slice(4, 6), 16)
+  // 加权亮度（人眼对绿色更敏感）
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b
+  return luminance > 160 ? '#303133' : '#ffffff'
 }
 
 // 返回
@@ -537,6 +553,7 @@ const handleSaveDocument = async () => {
   try {
     await updateDocument({
       id: currentDocument.value.id,
+      knowledgeBaseId: knowledgeBaseId.value,
       title: editingTitle.value,
       content: editingContent.value,
       tags: currentDocument.value.tags
@@ -566,6 +583,7 @@ const handleAddTag = async (tag) => {
   currentDocument.value.tags = tags
   await updateDocument({
     id: currentDocument.value.id,
+    knowledgeBaseId: knowledgeBaseId.value,
     title: editingTitle.value,
     content: editingContent.value,
     tags
@@ -580,6 +598,7 @@ const handleRemoveTag = async (tagName) => {
   currentDocument.value.tags = tags
   await updateDocument({
     id: currentDocument.value.id,
+    knowledgeBaseId: knowledgeBaseId.value,
     title: editingTitle.value,
     content: editingContent.value,
     tags
@@ -660,12 +679,44 @@ const handleSubmitDirectory = async () => {
   }
 }
 
+// 导入文档（读取 .md/.txt 文件内容创建为新文档）
+const importInputRef = ref(null)
+const triggerImport = () => {
+  importInputRef.value?.click()
+}
+const handleImportFiles = async (event) => {
+  const files = Array.from(event.target.files || [])
+  if (files.length === 0) {
+    return
+  }
+  let successCount = 0
+  for (const file of files) {
+    try {
+      const content = await file.text()
+      const title = file.name.replace(/\.(md|markdown|txt)$/i, '')
+      await createDocument({
+        knowledgeBaseId: knowledgeBaseId.value,
+        title,
+        content,
+        directoryId: 0
+      })
+      successCount++
+    } catch (error) {
+      console.error('导入文档失败:', file.name, error)
+    }
+  }
+  // 清空选择，允许再次选择同名文件
+  event.target.value = ''
+  ElMessage.success(`成功导入 ${successCount}/${files.length} 个文档`)
+  loadDocumentList()
+}
+
 // 创建文档
 const handleCreateDocument = () => {
   isEditDocument.value = false
   documentForm.id = null
   documentForm.title = ''
-  documentForm.directoryId = null
+  documentForm.directoryId = 0
   documentDialogVisible.value = true
 }
 

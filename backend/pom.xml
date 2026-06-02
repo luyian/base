@@ -111,6 +111,13 @@
             <version>${hutool.version}</version>
         </dependency>
 
+        <!-- Java-WebSocket 客户端（飞书 WebSocket 长连接） -->
+        <dependency>
+            <groupId>org.java-websocket</groupId>
+            <artifactId>Java-WebSocket</artifactId>
+            <version>1.5.4</version>
+        </dependency>
+
         <!-- Knife4j 接口文档 -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>

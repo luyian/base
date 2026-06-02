@@ -100,6 +100,30 @@ const constantRoutes = [
         component: () => import('@/views/message/index.vue'),
         meta: { title: '消息中心', icon: 'Bell' }
       },
+      {
+        path: 'approval',
+        name: 'ApprovalList',
+        component: () => import('@/views/approval/index.vue'),
+        meta: { title: '审批管理', icon: 'Stamp' }
+      },
+      {
+        path: 'approval/detail/:id',
+        name: 'ApprovalDetail',
+        component: () => import('@/views/approval/detail.vue'),
+        meta: { title: '审批详情', hidden: true }
+      },
+      {
+        path: 'approval/template',
+        name: 'ApprovalTemplate',
+        component: () => import('@/views/approval/template/index.vue'),
+        meta: { title: '审批模板', icon: 'Document' }
+      },
+      {
+        path: 'approval/event-log',
+        name: 'EventLog',
+        component: () => import('@/views/approval/eventLog/index.vue'),
+        meta: { title: '事件日志', icon: 'Notebook' }
+      },
       // 知识库模块路由
       {
         path: 'knowledge-base',

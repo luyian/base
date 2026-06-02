@@ -49,4 +49,19 @@ public class FeishuConfig {
      * OAuth 授权回调地址
      */
     private String redirectUri;
+
+    /**
+     * 事件订阅 Verification Token
+     */
+    private String verificationToken;
+
+    /**
+     * 事件加密密钥
+     */
+    private String encryptKey;
+
+    /**
+     * 是否启用 WebSocket 事件监听
+     */
+    private Boolean eventEnabled = false;
 }

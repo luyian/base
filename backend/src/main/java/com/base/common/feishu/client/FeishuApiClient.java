@@ -37,6 +37,32 @@ public class FeishuApiClient {
     private FeishuTokenService feishuTokenService;
 
     /**
+     * 发送 GET 请求
+     *
+     * @param path 接口路径（不含 baseUrl）
+     * @return 响应 JSON 对象
+     */
+    public JSONObject get(String path) {
+        return get(path, null);
+    }
+
+    /**
+     * 发送 GET 请求，支持查询参数
+     *
+     * @param path   接口路径（不含 baseUrl）
+     * @param params 查询参数
+     * @return 响应 JSON 对象
+     */
+    public JSONObject get(String path, Map<String, Object> params) {
+        String url = buildUrl(path, params);
+        Map<String, String> headers = buildHeaders();
+        String response = HttpClientUtil.getWithRetry(url, headers, feishuConfig.getRetry());
+        JSONObject jsonObject = JSONObject.parseObject(response);
+        checkResponse(jsonObject, path);
+        return jsonObject;
+    }
+
+    /**
      * 发送 POST 请求（JSON 格式）
      *
      * @param path 接口路径（不含 baseUrl）

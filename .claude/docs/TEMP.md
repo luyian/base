@@ -96,6 +96,12 @@
 - 文档详情页新增目录大纲侧边栏：从 Markdown 标题（h1-h6）自动生成 TOC，点击跳转对应章节，IntersectionObserver 高亮当前可视标题，el-switch 开关控制展开/收起
 - 暗色主题适配：KnowledgeDocDetail（详情页+TOC侧栏+评论区）、DocumentSquare（卡片+分页）、KnowledgeBaseDetail（目录树+文档列表+编辑器）三个页面基于全局 `--dk-*` 变量覆盖硬编码颜色
 
+## 基金基准指数市场查询修复（2026-06-02）
+
+- 后端 `FundServiceImpl.calculateValuation`：获取基准指数行情时优先从 `stock_info` 表查询市场，避免 `MarketUtil.inferMarket` 将沪市指数（如000300）误判为深市导致行情查不到
+- 后端 `FundServiceImpl.groupStockCodesByMarket`：表内查不到市场时增加 warn 日志，提示回退到代码推断
+- 小程序 `edit.js`/`edit.wxml`：基准指数输入框新增搜索建议功能，复用 `stockApi.searchStocks`，选择后自动填入指数代码
+
 ## 小程序股票自选功能 + 自选页实时行情（2026-06-01）
 
 - 股票列表页新增自选星标按钮：加载时获取用户自选列表构建 watchlistMap，点击星标切换自选状态

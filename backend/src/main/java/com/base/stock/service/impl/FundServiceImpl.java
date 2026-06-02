@@ -527,9 +527,24 @@ public class FundServiceImpl implements FundService {
         // 拉取基准指数行情
         String benchmarkCode = fund.getBenchmarkCode();
         if (benchmarkCode != null && !benchmarkCode.isEmpty() && !quoteMap.containsKey(benchmarkCode)) {
-            String benchmarkMarket = inferMarketByStockCode(benchmarkCode);
+            // 优先从股票表查询市场，避免代码推断错误（如000开头沪市指数被误判为深市）
+            String benchmarkMarket = null;
+            LambdaQueryWrapper<StockInfo> benchmarkWrapper = new LambdaQueryWrapper<>();
+            benchmarkWrapper.eq(StockInfo::getStockCode, benchmarkCode)
+                    .select(StockInfo::getMarket);
+            StockInfo benchmarkStock = stockInfoMapper.selectOne(benchmarkWrapper);
+            if (benchmarkStock != null && benchmarkStock.getMarket() != null
+                    && !benchmarkStock.getMarket().isEmpty()) {
+                benchmarkMarket = benchmarkStock.getMarket();
+                log.debug("基准指数 {} 从股票表获取市场: {}", benchmarkCode, benchmarkMarket);
+            } else {
+                benchmarkMarket = inferMarketByStockCode(benchmarkCode);
+                log.warn("基准指数 {} 未在股票表找到市场信息，回退到代码推断: {}",
+                        benchmarkCode, benchmarkMarket);
+            }
             try {
-                Map<String, StockQuote> benchmarkQuotes = fetchBatchQuotes(benchmarkMarket, Collections.singletonList(benchmarkCode));
+                Map<String, StockQuote> benchmarkQuotes = fetchBatchQuotes(benchmarkMarket,
+                        Collections.singletonList(benchmarkCode));
                 quoteMap.putAll(benchmarkQuotes);
             } catch (Exception e) {
                 log.error("获取基准指数报价失败: benchmarkCode={}", benchmarkCode, e);
@@ -935,7 +950,11 @@ public class FundServiceImpl implements FundService {
 
         Map<String, List<String>> result = new HashMap<>();
         for (String code : stockCodes) {
-            String market = marketMap.getOrDefault(code, inferMarketByStockCode(code));
+            String market = marketMap.get(code);
+            if (market == null || market.isEmpty()) {
+                market = inferMarketByStockCode(code);
+                log.warn("股票/指数 {} 未在股票表找到市场信息，回退到代码推断: {}", code, market);
+            }
             result.computeIfAbsent(market.toUpperCase(), k -> new ArrayList<>()).add(code);
         }
         return result;

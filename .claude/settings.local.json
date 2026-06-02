@@ -6,7 +6,8 @@
       "Bash(xargs grep:*)",
       "Bash(xargs head:*)",
       "mcp__codegraph__codegraph_files",
-      "mcp__codegraph__codegraph_explore"
+      "mcp__codegraph__codegraph_explore",
+      "mcp__codegraph__codegraph_trace"
     ]
   }
 }

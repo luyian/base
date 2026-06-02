@@ -19,7 +19,9 @@ Page({
     submitting: false,
     stockOptions: [],
     stockSearchLoading: false,
-    currentFocus: null
+    currentFocus: null,
+    benchmarkOptions: [],
+    benchmarkSearchLoading: false
   },
 
   onLoad(options) {
@@ -88,6 +90,34 @@ Page({
 
   onBenchmarkChange(e) {
     this.setData({ 'form.benchmarkCode': e.detail.value });
+  },
+
+  onBenchmarkSearch(e) {
+    const keyword = e.detail.value;
+    if (!keyword || keyword.length < 1) {
+      this.setData({ benchmarkOptions: [] });
+      return;
+    }
+    this.setData({ benchmarkSearchLoading: true });
+    stockApi.searchStocks(keyword)
+      .then(res => {
+        this.setData({
+          benchmarkOptions: res.data || [],
+          benchmarkSearchLoading: false
+        });
+      })
+      .catch(() => {
+        this.setData({ benchmarkSearchLoading: false });
+      });
+  },
+
+  onBenchmarkSelect(e) {
+    const index = e.currentTarget.dataset.index;
+    const stock = this.data.benchmarkOptions[index];
+    this.setData({
+      'form.benchmarkCode': stock.stockCode,
+      benchmarkOptions: []
+    });
   },
 
   onStockSearch(e) {

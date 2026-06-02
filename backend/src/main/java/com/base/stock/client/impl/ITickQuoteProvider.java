@@ -40,14 +40,19 @@ public class ITickQuoteProvider implements QuoteProvider {
 
     @Override
     public Map<String, StockQuote> getQuotes(List<String> codes) {
+        return getQuotes(codes, null);
+    }
+
+    @Override
+    public Map<String, StockQuote> getQuotes(List<String> codes, Map<String, String> marketMap) {
         Map<String, StockQuote> result = new HashMap<>();
 
         if (codes == null || codes.isEmpty()) {
             return result;
         }
 
-        // 按市场分组
-        Map<String, List<String>> marketGroups = groupByMarket(codes);
+        // 按市场分组，优先使用传入的 marketMap
+        Map<String, List<String>> marketGroups = groupByMarket(codes, marketMap);
 
         for (Map.Entry<String, List<String>> entry : marketGroups.entrySet()) {
             String market = entry.getKey();
@@ -76,10 +81,15 @@ public class ITickQuoteProvider implements QuoteProvider {
         return result;
     }
 
-    private Map<String, List<String>> groupByMarket(List<String> codes) {
+    private Map<String, List<String>> groupByMarket(List<String> codes, Map<String, String> marketMap) {
         Map<String, List<String>> groups = new HashMap<>();
         for (String code : codes) {
-            String market = inferMarket(code);
+            String market;
+            if (marketMap != null && marketMap.containsKey(code)) {
+                market = marketMap.get(code);
+            } else {
+                market = inferMarket(code);
+            }
             groups.computeIfAbsent(market, k -> new java.util.ArrayList<>()).add(code);
         }
         return groups;

@@ -23,7 +23,24 @@
     <!-- Benchmark Index -->
     <view class="form-item">
       <text class="label">基准指数</text>
-      <input class="input" value="{{form.benchmarkCode}}" placeholder="指数代码（如000300，可选）" bindinput="onBenchmarkChange" />
+      <view class="stock-input">
+        <input class="input"
+          value="{{form.benchmarkCode}}"
+          placeholder="搜索指数代码（如000300，可选）"
+          bindinput="onBenchmarkSearch"
+        />
+        <view class="stock-suggestions" wx:if="{{benchmarkOptions.length > 0}}">
+          <view class="suggestion-item"
+            wx:for="{{benchmarkOptions}}"
+            wx:for-item="stock"
+            wx:for-index="stockIdx"
+            wx:key="stockCode"
+            bindtap="onBenchmarkSelect"
+            data-index="{{stockIdx}}">
+            {{stock.stockCode}} - {{stock.stockName}}
+          </view>
+        </view>
+      </view>
     </view>
 
     <!-- Holdings -->

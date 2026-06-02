@@ -4,7 +4,9 @@
       "Bash(git add:*)",
       "WebSearch",
       "Bash(xargs grep:*)",
-      "Bash(xargs head:*)"
+      "Bash(xargs head:*)",
+      "mcp__codegraph__codegraph_files",
+      "mcp__codegraph__codegraph_explore"
     ]
   }
 }

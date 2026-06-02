@@ -102,3 +102,16 @@
 - 自选页重构：展示实时行情（现价、涨跌额、涨跌幅），支持手动刷新按钮和下拉刷新
 - 后端 WatchlistController 新增 `/stock/watchlist/quotes` 接口，注入 QuoteProviderFactory 复用基金估值的行情数据源
 - 小程序 api/watchlist.js 新增 getQuotes 方法调用实时行情接口
+
+## 飞书审批集成 + 事件回调 + 钉钉接口预留（2026-06-02）
+
+- 新增第三方平台抽象层 `com.base.common.thirdparty`：定义 ThirdPartyApprovalService/ThirdPartyEventService/ThirdPartyContactService 接口，飞书实现具体逻辑，钉钉仅预留接口
+- 飞书审批服务 `FeishuApprovalService`：对接飞书审批 API（创建/撤销/查询实例），`FeishuApprovalFormBuilder` 根据模板 formMapping 配置自动构建表单
+- 飞书 WebSocket 事件回调：`FeishuWebSocketClient` 长连接 + `FeishuEventDispatcher` 先入库再分发 + 审批/通讯录事件处理器
+- 审批业务模块 `com.base.approval`：ApprovalInstance/ApprovalTemplate/EventCallbackLog 三表，Service 层支持发起/撤销/回调更新/兜底同步
+- 定时任务：EventCallbackRetryTask（5分钟重试失败事件）、ApprovalStatusSyncTask（30分钟兜底同步 PENDING 实例）
+- 通讯录同步 `FeishuContactService`：分页拉取飞书用户同步到 sys_user_oauth
+- FeishuApiClient 扩展 GET 方法，FeishuConfig 新增事件配置字段（verificationToken/encryptKey/eventEnabled）
+- pom.xml 新增 Java-WebSocket 1.5.4 依赖
+- 前端新增审批列表/详情/模板管理/事件日志 4 个页面，路由挂在消息中心之后
+- DDL 文件：`schema_approval.sql`（tp_approval_template/tp_approval_instance/tp_event_callback_log）

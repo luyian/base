@@ -111,11 +111,11 @@
             <version>${hutool.version}</version>
         </dependency>
 
-        <!-- Java-WebSocket 客户端（飞书 WebSocket 长连接） -->
+        <!-- 飞书开放平台 Java SDK（WebSocket 长连接 + 事件订阅） -->
         <dependency>
-            <groupId>org.java-websocket</groupId>
-            <artifactId>Java-WebSocket</artifactId>
-            <version>1.5.4</version>
+            <groupId>com.larksuite.oapi</groupId>
+            <artifactId>oapi-sdk</artifactId>
+            <version>2.0.28</version>
         </dependency>
 
         <!-- Knife4j 接口文档 -->

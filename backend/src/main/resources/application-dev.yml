@@ -126,7 +126,7 @@ feishu:
   redirect-uri: http://localhost:3000/oauth/callback?platform=feishu
   verification-token: your-verification-token
   encrypt-key: your-encrypt-key
-  event-enabled: false
+  event-enabled: true
 
 oauth:
   enabled: false

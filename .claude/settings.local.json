@@ -7,7 +7,10 @@
       "Bash(xargs head:*)",
       "mcp__codegraph__codegraph_files",
       "mcp__codegraph__codegraph_explore",
-      "mcp__codegraph__codegraph_trace"
+      "mcp__codegraph__codegraph_trace",
+      "WebFetch(domain:open.feishu.cn)",
+      "WebFetch(domain:search.maven.org)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

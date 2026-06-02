@@ -30,6 +30,7 @@ public class FeishuEventService implements ThirdPartyEventService {
 
     private Client wsClient;
     private Thread wsThread;
+    private volatile boolean connected = false;
 
     @Override
     public ThirdPartyPlatform getPlatform() {
@@ -75,8 +76,13 @@ public class FeishuEventService implements ThirdPartyEventService {
             wsThread = new Thread(() -> {
                 try {
                     log.info("正在启动飞书 WebSocket 长连接...");
+                    connected = true;
                     wsClient.start();
+                    // start() 返回说明连接已断开
+                    connected = false;
+                    log.warn("飞书 WebSocket 连接已断开");
                 } catch (Exception e) {
+                    connected = false;
                     log.error("飞书 WebSocket 连接异常", e);
                 }
             }, "feishu-sdk-ws");
@@ -86,12 +92,14 @@ public class FeishuEventService implements ThirdPartyEventService {
             log.info("飞书事件监听已启动");
 
         } catch (Exception e) {
+            connected = false;
             log.error("飞书事件监听启动失败", e);
         }
     }
 
     @Override
     public void stopListening() {
+        connected = false;
         if (wsClient != null) {
             try {
                 if (wsThread != null) {
@@ -108,7 +116,8 @@ public class FeishuEventService implements ThirdPartyEventService {
 
     @Override
     public boolean isConnected() {
-        return wsClient != null && wsThread != null && wsThread.isAlive();
+        // SDK 内部自己管理连接和重连，只要 Client 实例存在就认为已连接
+        return wsClient != null;
     }
 
     @EventListener(ApplicationReadyEvent.class)

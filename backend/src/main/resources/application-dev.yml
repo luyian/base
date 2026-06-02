@@ -124,8 +124,8 @@ feishu:
   timeout: 30000
   retry: 3
   redirect-uri: http://localhost:3000/oauth/callback?platform=feishu
-  verification-token: your-verification-token
-  encrypt-key: your-encrypt-key
+  verification-token: jdd8PoMMrMAhj46suAB4hguPnGyADCLF
+  encrypt-key: fFxIUYyFhXnt3JgkXjrd7n5Fkkd1tkQk
   event-enabled: true
 
 oauth:

@@ -102,6 +102,12 @@
 - 后端 `FundServiceImpl.groupStockCodesByMarket`：表内查不到市场时增加 warn 日志，提示回退到代码推断
 - 小程序 `edit.js`/`edit.wxml`：基准指数输入框新增搜索建议功能，复用 `stockApi.searchStocks`，选择后自动填入指数代码
 
+## 基金详情页基准指数估值为0修复（2026-06-02）
+
+- 根因：`EastMoneyQuoteProvider`/`ITickQuoteProvider` 未重写带 `marketMap` 的 `getQuotes` 方法，接口默认实现直接忽略市场映射，内部重新推断市场，导致从 `stock_info` 查到的正确市场被丢弃
+- 修复：`EastMoneyQuoteProvider` 和 `ITickQuoteProvider` 均新增 `getQuotes(List<String>, Map<String,String>)` 重载，groupByMarket 优先使用传入的 marketMap，只有未传入时才回退到代码推断
+- 影响：基金详情页（`/stock/fund/{id}/valuation`）的基准指数行情现在能正确使用股票表中的市场信息，整体估算将按基准指数填充未覆盖仓位，不再降级为等比放大
+
 ## 小程序股票自选功能 + 自选页实时行情（2026-06-01）
 
 - 股票列表页新增自选星标按钮：加载时获取用户自选列表构建 watchlistMap，点击星标切换自选状态

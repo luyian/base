@@ -25,6 +25,7 @@
           ref="loginFormRef"
           :model="loginForm"
           :rules="loginRules"
+          :validate-on-rule-change="false"
           class="login-form"
         >
           <el-form-item prop="username">
@@ -136,8 +137,8 @@ const loginRules = computed(() => ({
   } : {})
 }))
 
-// 验证码是否启用
-const captchaEnabled = ref(true)
+// 验证码是否启用（初始 false，等接口返回后再决定）
+const captchaEnabled = ref(false)
 
 // 验证码图片地址
 const captchaUrl = ref('')

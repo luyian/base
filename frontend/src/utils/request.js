@@ -8,6 +8,9 @@ const service = axios.create({
   timeout: 10000
 })
 
+// 401 状态防抖：避免多个请求同时触发多次"未授权"提示
+let isHandling401 = false
+
 // 请求拦截器
 service.interceptors.request.use(
   config => {
@@ -36,12 +39,17 @@ service.interceptors.response.use(
 
     // 如果返回的状态码不是 200，则认为是错误
     if (res.code !== 200) {
-      ElMessage.error(res.message || '请求失败')
-
-      // 401: 未授权，跳转到登录页
+      // 401: 未授权，防抖处理（只提示一次并跳转登录页）
       if (res.code === 401) {
-        localStorage.removeItem('token')
-        router.push('/login')
+        if (!isHandling401) {
+          isHandling401 = true
+          ElMessage.error(res.message || '未授权，请重新登录')
+          localStorage.removeItem('token')
+          router.push('/login')
+          setTimeout(() => { isHandling401 = false }, 2000)
+        }
+      } else {
+        ElMessage.error(res.message || '请求失败')
       }
 
       return Promise.reject(new Error(res.message || '请求失败'))
@@ -56,9 +64,13 @@ service.interceptors.response.use(
       const bodyMessage = error.response.data?.message
       switch (error.response.status) {
         case 401:
-          ElMessage.error(bodyMessage || '未授权，请重新登录')
-          localStorage.removeItem('token')
-          router.push('/login')
+          if (!isHandling401) {
+            isHandling401 = true
+            ElMessage.error(bodyMessage || '未授权，请重新登录')
+            localStorage.removeItem('token')
+            router.push('/login')
+            setTimeout(() => { isHandling401 = false }, 2000)
+          }
           break
         case 403:
           ElMessage.error(bodyMessage || '拒绝访问')

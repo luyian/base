@@ -211,7 +211,12 @@ router.beforeEach(async (to, from, next) => {
     try {
       // 先加载用户信息和权限（如果还没有加载）
       if (!userStore.userInfo) {
-        await userStore.loadUserInfo()
+        const success = await userStore.loadUserInfo()
+        if (!success) {
+          userStore.logout()
+          next('/login')
+          return
+        }
       }
 
       // 加载用户菜单和动态路由

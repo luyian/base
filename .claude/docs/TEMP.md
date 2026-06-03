@@ -144,3 +144,17 @@
 - `WeatherSourceConfig` 配置类绑定 `weather.*` yml 节点
 - `WeatherServiceImpl` 重构：移除硬编码高德调用，改为通过工厂获取 provider，支持自动降级
 - `application-dev.yml` 新增 `weather` 配置节，默认使用高德，可配置切换到和风/心知
+
+## 修复首次访问登录页弹出两次"未授权"提示（2026-06-03）
+
+- 路由守卫：`loadUserInfo` 失败后立即 logout 并跳转 login，不再继续请求菜单接口
+- 请求拦截器：401 响应增加防抖（isHandling401 标志 + 2秒冷却），2秒内只弹一次提示并跳转一次登录页
+
+## 天气模块高德 QPS 超限修复（2026-06-03）
+
+- 新增 `QpsExceededException` 异常类，高德返回 `CUQPS_HAS_EXCEEDED_THE_LIMIT` 时抛出
+- `WeatherServiceImpl.getRealtimeWeather` 重构：请求间加 200ms 间隔（≈5QPS）避免触发限流；检测到 QPS 超限后立即整体切换降级数据源
+- 省份查询优化：批量预加载 `loadProvinceNameMap`，替代原先逐城市 `selectById` 查省份（减少 ~200 次 DB 查询）
+- adcode 编码修复：新增 `toAmapAdcode()` 方法，将本地 regionCode（2位/4位）统一补零为高德 6 位 adcode（原 `+\"00\"` 导致直辖市 2 位编码变成 4 位而非 6 位）
+- 过滤"省直辖县级行政区划"等非真实城市的行政占位记录
+- `getCityWeather` 反查时用 `replaceAll("0+$", "")` 去尾零还原本地 regionCode

@@ -43,7 +43,12 @@ public class AmapWeatherProvider implements WeatherProvider {
             JSONObject json = JSON.parseObject(result);
 
             if (!"1".equals(json.getString("status"))) {
-                log.warn("高德天气 API 返回异常: city={}, info={}", cityName, json.getString("info"));
+                String info = json.getString("info");
+                log.warn("高德天气 API 返回异常: city={}, info={}", cityName, info);
+                // QPS 超限，抛出专用异常让服务层快速降级
+                if (info != null && info.contains("EXCEEDED")) {
+                    throw new com.base.weather.provider.QpsExceededException(getName(), info);
+                }
                 return null;
             }
 

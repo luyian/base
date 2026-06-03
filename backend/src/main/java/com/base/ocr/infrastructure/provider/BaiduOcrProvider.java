@@ -95,14 +95,19 @@ public class BaiduOcrProvider implements OcrProvider {
     }
 
     @Override
-    public InvoiceResult recognizeInvoice(byte[] imageData) {
+    public InvoiceResult recognizeInvoice(byte[] fileData, boolean isPdf) {
         String accessToken = getAccessToken();
         if (accessToken == null) {
             return null;
         }
 
-        String imageBase64 = Base64.getEncoder().encodeToString(imageData);
-        String body = "image=" + urlEncode(imageBase64);
+        String fileBase64 = Base64.getEncoder().encodeToString(fileData);
+        String body;
+        if (isPdf) {
+            body = "pdf_file=" + urlEncode(fileBase64);
+        } else {
+            body = "image=" + urlEncode(fileBase64);
+        }
 
         JSONObject response = callApi(INVOICE_URL, accessToken, body);
         if (response == null) {
@@ -233,11 +238,17 @@ public class BaiduOcrProvider implements OcrProvider {
     }
 
     private String getWords(JSONObject wordsResult, String key) {
-        JSONObject field = wordsResult.getJSONObject(key);
-        if (field == null) {
+        Object value = wordsResult.get(key);
+        if (value == null) {
             return null;
         }
-        return field.getString("words");
+        // 兼容两种返回格式：
+        // 1. {"words": "xxx"} 对象格式（身份证等）
+        // 2. 直接字符串值（发票部分字段）
+        if (value instanceof JSONObject) {
+            return ((JSONObject) value).getString("words");
+        }
+        return value.toString();
     }
 
     private String urlEncode(String value) {

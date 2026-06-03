@@ -40,10 +40,11 @@ public interface OcrProvider {
     /**
      * 发票识别
      *
-     * @param imageData 图片二进制数据
+     * @param fileData 文件二进制数据（图片或PDF）
+     * @param isPdf    是否为PDF文件
      * @return 识别结果，失败返回 null
      */
-    InvoiceResult recognizeInvoice(byte[] imageData);
+    InvoiceResult recognizeInvoice(byte[] fileData, boolean isPdf);
 
     /**
      * 银行卡识别

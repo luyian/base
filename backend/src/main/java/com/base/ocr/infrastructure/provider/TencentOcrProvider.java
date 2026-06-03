@@ -89,11 +89,17 @@ public class TencentOcrProvider implements OcrProvider {
     }
 
     @Override
-    public InvoiceResult recognizeInvoice(byte[] imageData) {
-        String imageBase64 = Base64.getEncoder().encodeToString(imageData);
+    public InvoiceResult recognizeInvoice(byte[] fileData, boolean isPdf) {
+        String fileBase64 = Base64.getEncoder().encodeToString(fileData);
 
         JSONObject body = new JSONObject();
-        body.put("ImageBase64", imageBase64);
+        if (isPdf) {
+            body.put("FileBase64", fileBase64);
+            body.put("IsPdf", true);
+            body.put("PdfPageNumber", 1);
+        } else {
+            body.put("ImageBase64", fileBase64);
+        }
 
         JSONObject response = callApi("VatInvoiceOCR", body.toJSONString());
         if (response == null) {

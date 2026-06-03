@@ -105,11 +105,11 @@ public class AliyunOcrProvider implements OcrProvider {
     }
 
     @Override
-    public InvoiceResult recognizeInvoice(byte[] imageData) {
-        String imageBase64 = Base64.getEncoder().encodeToString(imageData);
+    public InvoiceResult recognizeInvoice(byte[] fileData, boolean isPdf) {
+        String fileBase64 = Base64.getEncoder().encodeToString(fileData);
 
         JSONObject body = new JSONObject();
-        body.put("body", imageBase64);
+        body.put("body", fileBase64);
 
         JSONObject response = callApi("RecognizeInvoice", body.toJSONString());
         if (response == null) {

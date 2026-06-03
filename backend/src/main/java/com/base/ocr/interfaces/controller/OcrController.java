@@ -54,18 +54,20 @@ public class OcrController {
      * 发票识别
      */
     @PostMapping("/invoice")
-    @ApiOperation("发票识别")
+    @ApiOperation("发票识别（支持图片和PDF）")
     public Result<InvoiceResult> recognizeInvoice(
             @RequestParam("file") MultipartFile file,
             @ApiParam("指定供应商（可选）") @RequestParam(required = false) String provider) {
-        byte[] imageData = getImageData(file);
-        if (imageData == null) {
-            return Result.error("图片文件为空或读取失败");
+        byte[] fileData = getImageData(file);
+        if (fileData == null) {
+            return Result.error("文件为空或读取失败");
         }
 
-        InvoiceResult result = ocrApplicationService.recognizeInvoice(imageData, provider);
+        boolean isPdf = file.getOriginalFilename() != null
+                && file.getOriginalFilename().toLowerCase().endsWith(".pdf");
+        InvoiceResult result = ocrApplicationService.recognizeInvoice(fileData, isPdf, provider);
         if (result == null) {
-            return Result.error("发票识别失败，请检查图片质量或稍后重试");
+            return Result.error("发票识别失败，请检查文件质量或稍后重试");
         }
         return Result.success(result);
     }

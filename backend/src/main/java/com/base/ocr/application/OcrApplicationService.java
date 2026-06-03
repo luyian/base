@@ -57,19 +57,20 @@ public class OcrApplicationService {
     /**
      * 发票识别（支持主备降级）
      *
-     * @param imageData 图片数据
-     * @param provider  指定供应商（可选）
+     * @param fileData 文件数据（图片或PDF）
+     * @param isPdf    是否为PDF文件
+     * @param provider 指定供应商（可选）
      * @return 识别结果
      */
-    public InvoiceResult recognizeInvoice(byte[] imageData, String provider) {
+    public InvoiceResult recognizeInvoice(byte[] fileData, boolean isPdf, String provider) {
         OcrProvider primary = resolveProvider(provider);
-        InvoiceResult result = primary.recognizeInvoice(imageData);
+        InvoiceResult result = primary.recognizeInvoice(fileData, isPdf);
 
         if (result == null) {
             log.warn("OCR 发票识别失败，供应商: {}，尝试降级", primary.getName());
             OcrProvider fallback = providerFactory.getFallbackProvider();
             if (fallback != null && !fallback.getName().equals(primary.getName())) {
-                result = fallback.recognizeInvoice(imageData);
+                result = fallback.recognizeInvoice(fileData, isPdf);
                 if (result != null) {
                     log.info("OCR 发票识别降级成功，使用供应商: {}", fallback.getName());
                 }

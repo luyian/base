@@ -67,13 +67,17 @@
                 drag
                 :auto-upload="false"
                 :show-file-list="false"
-                accept="image/*"
+                accept="image/*,.pdf"
                 :on-change="(file) => handleFileChange(file, 'invoice')"
               >
-                <img v-if="invoicePreview" :src="invoicePreview" class="preview-img" />
+                <img v-if="invoicePreview && !invoiceIsPdf" :src="invoicePreview" class="preview-img" />
+                <div v-else-if="invoiceIsPdf" class="preview-pdf">
+                  <el-icon size="40"><Document /></el-icon>
+                  <div>{{ invoiceFileName }}</div>
+                </div>
                 <div v-else class="upload-placeholder">
                   <el-icon size="40"><UploadFilled /></el-icon>
-                  <div>将发票图片拖到此处，或点击上传</div>
+                  <div>将发票图片或PDF拖到此处，或点击上传</div>
                 </div>
               </el-upload>
               <el-button type="primary" :loading="loading" :disabled="!invoiceFile" @click="doRecognize('invoice')" style="margin-top: 12px">
@@ -141,7 +145,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { UploadFilled } from '@element-plus/icons-vue'
+import { UploadFilled, Document } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { recognizeIdCard, recognizeInvoice, recognizeBankCard, getOcrProviders } from '@/api/ocr'
 
@@ -159,6 +163,8 @@ const idCardResult = ref(null)
 // 发票
 const invoiceFile = ref(null)
 const invoicePreview = ref('')
+const invoiceIsPdf = ref(false)
+const invoiceFileName = ref('')
 const invoiceResult = ref(null)
 
 // 银行卡
@@ -179,16 +185,27 @@ onMounted(async () => {
 
 function handleFileChange(uploadFile, type) {
   const file = uploadFile.raw
-  if (!file.type.startsWith('image/')) {
-    ElMessage.warning('请上传图片文件')
-    return
+  const isPdf = file.type === 'application/pdf'
+  const isImage = file.type.startsWith('image/')
+
+  // 发票支持图片和PDF，其他场景只支持图片
+  if (type === 'invoice') {
+    if (!isImage && !isPdf) {
+      ElMessage.warning('请上传图片或PDF文件')
+      return
+    }
+  } else {
+    if (!isImage) {
+      ElMessage.warning('请上传图片文件')
+      return
+    }
   }
   if (file.size > 10 * 1024 * 1024) {
-    ElMessage.warning('图片大小不能超过 10MB')
+    ElMessage.warning('文件大小不能超过 10MB')
     return
   }
 
-  const previewUrl = URL.createObjectURL(file)
+  const previewUrl = isImage ? URL.createObjectURL(file) : ''
 
   if (type === 'idCard') {
     idCardFile.value = file
@@ -197,6 +214,8 @@ function handleFileChange(uploadFile, type) {
   } else if (type === 'invoice') {
     invoiceFile.value = file
     invoicePreview.value = previewUrl
+    invoiceIsPdf.value = isPdf
+    invoiceFileName.value = file.name
     invoiceResult.value = null
   } else if (type === 'bankCard') {
     bankCardFile.value = file

@@ -155,6 +155,13 @@ const constantRoutes = [
         name: 'WeatherMap',
         component: () => import('@/views/weather/index.vue'),
         meta: { title: '天气地图', icon: 'Sunny' }
+      },
+      // OCR 识别模块路由
+      {
+        path: 'ocr',
+        name: 'OcrRecognize',
+        component: () => import('@/views/ocr/index.vue'),
+        meta: { title: 'OCR识别', icon: 'PictureFilled' }
       }
     ]
   }

@@ -1,6 +1,17 @@
 
 ---
 
+## OCR 智能识别模块（2026-06-03）
+
+- 新增 `com.base.ocr` 模块，采用 DDD 四层架构（interfaces/application/domain/infrastructure）
+- 支持三个供应商：腾讯云、百度云、阿里云，通过工厂模式主备切换和降级
+- 场景支持：身份证（正反面）、增值税发票、银行卡
+- API Key 从 sys_config 表动态读取，yml 配置主/备数据源
+- 前端 OCR 识别页面：Tab 切换场景 + 图片拖拽上传 + 结构化结果展示
+- 菜单权限 SQL：`init_ocr_permission.sql`（ID=113，挂系统管理下）
+
+---
+
 ## 工作流 Flowable 启动修复（2026-05-27）
 
 - 修复后端启动时 Flowable 查询 `ACT_GE_PROPERTY` 报表不存在的问题。

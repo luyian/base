@@ -143,3 +143,12 @@ weather:
   fallback-enabled: false
   # 降级数据源
   fallback-source: hefeng
+
+# OCR 数据源配置（API Key 从 sys_config 表读取）
+ocr:
+  # 主数据源: tencent / baidu / aliyun
+  source: tencent
+  # 是否启用降级
+  fallback-enabled: true
+  # 降级数据源
+  fallback-source: baidu

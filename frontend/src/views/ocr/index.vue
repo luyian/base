@@ -16,8 +16,8 @@
           <div class="ocr-content">
             <div class="upload-area">
               <el-radio-group v-model="idCardSide" style="margin-bottom: 12px">
-                <el-radio-button label="front">正面（人像面）</el-radio-button>
-                <el-radio-button label="back">背面（国徽面）</el-radio-button>
+                <el-radio-button value="front">正面（人像面）</el-radio-button>
+                <el-radio-button value="back">背面（国徽面）</el-radio-button>
               </el-radio-group>
               <el-upload
                 class="upload-box"

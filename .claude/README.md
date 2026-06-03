@@ -9,7 +9,13 @@
 ├── settings.local.json    # 本地权限配置
 ├── docs/
 │   ├── TEMP.md            # 代码变更记录（每次修改业务代码后更新）
+│   ├── feishu.md          # 飞书集成文档（OAuth + 消息）
+│   ├── oauth.md           # 第三方登录配置
+│   ├── open-api.md        # 开放接口文档
+│   ├── 使用手册.md         # 系统使用手册
 │   ├── workflow-flowable-guide.md  # Flowable 工作流使用手册
+│   ├── workflow-development.md     # 工作流开发指南
+│   ├── workflow-requirements.md    # 工作流需求文档
 │   └── archive/           # 已完成的设计文档归档
 │       ├── FEISHU_APPROVAL_DESIGN.md
 │       └── weather-multi-source.md

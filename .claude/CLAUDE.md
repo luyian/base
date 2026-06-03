@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## OpenSpec 规格驱动开发（自动执行）
+
+当用户提出新功能需求或较大的变更时，自动按照 OpenSpec 流程执行，无需用户手动输入 `/opsx:*` 命令：
+
+1. **需求不明确** → 自动进入探索模式（explore），通过提问帮用户理清思路
+2. **需求明确** → 自动生成提案/设计/规格/任务清单（propose）
+3. **用户确认规格后** → 自动逐任务实现（apply），每完成一个任务汇报进度
+4. **全部任务完成后** → 自动归档（archive）
+
+判断标准：
+- 涉及新增模块、新增接口、架构调整等 → 走 OpenSpec 流程
+- 简单的 bug 修复、配置调整、单文件小改动 → 直接修改，不走 OpenSpec
+
+规格文档存放在 `specs/` 目录下，Skill 定义在 `.claude/skills/` 中。
+
 ## 代码检索（CodeGraph）
 
 本项目已初始化 CodeGraph。在修改代码前，请先使用 `codegraph_search` 查找相关符号，再用 `codegraph_callers`、`codegraph_callees` 或 `codegraph_impact` 确认影响范围。只有当图谱结果不足时，再回退到 grep/read 读取文件。

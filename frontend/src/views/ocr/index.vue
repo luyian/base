@@ -169,8 +169,8 @@ const bankCardResult = ref(null)
 onMounted(async () => {
   try {
     const res = await getOcrProviders()
-    if (res.data.code === 200) {
-      providers.value = res.data.data || []
+    if (res.code === 200) {
+      providers.value = res.data || []
     }
   } catch (e) {
     // 供应商列表加载失败不影响使用
@@ -211,28 +211,16 @@ async function doRecognize(type) {
     let res
     if (type === 'idCard') {
       res = await recognizeIdCard(idCardFile.value, idCardSide.value, selectedProvider.value)
-      if (res.data.code === 200) {
-        idCardResult.value = res.data.data
-        ElMessage.success('身份证识别成功')
-      } else {
-        ElMessage.error(res.data.message || '识别失败')
-      }
+      idCardResult.value = res.data
+      ElMessage.success('身份证识别成功')
     } else if (type === 'invoice') {
       res = await recognizeInvoice(invoiceFile.value, selectedProvider.value)
-      if (res.data.code === 200) {
-        invoiceResult.value = res.data.data
-        ElMessage.success('发票识别成功')
-      } else {
-        ElMessage.error(res.data.message || '识别失败')
-      }
+      invoiceResult.value = res.data
+      ElMessage.success('发票识别成功')
     } else if (type === 'bankCard') {
       res = await recognizeBankCard(bankCardFile.value, selectedProvider.value)
-      if (res.data.code === 200) {
-        bankCardResult.value = res.data.data
-        ElMessage.success('银行卡识别成功')
-      } else {
-        ElMessage.error(res.data.message || '识别失败')
-      }
+      bankCardResult.value = res.data
+      ElMessage.success('银行卡识别成功')
     }
   } catch (e) {
     ElMessage.error('识别请求失败，请稍后重试')

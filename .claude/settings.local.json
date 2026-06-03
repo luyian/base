@@ -10,7 +10,9 @@
       "mcp__codegraph__codegraph_trace",
       "WebFetch(domain:open.feishu.cn)",
       "WebFetch(domain:search.maven.org)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(mv .claude/docs/FEISHU_APPROVAL_DESIGN.md .claude/docs/archive/)",
+      "Bash(mv .claude/plans/weather-multi-source.md .claude/docs/archive/)"
     ]
   }
 }

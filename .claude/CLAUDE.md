@@ -21,6 +21,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 本项目已初始化 CodeGraph。在修改代码前，请先使用 `codegraph_search` 查找相关符号，再用 `codegraph_callers`、`codegraph_callees` 或 `codegraph_impact` 确认影响范围。只有当图谱结果不足时，再回退到 grep/read 读取文件。
 
+**索引更新**：每次修改代码后，执行 `codegraph sync` 增量更新索引。
+
 ## 开发命令
 
 ### 后端 (backend/)

@@ -6,6 +6,7 @@ import com.base.stock.dto.StockQueryRequest;
 import com.base.stock.entity.StockInfo;
 import com.base.stock.entity.StockKline;
 import com.base.stock.service.StockService;
+import com.base.system.annotation.OperationLog;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.RequiredArgsConstructor;
@@ -92,6 +93,7 @@ public class StockController {
     @ApiOperation("新增股票配置")
     @PostMapping
     @PreAuthorize("hasAuthority('stock:info:add')")
+    @OperationLog(module = "股票管理", operation = "新增股票")
     public Result<StockInfo> create(@RequestBody StockInfo stockInfo) {
         StockInfo created = stockService.createStock(stockInfo);
         return Result.success(created);
@@ -103,6 +105,7 @@ public class StockController {
     @ApiOperation("更新股票配置")
     @PutMapping("/{stockCode}")
     @PreAuthorize("hasAuthority('stock:info:edit')")
+    @OperationLog(module = "股票管理", operation = "更新股票")
     public Result<StockInfo> update(@PathVariable String stockCode, @RequestBody StockInfo stockInfo) {
         StockInfo updated = stockService.updateStock(stockCode, stockInfo);
         return Result.success(updated);

@@ -6,6 +6,7 @@ import com.base.stock.dto.FundConfigRequest;
 import com.base.stock.dto.FundValuationResponse;
 import com.base.stock.entity.FundConfig;
 import com.base.stock.service.FundService;
+import com.base.system.annotation.OperationLog;
 import com.base.system.util.RedisUtil;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -130,6 +131,7 @@ public class FundController {
     @ApiOperation("创建基金")
     @PreAuthorize("hasAuthority('stock:fund:add')")
     @PostMapping
+    @OperationLog(module = "基金管理", operation = "新增基金")
     public Result<Long> create(@Validated @RequestBody FundConfigRequest request) {
         Long fundId = fundService.createFund(request);
         return Result.success(fundId);
@@ -141,6 +143,7 @@ public class FundController {
     @ApiOperation("更新基金")
     @PreAuthorize("hasAuthority('stock:fund:edit')")
     @PutMapping("/{id}")
+    @OperationLog(module = "基金管理", operation = "更新基金")
     public Result<Void> update(@PathVariable Long id, @Validated @RequestBody FundConfigRequest request) {
         fundService.updateFund(id, request);
         return Result.success();
@@ -152,6 +155,7 @@ public class FundController {
     @ApiOperation("删除基金")
     @PreAuthorize("hasAuthority('stock:fund:delete')")
     @DeleteMapping("/{id}")
+    @OperationLog(module = "基金管理", operation = "删除基金")
     public Result<Void> delete(@PathVariable Long id) {
         fundService.deleteFund(id);
         return Result.success();

@@ -218,7 +218,8 @@
           </div>
 
           <!-- 预览区 -->
-          <div class="editor-preview" v-show="editorMode === 'preview'" v-html="renderedContent">
+          <div class="editor-preview" v-show="editorMode === 'preview'">
+            <MdViewer :content="editingContent" />
           </div>
         </div>
       </div>
@@ -323,7 +324,7 @@ import {
   createTag,
   deleteTag
 } from '@/api/knowledge'
-import MarkdownIt from 'markdown-it'
+import MdViewer from '@/components/MdViewer.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -417,21 +418,6 @@ const availableTags = computed(() => {
   if (!currentDocument.value) return tagList.value
   const docTags = currentDocument.value.tags || []
   return tagList.value.filter(t => !docTags.includes(t.name))
-})
-
-// Markdown 渲染器：禁用原始 HTML 防 XSS，自动识别链接，软换行转 <br>
-const md = new MarkdownIt({
-  html: false,
-  linkify: true,
-  breaks: true
-})
-
-// 渲染 Markdown
-const renderedContent = computed(() => {
-  if (!editingContent.value) {
-    return ''
-  }
-  return md.render(editingContent.value)
 })
 
 // 获取标签颜色
@@ -1132,43 +1118,6 @@ onMounted(async () => {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
-  line-height: 1.8;
-}
-
-.editor-preview :deep(h1) {
-  font-size: 24px;
-  margin: 16px 0;
-}
-
-.editor-preview :deep(h2) {
-  font-size: 20px;
-  margin: 14px 0;
-}
-
-.editor-preview :deep(h3) {
-  font-size: 16px;
-  margin: 12px 0;
-}
-
-.editor-preview :deep(code) {
-  background: #f5f5f5;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-
-.editor-preview :deep(pre) {
-  background: #f5f5f5;
-  padding: 12px;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-
-.editor-preview :deep(ul) {
-  padding-left: 20px;
-}
-
-.editor-preview :deep(img) {
-  max-width: 100%;
 }
 
 /* ==================== 暗色主题 ==================== */
@@ -1259,14 +1208,5 @@ onMounted(async () => {
 
 [data-theme="dark"] .editor-preview {
   color: var(--dk-text-1);
-}
-
-[data-theme="dark"] .editor-preview :deep(code) {
-  background: var(--dk-bg-3);
-  color: #e0e4ea;
-}
-
-[data-theme="dark"] .editor-preview :deep(pre) {
-  background: var(--dk-bg-1);
 }
 </style>

@@ -45,7 +45,9 @@
       </div>
 
       <!-- 正文 -->
-      <div class="doc-content" v-html="renderedContent"></div>
+      <div class="doc-content">
+        <MdViewer :content="doc.content" @toc="handleTocUpdate" />
+      </div>
 
       <!-- 附件 -->
       <div class="section">
@@ -141,7 +143,7 @@ import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Document, Upload, Collection, List } from '@element-plus/icons-vue'
-import MarkdownIt from 'markdown-it'
+import MdViewer from '@/components/MdViewer.vue'
 import { useUserStore } from '@/store/user'
 import { uploadFile } from '@/api/file'
 import {
@@ -175,34 +177,11 @@ const showToc = ref(true)
 const activeHeading = ref(null)
 let headingObserver = null
 
-const md = new MarkdownIt({ html: false, linkify: true, breaks: true })
-
-// 为渲染的标题注入 id 锚点
-const defaultHeadingOpen = md.renderer.rules.heading_open ||
-  function (tokens, idx, options, env, self) { return self.renderToken(tokens, idx, options) }
-md.renderer.rules.heading_open = function (tokens, idx, options, env, self) {
-  tokens[idx].attrSet('id', 'heading-' + idx)
-  return defaultHeadingOpen(tokens, idx, options, env, self)
+// 目录列表由 MdViewer 组件通过 toc 事件提供
+const tocList = ref([])
+const handleTocUpdate = (list) => {
+  tocList.value = list
 }
-
-// 从 Markdown 内容提取标题列表
-const tocList = computed(() => {
-  if (!doc.value?.content) {
-    return []
-  }
-  const tokens = md.parse(doc.value.content, {})
-  const headings = []
-  for (let i = 0; i < tokens.length; i++) {
-    if (tokens[i].type === 'heading_open') {
-      const level = parseInt(tokens[i].tag.slice(1))
-      const text = tokens[i + 1]?.content || ''
-      headings.push({ id: 'heading-' + i, text, level })
-    }
-  }
-  return headings
-})
-
-const renderedContent = computed(() => (doc.value?.content ? md.render(doc.value.content) : ''))
 
 // 点击 TOC 项滚动到对应标题
 const scrollToHeading = (id) => {
@@ -239,7 +218,7 @@ const setupObserver = () => {
   })
 }
 
-watch(renderedContent, () => {
+watch(tocList, () => {
   nextTick(() => setupObserver())
 })
 
@@ -536,21 +515,8 @@ onBeforeUnmount(() => {
   background: #fff;
   border-radius: 6px;
   padding: 24px;
-  line-height: 1.8;
   margin-bottom: 20px;
 }
-
-.doc-content :deep(h1) { font-size: 24px; margin: 16px 0; }
-.doc-content :deep(h2) { font-size: 20px; margin: 14px 0; }
-.doc-content :deep(h3) { font-size: 16px; margin: 12px 0; }
-.doc-content :deep(code) { background: #f5f5f5; padding: 2px 6px; border-radius: 3px; }
-.doc-content :deep(pre) { background: #f5f5f5; padding: 12px; border-radius: 4px; overflow-x: auto; }
-.doc-content :deep(pre code) { background: none; padding: 0; }
-.doc-content :deep(ul), .doc-content :deep(ol) { padding-left: 24px; }
-.doc-content :deep(blockquote) { border-left: 4px solid #dcdfe6; padding-left: 12px; color: #909399; margin: 12px 0; }
-.doc-content :deep(table) { border-collapse: collapse; width: 100%; }
-.doc-content :deep(table td), .doc-content :deep(table th) { border: 1px solid #dcdfe6; padding: 6px 10px; }
-.doc-content :deep(img) { max-width: 100%; }
 
 .section {
   background: #fff;
@@ -726,32 +692,6 @@ onBeforeUnmount(() => {
 
 [data-theme="dark"] .doc-content {
   background: var(--dk-bg-2);
-  color: var(--dk-text-1);
-}
-
-[data-theme="dark"] .doc-content :deep(code) {
-  background: var(--dk-bg-3);
-  color: #e0e4ea;
-}
-
-[data-theme="dark"] .doc-content :deep(pre) {
-  background: var(--dk-bg-1);
-}
-
-[data-theme="dark"] .doc-content :deep(blockquote) {
-  border-left-color: var(--dk-border);
-  color: var(--dk-text-3);
-}
-
-[data-theme="dark"] .doc-content :deep(table td),
-[data-theme="dark"] .doc-content :deep(table th) {
-  border-color: var(--dk-border);
-}
-
-[data-theme="dark"] .doc-content :deep(h1),
-[data-theme="dark"] .doc-content :deep(h2),
-[data-theme="dark"] .doc-content :deep(h3) {
-  color: var(--dk-text-1);
 }
 
 [data-theme="dark"] .section {

@@ -1,6 +1,21 @@
 
 ---
 
+## 知识库 Markdown 查看功能专业化增强（2026-06-03）
+
+- 新建 `MdViewer.vue` 通用组件，集成 highlight.js 语法高亮 + markdown-it-task-lists
+- 代码块：深色主题 + 语言角标 + 一键复制按钮
+- 标题：h1 底部分割线、h2 左侧蓝条、层级递进字号
+- 表格：表头强调 + 斑马纹 + hover 高亮 + 圆角阴影
+- 引用块：渐变背景 + 蓝色左侧条
+- 链接：虚线下划线 + 外链箭头图标
+- 图片：圆角阴影 + 点击放大预览
+- 任务列表：自定义 checkbox 样式
+- 全套暗色主题适配
+- KnowledgeDocDetail / KnowledgeBaseDetail 预览区统一使用 MdViewer
+
+---
+
 ## OCR 智能识别模块（2026-06-03）
 
 - 新增 `com.base.ocr` 模块，采用 DDD 四层架构（interfaces/application/domain/infrastructure）

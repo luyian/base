@@ -148,6 +148,13 @@ const constantRoutes = [
         name: 'KnowledgeDocDetail',
         component: () => import('@/views/KnowledgeDocDetail.vue'),
         meta: { title: '文档详情', hidden: true }
+      },
+      // 天气模块路由
+      {
+        path: 'weather',
+        name: 'WeatherMap',
+        component: () => import('@/views/weather/index.vue'),
+        meta: { title: '天气地图', icon: 'Sunny' }
       }
     ]
   }

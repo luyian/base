@@ -117,6 +117,17 @@ stock:
 # OAuth 第三方登录配置
 # 飞书配置
 feishu:
+
+# 天气数据源配置
+weather:
+  # 主数据源: amap / hefeng / seniverse
+  source: amap
+  # 是否启用降级
+  fallback-enabled: false
+  # 降级数据源
+  fallback-source: hefeng
+
+feishu:
   enabled: true
   app-id: cli_a906a4c972f99bcc
   app-secret: x7RQFPRqzVKNnurLmrq5CgXESbDItgmM

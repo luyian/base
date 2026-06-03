@@ -127,3 +127,20 @@
 - pom.xml 新增 Java-WebSocket 1.5.4 依赖
 - 前端新增审批列表/详情/模板管理/事件日志 4 个页面，路由挂在消息中心之后
 - DDL 文件：`schema_approval.sql`（tp_approval_template/tp_approval_instance/tp_event_callback_log）
+
+## 全国实时天气地图（2026-06-02）
+
+- 新增 `com.base.weather` 后端模块：WeatherController（/weather/realtime、/weather/city/{adcode}）、WeatherService 调用高德天气 API、CityAdcodeData 静态城市坐标数据（约200个地级市）
+- Redis 缓存 30 分钟，避免频繁请求高德 API
+- 前端 `views/weather/index.vue`：ECharts 中国地图 + scatter 散点 + visualMap 连续色带（蓝→红表示低温→高温），支持气温/湿度切换、城市点击详情面板
+- GeoJSON 数据从 DataV 在线加载（`geo.datav.aliyun.com`）
+- 菜单挂在系统管理下（ID=112），菜单 SQL：`init_weather_permission.sql`
+
+## 天气模块多数据源重构（2026-06-03）
+
+- 新增 `WeatherProvider` 接口 + 工厂模式，参考股票模块 `QuoteProvider` 设计
+- 实现三个数据源：`AmapWeatherProvider`（高德）、`HefengWeatherProvider`（和风）、`SeniverseWeatherProvider`（心知）
+- `WeatherProviderFactory` 支持主/备数据源切换和降级
+- `WeatherSourceConfig` 配置类绑定 `weather.*` yml 节点
+- `WeatherServiceImpl` 重构：移除硬编码高德调用，改为通过工厂获取 provider，支持自动降级
+- `application-dev.yml` 新增 `weather` 配置节，默认使用高德，可配置切换到和风/心知

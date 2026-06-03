@@ -62,7 +62,6 @@ dump.rdb
 nul
 
 # Claude AI 配置和输出
-.claude/
 AGENTS.md
 
 # 上传文件目录（根据实际情况调整）

@@ -104,7 +104,7 @@ async function loadChinaGeo() {
     return
   }
   try {
-    const response = await fetch('https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json')
+    const response = await fetch('/geo/china.json')
     const geoJson = await response.json()
     echarts.registerMap('china', geoJson)
     chinaGeoLoaded = true

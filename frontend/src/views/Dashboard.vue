@@ -100,8 +100,8 @@
       </el-col>
     </el-row>
 
-    <!-- 第二行：服务器状态卡片 -->
-    <el-row :gutter="20" class="dashboard-row">
+    <!-- 第二行：服务器状态卡片（需要 monitor:server:view 权限） -->
+    <el-row :gutter="20" class="dashboard-row" v-if="hasMonitorPermission">
       <el-col :xs="12" :sm="6" v-for="stat in serverStats" :key="stat.label">
         <el-card class="stat-card" shadow="hover" :body-style="{ padding: '0' }">
           <div class="stat-card-inner">
@@ -337,6 +337,7 @@ const serverStats = ref([
 ])
 
 async function loadServerStats() {
+  if (!hasMonitorPermission.value) return
   try {
     const res = await getServerInfo()
     if (res.code === 200 && res.data) {
@@ -378,8 +379,11 @@ function getProgressColor(percentage) {
   return '#f56c6c'
 }
 
-// 登录日志
+// 权限判断
 const userStore = useUserStore()
+const hasMonitorPermission = computed(() => userStore.hasPermission('monitor:server:view'))
+
+// 登录日志
 const recentLogins = ref([])
 const loginLoading = ref(false)
 // 根据权限控制显示登录记录（log:login:list）
@@ -555,9 +559,12 @@ onMounted(() => {
     window.addEventListener('resize', () => operationChart?.resize())
   })
   
-  refreshTimer = setInterval(() => {
-    loadServerStats()
-  }, 30000)
+  // 仅有监控权限时才定时刷新服务器状态
+  if (hasMonitorPermission.value) {
+    refreshTimer = setInterval(() => {
+      loadServerStats()
+    }, 30000)
+  }
 })
 
 onUnmounted(() => {

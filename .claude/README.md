@@ -35,4 +35,4 @@
 | `docs/` | 项目文档和变更记录 | 每次修改业务代码后 |
 | `docs/archive/` | 已完成的方案/设计文档 | 功能上线后归档 |
 | `plans/` | 待实施或进行中的方案 | 规划阶段创建，完成后归档 |
-| `skills/` | Claude Code Skill 定义 | 新增/修改开发流程时 |
+| `skills/` | Claude Code Skill 定义 | 新增/修改开发流程时 |dd

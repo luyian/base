@@ -1,6 +1,24 @@
 
 ---
 
+## 知识库文档下载 MD 文件功能（2026-06-05）
+
+- KnowledgeDocDetail 顶部新增"下载 MD"按钮，点击即可将当前文档内容导出为 .md 文件
+- 纯前端实现，利用 Blob + URL.createObjectURL 生成下载链接
+
+---
+
+## 知识库编辑器图片上传自动插入（2026-06-04）
+
+- KnowledgeBaseDetail 编辑器新增图片上传功能，支持三种方式：
+  - 点击"插入图片"按钮选择文件
+  - 粘贴剪贴板图片（Ctrl+V）
+  - 拖拽图片文件到编辑区
+- 上传到 `/system/file/upload`（fileGroup=knowledge），返回 URL 后自动在光标位置插入 `![name](url)` 语法
+- 上传中显示占位符，失败自动清除
+
+---
+
 ## 知识库 Markdown 查看功能专业化增强（2026-06-03）
 
 - 新建 `MdViewer.vue` 通用组件，集成 highlight.js 语法高亮 + markdown-it-task-lists

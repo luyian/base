@@ -206,14 +206,40 @@
               <el-radio-button value="edit">编辑</el-radio-button>
               <el-radio-button value="preview">预览</el-radio-button>
             </el-radio-group>
+            <div class="editor-toolbar" v-show="editorMode === 'edit'">
+              <el-tooltip content="插入图片（支持粘贴/拖拽）" placement="top">
+                <el-button
+                  size="small"
+                  :icon="Picture"
+                  :loading="imageUploading"
+                  @click="triggerImageUpload"
+                >
+                  插入图片
+                </el-button>
+              </el-tooltip>
+              <input
+                ref="imageInputRef"
+                type="file"
+                accept="image/*"
+                style="display: none"
+                @change="handleImageSelect"
+              />
+            </div>
           </div>
 
           <!-- 编辑区 -->
-          <div class="editor-main" v-show="editorMode === 'edit'">
+          <div
+            class="editor-main"
+            v-show="editorMode === 'edit'"
+            @dragover.prevent
+            @drop.prevent="handleImageDrop"
+          >
             <textarea
+              ref="editorRef"
               v-model="editingContent"
               class="md-editor"
               placeholder="使用 Markdown 编写文档内容..."
+              @paste="handleImagePaste"
             />
           </div>
 
@@ -307,7 +333,8 @@ import {
   Plus,
   Check,
   MoreFilled,
-  Upload
+  Upload,
+  Picture
 } from '@element-plus/icons-vue'
 import {
   getKnowledgeBaseDetail,
@@ -324,6 +351,7 @@ import {
   createTag,
   deleteTag
 } from '@/api/knowledge'
+import { uploadFile } from '@/api/file'
 import MdViewer from '@/components/MdViewer.vue'
 
 const route = useRoute()
@@ -346,6 +374,9 @@ const saving = ref(false)
 const editingTitle = ref('')
 const editingContent = ref('')
 const editorMode = ref('edit')
+const editorRef = ref(null)
+const imageInputRef = ref(null)
+const imageUploading = ref(false)
 
 // 目录树配置
 const treeProps = {
@@ -568,6 +599,118 @@ const handleSaveDocument = async () => {
 const handleTitleBlur = () => {
   if (currentDocument.value && editingTitle.value !== currentDocument.value.title) {
     handleSaveDocument()
+  }
+}
+
+// ==================== 图片上传 ====================
+
+/**
+ * 在 textarea 光标位置插入文本
+ */
+const insertAtCursor = (text) => {
+  const textarea = editorRef.value
+  if (!textarea) {
+    editingContent.value += text
+    return
+  }
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  const before = editingContent.value.substring(0, start)
+  const after = editingContent.value.substring(end)
+  editingContent.value = before + text + after
+  // 恢复光标到插入文本之后
+  nextTick(() => {
+    textarea.focus()
+    textarea.selectionStart = start + text.length
+    textarea.selectionEnd = start + text.length
+  })
+}
+
+/**
+ * 上传图片文件并插入 markdown 语法
+ */
+const uploadAndInsertImage = async (file) => {
+  // 校验文件类型
+  if (!file.type.startsWith('image/')) {
+    ElMessage.warning('仅支持上传图片文件')
+    return
+  }
+  // 校验文件大小（10MB）
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过 10MB')
+    return
+  }
+  imageUploading.value = true
+  // 先插入上传中占位符
+  const placeholder = `![上传中...](uploading_${Date.now()})`
+  insertAtCursor(placeholder)
+  try {
+    const res = await uploadFile(file, 'knowledge')
+    const fileUrl = res.data?.fileUrl
+    if (!fileUrl) {
+      throw new Error('上传返回的文件地址为空')
+    }
+    const altName = file.name.replace(/\.[^.]+$/, '')
+    const markdownImg = `![${altName}](${fileUrl})`
+    // 用实际链接替换占位符
+    editingContent.value = editingContent.value.replace(placeholder, markdownImg)
+    ElMessage.success('图片插入成功')
+  } catch (error) {
+    console.error('上传图片失败:', error)
+    ElMessage.error('图片上传失败')
+    // 移除占位符
+    editingContent.value = editingContent.value.replace(placeholder, '')
+  } finally {
+    imageUploading.value = false
+  }
+}
+
+/**
+ * 点击按钮选择图片
+ */
+const triggerImageUpload = () => {
+  imageInputRef.value?.click()
+}
+
+/**
+ * 文件选择回调
+ */
+const handleImageSelect = (event) => {
+  const file = event.target.files?.[0]
+  if (file) {
+    uploadAndInsertImage(file)
+  }
+  event.target.value = ''
+}
+
+/**
+ * 粘贴图片处理
+ */
+const handleImagePaste = (event) => {
+  const items = event.clipboardData?.items
+  if (!items) return
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      event.preventDefault()
+      const file = item.getAsFile()
+      if (file) {
+        uploadAndInsertImage(file)
+      }
+      return
+    }
+  }
+}
+
+/**
+ * 拖拽图片处理
+ */
+const handleImageDrop = (event) => {
+  const files = event.dataTransfer?.files
+  if (!files || files.length === 0) return
+  for (const file of files) {
+    if (file.type.startsWith('image/')) {
+      uploadAndInsertImage(file)
+    }
   }
 }
 
@@ -1095,12 +1238,26 @@ onMounted(async () => {
 .editor-tabs {
   padding: 8px 16px;
   border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .editor-main {
   flex: 1;
   overflow: hidden;
   padding: 16px;
+  position: relative;
+}
+
+.editor-main.dragover {
+  background: #ecf5ff;
 }
 
 .md-editor {

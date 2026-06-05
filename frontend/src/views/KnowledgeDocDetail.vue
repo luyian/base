@@ -7,6 +7,7 @@
         <h2>{{ doc?.title || '文档详情' }}</h2>
       </div>
       <div class="header-right">
+        <el-button :icon="Download" @click="downloadMd">下载 MD</el-button>
         <div class="toc-toggle" v-if="tocList.length > 0">
           <el-icon><List /></el-icon>
           <span class="toc-label">目录</span>
@@ -142,7 +143,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowLeft, Document, Upload, Collection, List } from '@element-plus/icons-vue'
+import { ArrowLeft, Document, Upload, Collection, List, Download } from '@element-plus/icons-vue'
 import MdViewer from '@/components/MdViewer.vue'
 import { useUserStore } from '@/store/user'
 import { uploadFile } from '@/api/file'
@@ -248,6 +249,23 @@ const formatSize = (size) => {
 
 const goBack = () => {
   router.push('/document-square')
+}
+
+// 下载 MD 文件
+const downloadMd = () => {
+  if (!doc.value || !doc.value.content) {
+    ElMessage.warning('文档内容为空，无法下载')
+    return
+  }
+  const blob = new Blob([doc.value.content], { type: 'text/markdown;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = (doc.value.title || '文档') + '.md'
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
 }
 
 const loadDoc = async () => {

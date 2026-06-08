@@ -22,4 +22,9 @@ public class DocumentPageRequest {
      * 标题关键字（可选，模糊匹配）
      */
     private String keyword;
+
+    /**
+     * 标签名称（可选，精确匹配）
+     */
+    private String tag;
 }

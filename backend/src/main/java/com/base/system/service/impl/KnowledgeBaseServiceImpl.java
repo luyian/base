@@ -187,9 +187,37 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         long pageNum = request.getPageNum() != null ? request.getPageNum() : 1L;
         long pageSize = request.getPageSize() != null ? request.getPageSize() : 12L;
 
+        // 如果传了标签名，先通过关联表查出符合的文档ID集合
+        Set<Long> tagFilterDocIds = null;
+        if (request.getTag() != null && !request.getTag().isEmpty()) {
+            // 查出该标签名对应的所有标签记录（可能跨知识库存在同名标签）
+            LambdaQueryWrapper<KbTag> tagWrapper = new LambdaQueryWrapper<>();
+            tagWrapper.eq(KbTag::getName, request.getTag());
+            List<KbTag> matchedTags = tagMapper.selectList(tagWrapper);
+            if (matchedTags.isEmpty()) {
+                // 标签不存在，直接返回空
+                Page<DocumentResponse> emptyResult = new Page<>(pageNum, pageSize, 0);
+                emptyResult.setRecords(new ArrayList<>());
+                return emptyResult;
+            }
+            Set<Long> tagIds = matchedTags.stream().map(KbTag::getId).collect(Collectors.toSet());
+            LambdaQueryWrapper<KbDocumentTag> dtWrapper = new LambdaQueryWrapper<>();
+            dtWrapper.in(KbDocumentTag::getTagId, tagIds);
+            List<KbDocumentTag> docTags = documentTagMapper.selectList(dtWrapper);
+            tagFilterDocIds = docTags.stream().map(KbDocumentTag::getDocumentId).collect(Collectors.toSet());
+            if (tagFilterDocIds.isEmpty()) {
+                Page<DocumentResponse> emptyResult = new Page<>(pageNum, pageSize, 0);
+                emptyResult.setRecords(new ArrayList<>());
+                return emptyResult;
+            }
+        }
+
         LambdaQueryWrapper<KbDocument> wrapper = new LambdaQueryWrapper<>();
         if (request.getKeyword() != null && !request.getKeyword().isEmpty()) {
             wrapper.like(KbDocument::getTitle, request.getKeyword());
+        }
+        if (tagFilterDocIds != null) {
+            wrapper.in(KbDocument::getId, tagFilterDocIds);
         }
         wrapper.orderByDesc(KbDocument::getUpdateTime);
 
@@ -205,9 +233,28 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
                 .map(KbDocument::getKnowledgeBaseId).collect(Collectors.toSet());
         Map<Long, String> kbNameMap = knowledgeBaseMapper.selectBatchIds(kbIds).stream()
                 .collect(Collectors.toMap(KbKnowledgeBase::getId, KbKnowledgeBase::getName, (a, b) -> a));
+
+        // 批量查询所属目录名称
+        Set<Long> dirIds = page.getRecords().stream()
+                .map(KbDocument::getDirectoryId)
+                .filter(id -> id != null && id != 0L)
+                .collect(Collectors.toSet());
+        Map<Long, String> dirNameMap = new HashMap<>();
+        if (!dirIds.isEmpty()) {
+            List<KbDirectory> dirs = directoryMapper.selectBatchIds(dirIds);
+            dirNameMap = dirs.stream().collect(Collectors.toMap(KbDirectory::getId, KbDirectory::getName, (a, b) -> a));
+        }
+
+        // 构建目录全路径映射（遍历所有相关知识库的目录）
+        Map<Long, String> dirPathMap = buildDirPathMap(kbIds);
+
+        Map<Long, String> finalDirNameMap = dirNameMap;
         List<DocumentResponse> records = page.getRecords().stream().map(doc -> {
             DocumentResponse resp = toDocumentResponse(doc);
             resp.setKnowledgeBaseName(kbNameMap.get(doc.getKnowledgeBaseId()));
+            if (doc.getDirectoryId() != null && doc.getDirectoryId() != 0L) {
+                resp.setDirectoryPath(dirPathMap.get(doc.getDirectoryId()));
+            }
             return resp;
         }).collect(Collectors.toList());
         result.setRecords(records);
@@ -284,6 +331,19 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
         wrapper.orderByAsc(KbTag::getName);
         List<KbTag> list = tagMapper.selectList(wrapper);
         return list.stream().map(this::toTagResponse).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<TagResponse> listAllTags() {
+        LambdaQueryWrapper<KbTag> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByAsc(KbTag::getName);
+        List<KbTag> list = tagMapper.selectList(wrapper);
+        // 按标签名称去重，保留第一个
+        Map<String, TagResponse> nameMap = new LinkedHashMap<>();
+        for (KbTag tag : list) {
+            nameMap.putIfAbsent(tag.getName(), toTagResponse(tag));
+        }
+        return new ArrayList<>(nameMap.values());
     }
 
     @Override
@@ -543,6 +603,45 @@ public class KnowledgeBaseServiceImpl implements KnowledgeBaseService {
                 .filter(node -> Objects.equals(node.getParentId(), parentId))
                 .peek(node -> node.setChildren(buildTree(allNodes, node.getId())))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 构建目录ID -> 全路径名称映射（如 "前端/Vue/组件"）
+     */
+    private Map<Long, String> buildDirPathMap(Set<Long> knowledgeBaseIds) {
+        if (knowledgeBaseIds == null || knowledgeBaseIds.isEmpty()) {
+            return new HashMap<>();
+        }
+        LambdaQueryWrapper<KbDirectory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(KbDirectory::getKnowledgeBaseId, knowledgeBaseIds);
+        List<KbDirectory> allDirs = directoryMapper.selectList(wrapper);
+        if (allDirs.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<Long, KbDirectory> idMap = allDirs.stream()
+                .collect(Collectors.toMap(KbDirectory::getId, d -> d, (a, b) -> a));
+        Map<Long, String> pathMap = new HashMap<>();
+        for (KbDirectory dir : allDirs) {
+            pathMap.put(dir.getId(), buildSinglePath(dir, idMap));
+        }
+        return pathMap;
+    }
+
+    /**
+     * 递归拼接单个目录的全路径
+     */
+    private String buildSinglePath(KbDirectory dir, Map<Long, KbDirectory> idMap) {
+        List<String> parts = new ArrayList<>();
+        KbDirectory current = dir;
+        while (current != null) {
+            parts.add(current.getName());
+            if (current.getParentId() == null || current.getParentId() == 0L) {
+                break;
+            }
+            current = idMap.get(current.getParentId());
+        }
+        Collections.reverse(parts);
+        return String.join("/", parts);
     }
 
     private CommentResponse toCommentResponse(KbComment entity) {

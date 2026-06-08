@@ -99,6 +99,11 @@ public interface KnowledgeBaseService {
     List<TagResponse> listTags(Long knowledgeBaseId);
 
     /**
+     * 获取所有标签（跨知识库，按名称去重）
+     */
+    List<TagResponse> listAllTags();
+
+    /**
      * 创建标签
      */
     void createTag(TagSaveRequest request);

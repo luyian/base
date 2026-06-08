@@ -34,6 +34,15 @@ public class TagController {
     }
 
     /**
+     * 获取所有标签（跨知识库，去重）
+     */
+    @ApiOperation("获取所有标签（去重）")
+    @GetMapping("/all")
+    public Result<List<TagResponse>> listAll() {
+        return Result.success(knowledgeBaseService.listAllTags());
+    }
+
+    /**
      * 创建标签
      */
     @ApiOperation("创建标签")

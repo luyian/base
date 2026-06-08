@@ -43,6 +43,11 @@ public class DocumentResponse {
     private Long directoryId;
 
     /**
+     * 目录路径（如"前端/Vue"）
+     */
+    private String directoryPath;
+
+    /**
      * 标签列表
      */
     private List<String> tags;

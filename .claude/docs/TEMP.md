@@ -1,6 +1,14 @@
 
 ---
 
+## 新增 Redis + 注解接口限流工具（2026-06-09）
+
+- 新增 `@RateLimit` 注解（`com.base.common.annotation`），支持自定义 key、时间窗口、最大次数、提示消息
+- 新增 `RateLimitAspect` 切面（`com.base.common.aspect`），基于 Redis 计数器实现限流
+- 默认同一用户对同一接口 5 秒内只能调用 1 次，未登录用户按 IP 限流
+
+---
+
 ## 知识库文档下载 MD 文件功能（2026-06-05）
 
 - KnowledgeDocDetail 顶部新增"下载 MD"按钮，点击即可将当前文档内容导出为 .md 文件

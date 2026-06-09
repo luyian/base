@@ -3,9 +3,9 @@
 
 ## 新增分布式流水号生成工具（2026-06-09）
 
-- 新增 `SerialNumberUtil`（`com.base.common.util`），基于 Redis INCR 实现分布式唯一流水号
+- 新增 `SerialNumberUtil`（`com.base.common.util`），基于 Redis Lua 脚本原子自增实现分布式唯一流水号
 - 支持三种模式：日期+序号（默认6位）、自定义序号位数、带时间戳精确到秒
-- Key 自动过期，避免 Redis 堆积
+- 风险防护：Lua原子化INCR+EXPIRE、序号溢出校验、Redis宕机本地AtomicLong降级、时钟回拨检测
 
 ## 新增 Redis + 注解接口限流工具（2026-06-09）
 

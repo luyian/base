@@ -1,6 +1,12 @@
 
 ---
 
+## 新增分布式流水号生成工具（2026-06-09）
+
+- 新增 `SerialNumberUtil`（`com.base.common.util`），基于 Redis INCR 实现分布式唯一流水号
+- 支持三种模式：日期+序号（默认6位）、自定义序号位数、带时间戳精确到秒
+- Key 自动过期，避免 Redis 堆积
+
 ## 新增 Redis + 注解接口限流工具（2026-06-09）
 
 - 新增 `@RateLimit` 注解（`com.base.common.annotation`），支持自定义 key、时间窗口、最大次数、提示消息

@@ -1,0 +1,108 @@
+<!--pages/ai/ai.wxml - AI 助手页面-->
+<view class="container">
+  <nav-bar title="AI 助手" back="{{true}}" />
+
+  <!-- 模式切换 -->
+  <view class="mode-bar">
+    <view class="mode-switch">
+      <view class="mode-btn {{mode === 'stock' ? 'active' : ''}}" bindtap="switchMode" data-mode="stock">
+        <text class="mode-icon">📊</text>
+        <text>A股数据</text>
+      </view>
+      <view class="mode-btn {{mode === 'system' ? 'active' : ''}}" bindtap="switchMode" data-mode="system">
+        <text class="mode-icon">⚙️</text>
+        <text>系统</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 消息区域 -->
+  <scroll-view
+    scroll-y
+    class="chat-area"
+    scroll-into-view="{{scrollToId}}"
+    enhanced="{{true}}"
+    show-scrollbar="{{false}}"
+  >
+    <!-- 空状态 -->
+    <view wx:if="{{messages.length === 0 && !loading}}" class="empty-state">
+      <view class="empty-avatar">
+        <text class="empty-icon">🤖</text>
+      </view>
+      <text class="empty-title">你好，我是 AI 助手</text>
+      <text class="empty-desc">{{mode === 'stock' ? '我可以查询A股行情、资金流向、行业排名等数据' : '我可以帮你了解系统状态和功能'}}</text>
+
+      <!-- 快捷问题 -->
+      <view class="quick-list">
+        <view
+          class="quick-item"
+          wx:for="{{quickQuestions}}"
+          wx:key="*this"
+          bindtap="onQuickTap"
+          data-question="{{item}}"
+        >
+          <text>{{item}}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 消息列表 -->
+    <view class="msg-list">
+      <view
+        wx:for="{{messages}}"
+        wx:key="id"
+        id="msg-{{item.id}}"
+        class="msg-row {{item.role}}"
+      >
+        <!-- AI 头像 -->
+        <view wx:if="{{item.role === 'assistant'}}" class="msg-avatar ai">
+          <text>🤖</text>
+        </view>
+
+        <!-- 消息气泡 -->
+        <view class="msg-bubble {{item.role}}">
+          <text class="msg-text" user-select>{{item.content}}</text>
+        </view>
+
+        <!-- 用户头像 -->
+        <view wx:if="{{item.role === 'user'}}" class="msg-avatar user">
+          <text>👤</text>
+        </view>
+      </view>
+
+      <!-- 加载中 -->
+      <view wx:if="{{loading}}" class="msg-row assistant" id="msg-loading">
+        <view class="msg-avatar ai"><text>🤖</text></view>
+        <view class="msg-bubble assistant">
+          <view class="typing">
+            <view class="dot"></view>
+            <view class="dot"></view>
+            <view class="dot"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 底部占位 -->
+    <view class="bottom-spacer" id="bottom"></view>
+  </scroll-view>
+
+  <!-- 输入区域 -->
+  <view class="input-bar">
+    <view class="input-wrap">
+      <input
+        class="msg-input"
+        value="{{inputValue}}"
+        placeholder="输入问题..."
+        placeholder-class="input-placeholder"
+        confirm-type="send"
+        bindinput="onInput"
+        bindconfirm="onSend"
+        disabled="{{loading}}"
+      />
+      <view class="send-btn {{inputValue.trim() && !loading ? 'active' : ''}}" bindtap="onSend">
+        <text class="send-icon">➤</text>
+      </view>
+    </view>
+  </view>
+</view>

@@ -252,6 +252,37 @@ page {
 .fund-card:nth-child(4) { animation-delay: 0.2s; }
 .fund-card:nth-child(5) { animation-delay: 0.25s; }
 
+/* AI 浮动按钮 */
+.ai-fab {
+  position: fixed;
+  right: 32rpx;
+  bottom: 200rpx;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  z-index: 100;
+  animation: fabBounce 2s ease-in-out infinite;
+}
+
+.ai-fab:active {
+  transform: scale(0.9);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.ai-fab-icon {
+  font-size: 44rpx;
+}
+
+@keyframes fabBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6rpx); }
+}
+
 /* ==================== 深色主题 ==================== */
 .dark-theme,
 .dark-theme page {

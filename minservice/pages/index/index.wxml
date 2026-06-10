@@ -69,4 +69,9 @@
     <text class="refresh-icon {{refreshing ? 'spinning' : ''}}">↻</text>
     <text>刷新估值</text>
   </view>
+
+  <!-- AI 助手浮动入口 -->
+  <view class="ai-fab" bindtap="goToAi">
+    <text class="ai-fab-icon">🤖</text>
+  </view>
 </view>

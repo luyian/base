@@ -3,6 +3,7 @@
     "pages/login/login",
     "pages/login/register",
     "pages/index/index",
+    "pages/ai/ai",
     "pages/fund/fund",
     "pages/fund/detail",
     "pages/fund/edit",

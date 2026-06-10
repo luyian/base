@@ -137,5 +137,12 @@ Page({
     if (num > 0) return 'positive';
     if (num < 0) return 'negative';
     return '';
+  },
+
+  // 跳转 AI 助手
+  goToAi() {
+    wx.navigateTo({
+      url: '/pages/ai/ai'
+    });
   }
 });

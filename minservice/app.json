@@ -3,13 +3,13 @@
     "pages/login/login",
     "pages/login/register",
     "pages/index/index",
-    "pages/ai/ai",
     "pages/fund/fund",
     "pages/fund/detail",
     "pages/fund/edit",
     "pages/stock/stock",
     "pages/watchlist/watchlist",
-    "pages/profile/profile"
+    "pages/profile/profile",
+    "pages/ai/ai"
   ],
   "window": {
     "backgroundTextStyle": "light",

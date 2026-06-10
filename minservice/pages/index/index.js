@@ -20,8 +20,10 @@ Page({
 
   onShow() {
     this.applyTheme();
-    // 每次显示页面都刷新数据
-    this.loadData();
+    // Refresh data when page shows
+    if (getApp().isLoggedIn()) {
+      this.loadData();
+    }
   },
 
   // 应用主题

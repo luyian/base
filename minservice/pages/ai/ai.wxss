@@ -173,6 +173,12 @@ page {
   border-radius: 50%;
 }
 
+.msg-avatar.user .msg-avatar-img {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+}
+
 /* 消息气泡 */
 .msg-bubble {
   max-width: 75%;

@@ -1,5 +1,6 @@
 // pages/ai/ai.js - AI 助手页面
 const aiApi = require('../../api/ai');
+const app = getApp();
 
 Page({
   data: {
@@ -9,11 +10,14 @@ Page({
     loading: false,
     scrollToId: '',
     quickQuestions: [],
-    msgIdCounter: 0
+    msgIdCounter: 0,
+    userInfo: null
   },
 
   onLoad() {
     this.updateQuickQuestions();
+    const userInfo = wx.getStorageSync('userInfo') || app.globalData.userInfo;
+    this.setData({ userInfo });
   },
 
   switchMode(e) {

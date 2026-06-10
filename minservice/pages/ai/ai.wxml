@@ -67,7 +67,8 @@
 
         <!-- 用户: 头像在右 -->
         <view wx:if="{{item.role === 'user'}}" class="msg-avatar user">
-          <text>👤</text>
+          <image wx:if="{{userInfo.avatar}}" class="msg-avatar-img" src="{{userInfo.avatar}}" mode="aspectFill" />
+          <text wx:else>👤</text>
         </view>
       </view>
 

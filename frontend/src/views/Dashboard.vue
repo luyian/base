@@ -10,7 +10,31 @@
                 <el-icon class="ai-card-icon"><ChatDotRound /></el-icon>
                 AI 智能助手
               </span>
-              <el-tag type="success" size="small" effect="dark">在线</el-tag>
+              <div class="ai-header-right">
+                <div class="ai-mode-switch">
+                  <button
+                    class="ai-mode-btn"
+                    :class="{ active: aiMode === 'stock' }"
+                    @click="aiMode = 'stock'"
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                      <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
+                    </svg>
+                    A股数据
+                  </button>
+                  <button
+                    class="ai-mode-btn"
+                    :class="{ active: aiMode === 'system' }"
+                    @click="aiMode = 'system'"
+                  >
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.61 3.61 0 0 1 8.4 12 3.61 3.61 0 0 1 12 8.4a3.61 3.61 0 0 1 3.6 3.6 3.61 3.61 0 0 1-3.6 3.6z"/>
+                    </svg>
+                    系统
+                  </button>
+                </div>
+                <span class="ai-status-dot"></span>
+              </div>
             </div>
           </template>
           <div class="ai-body">
@@ -259,12 +283,21 @@ import { pageLoginLogs } from '@/api/loginLog'
 import { getLatestNotices, getUnreadCount } from '@/api/notice'
 
 // AI 助手
-const quickQuestions = [
+const aiMode = ref('stock')
+
+const stockQuestions = [
+  '查询贵州茅台行情',
+  '今日北向资金流向',
+  '行业板块涨跌排名',
+  '今日强势股有哪些'
+]
+const systemQuestions = [
   '查看服务器状态',
   '今日登录统计',
   '系统有什么新功能',
   '帮我分析数据'
 ]
+const quickQuestions = computed(() => aiMode.value === 'stock' ? stockQuestions : systemQuestions)
 
 const aiQuestion = ref('')
 const aiMessages = ref([])
@@ -304,7 +337,7 @@ function handleAiSend() {
     磁盘使用率${serverStats.value[2]?.value || 'N/A'}
   `
   
-  chat({ message: msg, context: contextInfo })
+  chat({ message: msg, context: contextInfo, enableSkills: aiMode.value === 'stock' })
     .then(res => {
       const answer = (res.data && res.data.answer) ? res.data.answer : '暂无回复'
       aiMessages.value.push({ role: 'assistant', content: answer })
@@ -592,6 +625,60 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.ai-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ai-mode-switch {
+  display: inline-flex;
+  background: var(--el-fill-color-light);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.ai-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.ai-mode-btn:hover {
+  color: var(--el-text-color-primary);
+}
+
+.ai-mode-btn.active {
+  background: #fff;
+  color: var(--el-color-primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 500;
+}
+
+.ai-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--el-color-success);
+  box-shadow: 0 0 6px var(--el-color-success);
+  animation: pulse-dot 2s infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .ai-card-title {

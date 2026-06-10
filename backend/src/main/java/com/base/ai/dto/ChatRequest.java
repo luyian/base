@@ -29,4 +29,9 @@ public class ChatRequest implements Serializable {
      */
     @Size(max = 5000, message = "上下文长度不能超过 5000 字符")
     private String context;
+
+    /**
+     * 是否启用技能（Function Calling），默认 true
+     */
+    private Boolean enableSkills = true;
 }

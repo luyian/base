@@ -18,4 +18,13 @@ public interface AiService {
      * @return 对话响应
      */
     ChatResponse chat(ChatRequest request);
+
+    /**
+     * 带技能的对话（Function Calling）
+     * AI 可自动调用注册的技能获取实时数据，结合数据生成回答
+     *
+     * @param request 对话请求
+     * @return 对话响应
+     */
+    ChatResponse chatWithSkills(ChatRequest request);
 }

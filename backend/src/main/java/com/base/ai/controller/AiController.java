@@ -28,11 +28,16 @@ public class AiController {
 
     private final AiService aiService;
 
-    @Operation(summary = "对话")
+    @Operation(summary = "对话（支持技能调用）")
     @PostMapping("/chat")
     @Log(title = "AI 助手", content = "Dashboard AI 对话", type = "OTHER")
     public Result<ChatResponse> chat(@Validated @RequestBody ChatRequest request) {
-        ChatResponse response = aiService.chat(request);
+        ChatResponse response;
+        if (Boolean.TRUE.equals(request.getEnableSkills())) {
+            response = aiService.chatWithSkills(request);
+        } else {
+            response = aiService.chat(request);
+        }
         return Result.success(response);
     }
 }

@@ -1,7 +1,19 @@
 
 ---
 
-## 数据字典模块拆表重构（2026-06-09）
+## AI 技能扩展 — Function Calling（2026-06-10）
+
+- 新增 `AiSkillConfig` 配置类（`ai.skill` 配置节，控制 Python 路径、超时、开关）
+- 新增 `PythonExecutor` 执行器，通过 ProcessBuilder 调用 Python 脚本，临时文件方式避免命令行长度限制
+- 新增 `StockScripts` 脚本模板类，内置 10 个数据脚本（行情/资金流/新闻/行业排名/北向/龙虎榜/强势股/板块/融资融券/估值）
+- 新增 `StockDataTools`（@Tool 注解），暴露 10 个技能方法给 LangChain4j Function Calling
+- 改造 `AiServiceImpl`，新增 `chatWithSkills` 方法，使用 LangChain4j AiServices 构建带 Tools 的代理
+- 改造 `AiController`，根据 `enableSkills` 字段选择对话模式
+- 改造 `ChatRequest` DTO，新增 `enableSkills` 字段（默认 true）
+- 前端 Dashboard 快捷问题改为股票数据相关，对话默认启用技能
+- `application-dev.yml` 新增 `ai.skill` 配置节
+
+---
 
 - 将 `sys_enum` 单表拆分为 `sys_dict_type`（字典类型表）+ `sys_dict_data`（字典数据表）
 - 后端：新建 DictType/DictData 实体、Mapper、Service、Controller，路径改为 `/system/dict/type` 和 `/system/dict/data`

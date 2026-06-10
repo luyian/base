@@ -63,8 +63,11 @@ page {
 /* 聊天区域 */
 .chat-area {
   flex: 1;
-  padding: 24rpx 32rpx 0;
   overflow-y: auto;
+}
+
+.chat-inner {
+  padding: 24rpx 0 0;
 }
 
 /* 空状态 */
@@ -142,6 +145,7 @@ page {
   display: flex;
   align-items: flex-start;
   gap: 16rpx;
+  padding: 0 32rpx;
 }
 
 .msg-row.user {

@@ -24,6 +24,7 @@
     enhanced="{{true}}"
     show-scrollbar="{{false}}"
   >
+    <view class="chat-inner">
     <!-- 空状态 -->
     <view wx:if="{{messages.length === 0 && !loading}}" class="empty-state">
       <view class="empty-avatar">
@@ -89,6 +90,7 @@
 
     <!-- 底部占位 -->
     <view class="bottom-spacer" id="bottom"></view>
+    </view>
   </scroll-view>
 
   <!-- 输入区域 -->

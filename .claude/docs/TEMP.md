@@ -1,6 +1,18 @@
 
 ---
 
+## 数据字典模块拆表重构（2026-06-09）
+
+- 将 `sys_enum` 单表拆分为 `sys_dict_type`（字典类型表）+ `sys_dict_data`（字典数据表）
+- 后端：新建 DictType/DictData 实体、Mapper、Service、Controller，路径改为 `/system/dict/type` 和 `/system/dict/data`
+- 前端：新建 `api/dict.js` 和 `views/system/Dict.vue`，支持字典类型分页管理 + 数据项弹窗 CRUD
+- 权限标识从 `system:enum:*` 改为 `system:dict:*`
+- 更新 DictConverter、StockServiceImpl、WatchlistServiceImpl 引用新接口
+- 删除旧的 Enum 模块全部文件（实体、Mapper、Service、Controller、DTO、前端 API 和页面）
+- 数据迁移 SQL：`backend/src/main/resources/db/alter_dict_split.sql`
+
+---
+
 ## 新增分布式流水号生成工具（2026-06-09）
 
 - 新增 `SerialNumberUtil`（`com.base.common.util`），基于 Redis Lua 脚本原子自增实现分布式唯一流水号

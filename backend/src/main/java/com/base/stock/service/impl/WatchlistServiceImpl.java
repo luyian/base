@@ -11,8 +11,8 @@ import com.base.stock.entity.Watchlist;
 import com.base.stock.mapper.StockInfoMapper;
 import com.base.stock.mapper.WatchlistMapper;
 import com.base.stock.service.WatchlistService;
-import com.base.system.dto.enums.EnumResponse;
-import com.base.system.service.EnumService;
+import com.base.system.dto.dict.DictDataResponse;
+import com.base.system.service.DictDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,7 +40,7 @@ public class WatchlistServiceImpl implements WatchlistService {
     private final WatchlistMapper watchlistMapper;
     private final ITickApiClient iTickApiClient;
     private final StockInfoMapper stockInfoMapper;
-    private final EnumService enumService;
+    private final DictDataService dictDataService;
 
     @Override
     public List<Watchlist> listByUserId(Long userId) {
@@ -56,8 +56,8 @@ public class WatchlistServiceImpl implements WatchlistService {
         if (list == null || list.isEmpty()) {
             return;
         }
-        Map<String, String> industryMap = enumService.listByType("stock_industry").stream()
-                .collect(Collectors.toMap(EnumResponse::getEnumCode, EnumResponse::getEnumValue, (v1, v2) -> v1));
+        Map<String, String> industryMap = dictDataService.listByDictType("stock_industry").stream()
+                .collect(Collectors.toMap(DictDataResponse::getDictValue, DictDataResponse::getDictLabel, (v1, v2) -> v1));
         for (Watchlist item : list) {
             if (item.getIndustry() != null) {
                 item.setIndustryCn(industryMap.getOrDefault(item.getIndustry(), item.getIndustry()));

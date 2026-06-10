@@ -16,8 +16,8 @@ import com.base.stock.mapper.StockKlineMapper;
 import com.base.stock.service.StockService;
 import com.base.stock.service.StockSyncService;
 import com.base.stock.util.MarketUtil;
-import com.base.system.dto.enums.EnumResponse;
-import com.base.system.service.EnumService;
+import com.base.system.dto.dict.DictDataResponse;
+import com.base.system.service.DictDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -42,7 +42,7 @@ public class StockServiceImpl implements StockService {
     private final StockInfoMapper stockInfoMapper;
     private final StockKlineMapper stockKlineMapper;
     private final StockSyncService stockSyncService;
-    private final EnumService enumService;
+    private final DictDataService dictDataService;
 
     @Override
     public Page<StockInfo> pageStocks(StockQueryRequest request) {
@@ -128,11 +128,11 @@ public class StockServiceImpl implements StockService {
 
     @Override
     public List<Map<String, String>> listIndustryOptions() {
-        List<EnumResponse> enumList = enumService.listByType("stock_industry");
-        return enumList.stream().map(item -> {
+        List<DictDataResponse> dataList = dictDataService.listByDictType("stock_industry");
+        return dataList.stream().map(item -> {
             Map<String, String> option = new HashMap<>(2);
-            option.put("value", item.getEnumCode());
-            option.put("label", item.getEnumValue());
+            option.put("value", item.getDictValue());
+            option.put("label", item.getDictLabel());
             return option;
         }).collect(Collectors.toList());
     }
@@ -197,9 +197,9 @@ public class StockServiceImpl implements StockService {
      * @return 英文代码 -> 中文名称
      */
     private Map<String, String> getIndustryMap() {
-        List<EnumResponse> enumList = enumService.listByType("stock_industry");
-        return enumList.stream()
-                .collect(Collectors.toMap(EnumResponse::getEnumCode, EnumResponse::getEnumValue, (v1, v2) -> v1));
+        List<DictDataResponse> dataList = dictDataService.listByDictType("stock_industry");
+        return dataList.stream()
+                .collect(Collectors.toMap(DictDataResponse::getDictValue, DictDataResponse::getDictLabel, (v1, v2) -> v1));
     }
 
     /**

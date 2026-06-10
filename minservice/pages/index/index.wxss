@@ -274,8 +274,9 @@ page {
   box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
-.ai-fab-icon {
-  font-size: 44rpx;
+.ai-fab-img {
+  width: 56rpx;
+  height: 56rpx;
 }
 
 @keyframes fabBounce {

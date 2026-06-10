@@ -86,8 +86,9 @@ page {
   margin-bottom: 24rpx;
 }
 
-.empty-icon {
-  font-size: 56rpx;
+.empty-avatar-img {
+  width: 72rpx;
+  height: 72rpx;
 }
 
 .empty-title {
@@ -163,6 +164,11 @@ page {
 
 .msg-avatar.user {
   background: linear-gradient(135deg, #F0FDF4, #DCFCE7);
+}
+
+.msg-avatar-img {
+  width: 40rpx;
+  height: 40rpx;
 }
 
 /* 消息气泡 */

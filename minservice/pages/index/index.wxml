@@ -72,6 +72,6 @@
 
   <!-- AI 助手浮动入口 -->
   <view class="ai-fab" bindtap="goToAi">
-    <text class="ai-fab-icon">🤖</text>
+    <image class="ai-fab-img" src="/assets/robot.png" mode="aspectFit" />
   </view>
 </view>

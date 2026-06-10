@@ -27,7 +27,7 @@
     <!-- 空状态 -->
     <view wx:if="{{messages.length === 0 && !loading}}" class="empty-state">
       <view class="empty-avatar">
-        <text class="empty-icon">🤖</text>
+        <image class="empty-avatar-img" src="/assets/robot.png" mode="aspectFit" />
       </view>
       <text class="empty-title">你好，我是 AI 助手</text>
       <text class="empty-desc">{{mode === 'stock' ? '我可以查询A股行情、资金流向、行业排名等数据' : '我可以帮你了解系统状态和功能'}}</text>
@@ -56,7 +56,7 @@
       >
         <!-- AI 头像 -->
         <view wx:if="{{item.role === 'assistant'}}" class="msg-avatar ai">
-          <text>🤖</text>
+          <image class="msg-avatar-img" src="/assets/robot.png" mode="aspectFit" />
         </view>
 
         <!-- 消息气泡 -->
@@ -72,7 +72,9 @@
 
       <!-- 加载中 -->
       <view wx:if="{{loading}}" class="msg-row assistant" id="msg-loading">
-        <view class="msg-avatar ai"><text>🤖</text></view>
+        <view class="msg-avatar ai">
+          <image class="msg-avatar-img" src="/assets/robot.png" mode="aspectFit" />
+        </view>
         <view class="msg-bubble assistant">
           <view class="typing">
             <view class="dot"></view>

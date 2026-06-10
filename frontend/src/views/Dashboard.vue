@@ -69,7 +69,8 @@
                       <el-icon><Service /></el-icon>
                     </div>
                     <div class="ai-bubble-inner">
-                      <div class="ai-bubble-content" v-html="formatContent(item.content)"></div>
+                      <div class="ai-bubble-content" v-if="item.role === 'user'" v-html="formatContent(item.content)"></div>
+                      <MdViewer v-else :content="item.content" class="ai-bubble-content ai-md-content" />
                       <div v-if="item.role === 'assistant'" class="ai-bubble-actions">
                         <el-button type="primary" link size="small" @click="copyContent(item.content)">
                           <el-icon><DocumentCopy /></el-icon>
@@ -281,6 +282,7 @@ import { chat } from '@/api/ai'
 import { getServerInfo } from '@/api/monitor'
 import { pageLoginLogs } from '@/api/loginLog'
 import { getLatestNotices, getUnreadCount } from '@/api/notice'
+import MdViewer from '@/components/MdViewer.vue'
 
 // AI 助手
 const aiMode = ref('stock')
@@ -825,6 +827,84 @@ onUnmounted(() => {
   border: 1px solid var(--el-border-color-lighter);
   border-bottom-left-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* AI Markdown 内容样式覆盖 */
+.ai-md-content {
+  white-space: normal;
+}
+
+.ai-md-content :deep(.md-viewer__body) {
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.ai-md-content :deep(.md-viewer__body p) {
+  margin: 0 0 8px;
+}
+
+.ai-md-content :deep(.md-viewer__body p:last-child) {
+  margin-bottom: 0;
+}
+
+.ai-md-content :deep(.md-viewer__body table) {
+  font-size: 12px;
+  margin: 8px 0;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.ai-md-content :deep(.md-viewer__body table th),
+.ai-md-content :deep(.md-viewer__body table td) {
+  padding: 6px 10px;
+  border: 1px solid var(--el-border-color-lighter);
+}
+
+.ai-md-content :deep(.md-viewer__body table th) {
+  background: var(--el-fill-color-light);
+  font-weight: 600;
+}
+
+.ai-md-content :deep(.md-viewer__body ul),
+.ai-md-content :deep(.md-viewer__body ol) {
+  padding-left: 20px;
+  margin: 6px 0;
+}
+
+.ai-md-content :deep(.md-viewer__body li) {
+  margin-bottom: 4px;
+}
+
+.ai-md-content :deep(.md-viewer__body h1),
+.ai-md-content :deep(.md-viewer__body h2),
+.ai-md-content :deep(.md-viewer__body h3) {
+  margin: 12px 0 6px;
+  font-size: 15px;
+}
+
+.ai-md-content :deep(.md-viewer__body code) {
+  font-size: 12px;
+  padding: 2px 5px;
+  background: var(--el-fill-color-light);
+  border-radius: 3px;
+}
+
+.ai-md-content :deep(.md-code-block) {
+  margin: 8px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ai-md-content :deep(.md-viewer__body blockquote) {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--el-color-primary);
+  background: var(--el-fill-color-lighter);
+  border-radius: 0 6px 6px 0;
+}
+
+.ai-md-content :deep(.md-viewer__body strong) {
+  font-weight: 600;
 }
 
 .ai-bubble-actions {

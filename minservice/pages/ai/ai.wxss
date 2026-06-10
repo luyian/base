@@ -63,7 +63,7 @@ page {
 /* 聊天区域 */
 .chat-area {
   flex: 1;
-  padding: 24rpx 24rpx 0;
+  padding: 24rpx 32rpx 0;
   overflow-y: auto;
 }
 
@@ -181,7 +181,7 @@ page {
 
 /* 消息气泡 */
 .msg-bubble {
-  max-width: 75%;
+  max-width: 70%;
   padding: 20rpx 28rpx;
   border-radius: 20rpx;
   font-size: 28rpx;

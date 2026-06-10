@@ -145,7 +145,7 @@ page {
 }
 
 .msg-row.user {
-  flex-direction: row-reverse;
+  justify-content: flex-end;
 }
 
 .msg-avatar {

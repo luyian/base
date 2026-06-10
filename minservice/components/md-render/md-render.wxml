@@ -1,0 +1,4 @@
+<!--components/md-render/md-render.wxml-->
+<view class="md-render">
+  <rich-text nodes="{{nodes}}" user-select></rich-text>
+</view>

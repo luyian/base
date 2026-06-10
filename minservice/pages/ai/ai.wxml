@@ -61,7 +61,8 @@
 
         <!-- 消息气泡 -->
         <view class="msg-bubble {{item.role}}">
-          <text class="msg-text" user-select>{{item.content}}</text>
+          <text wx:if="{{item.role === 'user'}}" class="msg-text" user-select>{{item.content}}</text>
+          <md-render wx:else content="{{item.content}}" />
         </view>
 
         <!-- 用户头像 -->

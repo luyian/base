@@ -1,0 +1,7 @@
+/* components/md-render/md-render.wxss */
+.md-render {
+  font-size: 28rpx;
+  line-height: 1.7;
+  color: var(--text-primary, #1E293B);
+  word-break: break-all;
+}

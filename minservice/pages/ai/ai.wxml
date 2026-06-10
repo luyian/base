@@ -54,20 +54,16 @@
         id="msg-{{item.id}}"
         class="msg-row {{item.role}}"
       >
-        <!-- AI 头像 -->
-        <view wx:if="{{item.role === 'assistant'}}" class="msg-avatar ai">
-          <image class="msg-avatar-img" src="/assets/robot.png" mode="aspectFit" />
+        <!-- 头像 -->
+        <view class="msg-avatar {{item.role === 'assistant' ? 'ai' : 'user'}}">
+          <image wx:if="{{item.role === 'assistant'}}" class="msg-avatar-img" src="/assets/robot.png" mode="aspectFit" />
+          <text wx:else>👤</text>
         </view>
 
         <!-- 消息气泡 -->
         <view class="msg-bubble {{item.role}}">
           <text wx:if="{{item.role === 'user'}}" class="msg-text" user-select>{{item.content}}</text>
           <md-render wx:else content="{{item.content}}" />
-        </view>
-
-        <!-- 用户头像 -->
-        <view wx:if="{{item.role === 'user'}}" class="msg-avatar user">
-          <text>👤</text>
         </view>
       </view>
 

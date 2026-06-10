@@ -60,6 +60,12 @@ page {
 
 .avatar-text { font-size: 60rpx; font-weight: 700; color: #fff; }
 
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 76rpx;
+}
+
 .wechat-badge {
   position: absolute;
   bottom: -4rpx;

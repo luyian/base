@@ -6,7 +6,8 @@
   <view class="user-header">
     <view class="avatar-wrap">
       <view class="avatar">
-        <text class="avatar-text">{{userInfo.nickname ? userInfo.nickname.substring(0,1) : '用'}}</text>
+        <image wx:if="{{userInfo.avatar}}" class="avatar-img" src="{{userInfo.avatar}}" mode="aspectFill" />
+        <text wx:else class="avatar-text">{{userInfo.nickname ? userInfo.nickname.substring(0,1) : '用'}}</text>
       </view>
       <view class="wechat-badge {{userInfo.wxOpenid ? 'bound' : 'unbound'}}">
         <text class="badge-icon">{{userInfo.wxOpenid ? '✓' : '—'}}</text>

@@ -89,6 +89,7 @@ page {
 .empty-avatar-img {
   width: 72rpx;
   height: 72rpx;
+  border-radius: 50%;
 }
 
 .empty-title {
@@ -169,6 +170,7 @@ page {
 .msg-avatar-img {
   width: 40rpx;
   height: 40rpx;
+  border-radius: 50%;
 }
 
 /* 消息气泡 */

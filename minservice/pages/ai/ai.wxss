@@ -168,14 +168,14 @@ page {
 }
 
 .msg-avatar-img {
-  width: 40rpx;
-  height: 40rpx;
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 50%;
 }
 
 .msg-avatar.user .msg-avatar-img {
-  width: 40rpx;
-  height: 40rpx;
+  width: 56rpx;
+  height: 56rpx;
   border-radius: 50%;
 }
 

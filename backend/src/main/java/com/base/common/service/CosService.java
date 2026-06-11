@@ -106,12 +106,28 @@ public class CosService {
      * @return 带签名的临时访问 URL
      */
     public String getFileUrl(String key) {
+        return getFileUrl(key, null);
+    }
+
+    /**
+     * 获取文件预签名访问 URL（1 小时有效），指定下载文件名
+     *
+     * @param key          COS 对象 key
+     * @param originalName 下载时的文件名，为 null 则不指定
+     * @return 带签名的临时访问 URL
+     */
+    public String getFileUrl(String key, String originalName) {
         if (key == null || key.isEmpty()) {
             return null;
         }
         Date expiration = new Date(System.currentTimeMillis() + 3600 * 1000L);
         GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(getBucket(), key);
         request.setExpiration(expiration);
+        if (originalName != null && !originalName.isEmpty()) {
+            ResponseHeaderOverrides overrides = new ResponseHeaderOverrides();
+            overrides.setContentDisposition("attachment; filename=\"" + originalName + "\"");
+            request.setResponseHeaders(overrides);
+        }
         URL url = getClient().generatePresignedUrl(request);
         return url.toString();
     }

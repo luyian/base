@@ -150,8 +150,8 @@ public class FileConvertServiceImpl implements FileConvertService {
         }
 
         sysFileMapper.insert(sysFile);
-        // 设置访问 URL
-        sysFile.setFileUrl(cosService.getFileUrl(cosKey));
+        // 设置访问 URL，带原始文件名
+        sysFile.setFileUrl(cosService.getFileUrl(cosKey, originalName));
         return sysFile;
     }
 

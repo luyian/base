@@ -1,6 +1,16 @@
 
 ---
 
+## 新增文件转换菜单（2026-06-10）
+
+- 后端新增 `FileConvertController`（`/system/file-convert/pdf-to-word`），通过 RestTemplate 调用 python-tools 转换
+- 新增 `FileConvertService`/`FileConvertServiceImpl`，转换前后文件均上传 COS 并写入 sys_file 记录
+- 前端新增 `FileConvert.vue` 页面（Tab 式布局，预留扩展位），支持拖拽上传 PDF 并下载转换后的 Word
+- 前端新增 `api/fileConvert.js` 接口封装
+- 菜单权限 SQL：`init_file_convert_permission.sql`（ID=114，挂系统管理下）
+
+---
+
 ## 新增 Python 工具服务 python-tools（2026-06-10）
 
 - 基于 FastAPI 搭建独立 Python HTTP 服务，端口 8100，供 Spring Boot 后端内部调用

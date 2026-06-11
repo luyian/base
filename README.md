@@ -60,10 +60,11 @@
                             │
         ┌───────────────────┼───────────────────┐
         ▼                   ▼                   ▼
-   ┌─────────┐        ┌─────────┐        ┌─────────┐
-   │  MySQL  │        │  Redis  │        │ 外部API │
-   │ 数据存储 │        │  缓存   │        │ iTick等 │
-   └─────────┘        └─────────┘        └─────────┘
+   ┌─────────┐        ┌─────────┐        ┌─────────────────┐
+   │  MySQL  │        │  Redis  │        │  Python Tools   │
+   │ 数据存储 │        │  缓存   │        │ FastAPI :8100   │
+   └─────────┘        └─────────┘        │ PDF转换/股票数据 │
+                                          └─────────────────┘
 ```
 
 ## 项目结构
@@ -76,6 +77,7 @@ base/
 │   │   │   ├── config/               # LangChain4j 配置
 │   │   │   ├── controller/           # AI 对话接口
 │   │   │   ├── service/              # AI 服务实现
+│   │   │   ├── skill/                # AI 技能（HTTP调用python-tools）
 │   │   │   └── dto/                  # 请求响应对象
 │   │   ├── common/                   # 公共模块
 │   │   │   ├── annotation/           # @DataScope, @Log 注解
@@ -106,23 +108,39 @@ base/
 │       ├── db/                       # 数据库脚本
 │       └── application*.yml          # 配置文件
 │
-└── frontend/                         # 前端项目
-    ├── src/
-    │   ├── api/                      # API 接口封装
-    │   ├── components/               # 公共组件
-    │   ├── directives/               # 自定义指令 (权限控制)
-  yout/                   # 布局组件
-    │   ├── router/                   # 路由配置
-    │   ├── store/                    # Pinia 状态管理
-    │   ├── utils/                    # 工具函数
-    │   │   ├── request.js            # Axios 封装
-    │   │   └── route.js              # 动态路由生成
-    │   └── views/                    # 页面组件
-    │       ├── system/               # 系统管理页面
-    │       ├── stock/                # 股票分析页面
-    │       ├── message/              # 消息中心页面
-    │       └── monitor/              # 系统监控页面
-    └── vite.config.js                # Vite 配置
+├── frontend/                         # 前端项目
+│   ├── src/
+│   │   ├── api/                      # API 接口封装
+│   │   ├── components/               # 公共组件
+│   │   ├── directives/               # 自定义指令 (权限控制)
+│   │   ├── layout/                   # 布局组件
+│   │   ├── router/                   # 路由配置
+│   │   ├── store/                    # Pinia 状态管理
+│   │   ├── utils/                    # 工具函数
+│   │   │   ├── request.js            # Axios 封装
+│   │   │   └── route.js              # 动态路由生成
+│   │   └── views/                    # 页面组件
+│   │       ├── system/               # 系统管理页面
+│   │       ├── stock/                # 股票分析页面
+│   │       ├── message/              # 消息中心页面
+│   │       └── monitor/              # 系统监控页面
+│   └── vite.config.js                # Vite 配置
+│
+└── python-tools/                     # Python 工具服务
+    ├── app/
+    │   ├── main.py                   # FastAPI 入口
+    │   ├── config.py                 # 配置管理
+    │   ├── schema.py                 # 统一响应模型
+    │   ├── routers/                  # 路由层
+    │   │   ├── pdf.py                # PDF 转换接口
+    │   │   └── stock.py              # 股票数据接口
+    │   └── services/                 # 服务层
+    │       ├── em_helper.py          # 东财公共模块
+    │       ├── pdf_service.py        # PDF 转换
+    │       └── stock_service.py      # 股票数据查询
+    ├── requirements.txt              # Python 依赖
+    ├── start.py                      # 启动脚本
+    └── run.bat                       # Windows 一键启动
 ```
 
 ## 核心功能
@@ -247,6 +265,7 @@ ChannelSender.send(userId, message)  →  发送消息
 - MySQL 8.0+
 - Redis 6.0+
 - Node.js 16+
+- Python 3.10+（python-tools 服务）
 
 ### 1. 初始化数据库
 
@@ -274,7 +293,24 @@ spring:
     port: 6379
 ```
 
-### 3. 启动后端bash
+### 3. 启动 Python 工具服务
+
+```bash
+cd python-tools
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux/Mac
+pip install -r requirements.txt
+python start.py
+```
+
+Windows 可直接双击 `python-tools/run.bat` 一键启动。
+
+服务启动在 `http://localhost:8100`，提供 PDF 转换、股票数据查询等接口。
+
+### 4. 启动后端
+
+```bash
 cd backend
 mvn spring-boot:run
 ```
@@ -283,7 +319,7 @@ mvn spring-boot:run
 
 API 文档：`http://localhost:8080/doc.html`
 
-### 4. 启动前端
+### 5. 启动前端
 
 ```bash
 cd frontend
@@ -293,7 +329,7 @@ npm run dev
 
 前端服务启动在 `http://localhost:3000`
 
-### 5. 默认账号
+### 6. 默认账号
 
 | 用户名 | 密码 | 角色 |
 |--------|------|------|
@@ -368,7 +404,7 @@ public class EmailChannelSender implements ChannelSender {
 ### 生产环境配置
 
 1. 修改 `application-prod.yml` 配置数据库、Redis、JWT 密钥
-2. 配置文件上传路径
+2. 配置 `ai.skill.python-tools-url` 指向 python-tools 服务地址
 3. 前端修改 `.env.production` 配置 API 地址
 
 ### 构建
@@ -381,8 +417,47 @@ java -jar target/base-system-1.0.0.jar --spring.profiles.active=prod
 
 # 前端
 cd frontend
-npm run b 将 dist 目录部署到 Nginx
+npm run build
+# 将 dist 目录部署到 Nginx
+
+# Python 工具服务
+cd python-tools
+pip install -r requirements.txt
+uvicorn app.main:app --host 0.0.0.0 --port 8100 --workers 2
 ```
+
+### Python 工具服务部署
+
+推荐使用 systemd 管理：
+
+```ini
+# /etc/systemd/system/python-tools.service
+[Unit]
+Description=Python Tools Service
+After=network.target
+
+[Service]
+Type=simple
+User=app
+WorkingDirectory=/opt/python-tools
+ExecStart=/opt/python-tools/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8100 --workers 2
+Restart=always
+RestartSec=5
+Environment=PYTOOL_DEBUG=false
+
+[Install]
+WantedBy=multi-user.target
+```
+
+或使用 Docker：
+
+```bash
+cd python-tools
+docker build -t python-tools .
+docker run -d --name python-tools -p 8100:8100 python-tools
+```
+
+**启动顺序**：Python Tools → Spring Boot → 前端
 
 ### Docker 构建 (低内存)
 
@@ -452,6 +527,17 @@ cription | 消息订阅 |
 | 500 | 服务器错误 |
 
 ## 更新日志
+
+### v1.3.0 (2026-06)
+
+- 新增 python-tools 服务（FastAPI），独立部署，后端通过 HTTP 调用
+- 新增文件转换功能（PDF 转 Word），转换前后文件上传 COS 记录
+- AI 技能（Function Calling）改为 HTTP 调用 python-tools，取代进程调用
+- 新增 OCR 智能识别模块（身份证/发票/银行卡，多供应商降级）
+- 新增天气地图模块（多数据源）
+- 新增飞书审批集成 + 事件回调
+- 新增知识库增强（附件、文档广场、评论、Markdown 渲染优化）
+- 字典模块重构（单表拆为 type + data）
 
 ### v1.2.0 (2026-03)
 

@@ -44,6 +44,19 @@ npm run build                    # 构建生产版本
 npm run preview                  # 预览生产构建
 ```
 
+### Python 工具服务 (python-tools/)
+```bash
+cd python-tools
+python -m venv venv
+venv\Scripts\activate            # Windows
+pip install -r requirements.txt
+python start.py                  # 启动服务 (端口 8100)
+```
+
+Windows 可双击 `run.bat` 一键启动。
+
+API 文档：http://localhost:8100/docs
+
 ### 数据库初始化
 ```bash
 # 执行 SQL 文件初始化数据库
@@ -54,12 +67,13 @@ backend/src/main/resources/db/data.sql    # 初始数据
 ## 项目架构
 
 ### 整体架构
-前后端分离架构，前端通过 `/api` 代理转发请求到后端 8080 端口。
+前后端分离架构，前端通过 `/api` 代理转发请求到后端 8080 端口。后端通过 HTTP 调用 python-tools 服务（端口 8100）。
 
 ```
 base/
-├── backend/    # Spring Boot 2.7.18 + MyBatis Plus + Spring Security + JWT
-└── frontend/   # Vue 3 + Vite + Element Plus + Pinia
+├── backend/        # Spring Boot 2.7.18 + MyBatis Plus + Spring Security + JWT
+├── frontend/       # Vue 3 + Vite + Element Plus + Pinia
+└── python-tools/   # FastAPI + Python 3.10（PDF转换、股票数据查询等）
 ```
 
 ### 后端分层架构 (backend/src/main/java/com/base/)
@@ -115,6 +129,8 @@ src/
 | `backend/src/main/resources/application.yml` | 主配置（激活 dev profile） |
 | `backend/src/main/resources/application-dev.yml` | 开发环境（数据库、Redis 连接） |
 | `frontend/vite.config.js` | Vite 配置（代理 /api → localhost:8080） |
+| `python-tools/.env` | Python 工具服务配置（端口、调试模式） |
+| `python-tools/requirements.txt` | Python 依赖清单 |
 
 ### API 响应格式
 
@@ -192,3 +208,41 @@ com.base.message/
 ### API 文档
 
 后端启动后访问: http://localhost:8080/doc.html (Knife4j)
+
+Python 工具服务: http://localhost:8100/docs (Swagger UI)
+
+### Python 工具服务模块 (python-tools/)
+
+独立的 FastAPI 服务，供后端通过 HTTP 调用，端口 8100。
+
+#### 模块结构
+
+```
+python-tools/app/
+├── main.py              # FastAPI 入口，注册路由 + 全局异常处理
+├── config.py            # pydantic-settings 配置（环境变量前缀 PYTOOL_）
+├── schema.py            # 统一响应 Result（code/message/data，与后端一致）
+├── routers/
+│   ├── pdf.py           # POST /api/pdf/to-word（PDF 转 Word）
+│   └── stock.py         # GET /api/stock/*（10 个股票数据接口）
+└── services/
+    ├── em_helper.py     # 东财公共模块（限流 + 会话复用）
+    ├── pdf_service.py   # PDF 转 Word（基于 pdf2docx）
+    └── stock_service.py # 股票数据查询（行情/资金流/龙虎榜/北向等）
+```
+
+#### 后端调用方式
+
+后端通过 `PythonToolsClient`（RestTemplate）调用，配置项 `ai.skill.python-tools-url`（默认 `http://localhost:8100`）。
+
+文件转换功能通过 `FileConvertServiceImpl` 调用 `/api/pdf/to-word`，转换前后文件均上传 COS 记录到 sys_file。
+
+#### 启动顺序
+
+Python Tools (8100) → Spring Boot (8080) → 前端 (3000)
+
+#### 扩展方式
+
+1. 在 `app/services/` 下新建 `xxx_service.py`
+2. 在 `app/routers/` 下新建 `xxx.py` 定义路由
+3. 在 `app/main.py` 中 `include_router` 注册

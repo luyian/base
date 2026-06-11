@@ -7,18 +7,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.regex.Pattern;
 
 /**
  * A 股数据技能 — 通过 @Tool 注解暴露给 LangChain4j AiServices，
- * 大模型根据用户问题自动选择调用。每个方法内部验证参数后调用 PythonExecutor。
+ * 大模型根据用户问题自动选择调用。每个方法内部验证参数后通过 HTTP 调用 python-tools 服务。
  * <p>
  * 安全边界：
- * - LLM 只能选择已定义的 Tool 方法，不能生成任意脚本
+ * - LLM 只能选择已定义的 Tool 方法，不能生成任意请求
  * - 所有参数经过正则白名单校验（仅允许数字和逗号）
- * - PythonExecutor 只执行枚举范围内的脚本
+ * - HTTP 调用仅限内部 python-tools 服务
  *
  * @author base
  * @since 2026-06-10
@@ -28,7 +26,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class StockDataTools {
 
-    private final PythonExecutor pythonExecutor;
+    private final PythonToolsClient pythonToolsClient;
 
     /** 股票代码参数格式：6位数字，多个用逗号分隔 */
     private static final Pattern CODE_PATTERN = Pattern.compile("^\\d{6}(,\\d{6})*$");
@@ -41,7 +39,7 @@ public class StockDataTools {
         if (sanitized == null) {
             return "{\"error\": \"股票代码格式错误，请输入6位数字代码\"}";
         }
-        return pythonExecutor.execute(SkillScriptEnum.STOCK_QUOTE, Collections.singletonList(sanitized));
+        return pythonToolsClient.call("/api/stock/quote?codes=" + sanitized);
     }
 
     @Tool("查询个股当日资金流向（分钟级），包括主力净流入、超大单、大单、中单、小单净流入金额，判断主力资金动向。")
@@ -52,7 +50,7 @@ public class StockDataTools {
         if (sanitized == null) {
             return "{\"error\": \"股票代码格式错误，请输入6位数字代码\"}";
         }
-        return pythonExecutor.execute(SkillScriptEnum.STOCK_FUND_FLOW, Collections.singletonList(sanitized));
+        return pythonToolsClient.call("/api/stock/fund-flow?code=" + sanitized);
     }
 
     @Tool("查询个股相关新闻资讯，了解最新动态和市场情绪。")
@@ -63,19 +61,19 @@ public class StockDataTools {
         if (sanitized == null) {
             return "{\"error\": \"股票代码格式错误，请输入6位数字代码\"}";
         }
-        return pythonExecutor.execute(SkillScriptEnum.STOCK_NEWS, Collections.singletonList(sanitized));
+        return pythonToolsClient.call("/api/stock/news?code=" + sanitized);
     }
 
     @Tool("查询全市场行业板块涨跌幅排名，了解当日行业轮动和资金偏好方向。")
     public String getIndustryRank() {
         log.info("AI 技能调用: getIndustryRank()");
-        return pythonExecutor.execute(SkillScriptEnum.INDUSTRY_RANK, Collections.emptyList());
+        return pythonToolsClient.call("/api/stock/industry-rank");
     }
 
     @Tool("查询北向资金（沪股通/深股通）当日实时分钟流向，判断外资态度。")
     public String getNorthboundFlow() {
         log.info("AI 技能调用: getNorthboundFlow()");
-        return pythonExecutor.execute(SkillScriptEnum.NORTHBOUND_FLOW, Collections.emptyList());
+        return pythonToolsClient.call("/api/stock/northbound-flow");
     }
 
     @Tool("查询龙虎榜数据，包括个股上榜记录、买卖营业部席位TOP5、机构净买入。用于跟踪游资和机构动向。")
@@ -86,13 +84,13 @@ public class StockDataTools {
         if (sanitized == null) {
             return "{\"error\": \"股票代码格式错误，请输入6位数字代码\"}";
         }
-        return pythonExecutor.execute(SkillScriptEnum.DRAGON_TIGER, Collections.singletonList(sanitized));
+        return pythonToolsClient.call("/api/stock/dragon-tiger?code=" + sanitized);
     }
 
     @Tool("查询当日涨停/强势股及题材归因，了解市场热点主线和资金聚焦方向。")
     public String getHotStocks() {
         log.info("AI 技能调用: getHotStocks()");
-        return pythonExecutor.execute(SkillScriptEnum.HOT_STOCKS, Collections.emptyList());
+        return pythonToolsClient.call("/api/stock/hot-stocks");
     }
 
     @Tool("查询个股所属概念板块/行业板块归属，了解股票的题材属性。")
@@ -103,7 +101,7 @@ public class StockDataTools {
         if (sanitized == null) {
             return "{\"error\": \"股票代码格式错误，请输入6位数字代码\"}";
         }
-        return pythonExecutor.execute(SkillScriptEnum.CONCEPT_BLOCKS, Collections.singletonList(sanitized));
+        return pythonToolsClient.call("/api/stock/concept-blocks?code=" + sanitized);
     }
 
     @Tool("查询个股融资融券数据，包括融资余额、融资买入额、融券余额等，判断杠杆资金动向。")
@@ -114,7 +112,7 @@ public class StockDataTools {
         if (sanitized == null) {
             return "{\"error\": \"股票代码格式错误，请输入6位数字代码\"}";
         }
-        return pythonExecutor.execute(SkillScriptEnum.MARGIN_TRADING, Collections.singletonList(sanitized));
+        return pythonToolsClient.call("/api/stock/margin-trading?code=" + sanitized);
     }
 
     @Tool("个股综合估值分析，包括实时PE/PB/市值、机构一致预期EPS、前向PE、PEG、PE消化年限，用于判断估值高低。")
@@ -125,7 +123,7 @@ public class StockDataTools {
         if (sanitized == null) {
             return "{\"error\": \"股票代码格式错误，请输入6位数字代码\"}";
         }
-        return pythonExecutor.execute(SkillScriptEnum.STOCK_VALUATION, Collections.singletonList(sanitized));
+        return pythonToolsClient.call("/api/stock/valuation?code=" + sanitized);
     }
 
     /**

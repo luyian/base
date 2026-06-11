@@ -11,17 +11,21 @@ import dev.langchain4j.service.UserMessage;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.concurrent.TimeUnit;
 
 /**
  * AI 技能集成测试 - 使用商汤 deepseek-v4-flash 验证 Function Calling 完整流程
+ * 前置条件：python-tools 服务已启动（端口 8100）
  */
 public class AiSkillIntegrationTest {
 
     static final String BASE_URL = "https://token.sensenova.cn/v1";
     static final String API_KEY = "sk-2RKTWVGRQw3wiibIx9Ucj5aZ52jYUk6q";
     static final String MODEL = "deepseek-v4-flash";
+
+    static final String PYTHON_TOOLS_URL = "http://localhost:8100";
 
     interface StockAssistant {
         @SystemMessage("你是A股数据分析助手。当用户询问股票相关信息时，请调用工具获取实时数据并基于数据给出分析。回答用中文。数据仅供参考，不构成投资建议。")
@@ -33,133 +37,85 @@ public class AiSkillIntegrationTest {
         @Tool("查询股票实时行情，包括价格、涨跌幅、PE、PB、市值等")
         public String getStockQuote(@P("股票代码，多只用逗号分隔") String codes) {
             System.out.println("  [Tool Called] getStockQuote(" + codes + ")");
-            return executePython("stock_quote.py", codes);
+            return callPythonTools("/api/stock/quote?codes=" + codes);
         }
 
         @Tool("查询北向资金当日实时流向")
         public String getNorthboundFlow() {
             System.out.println("  [Tool Called] getNorthboundFlow()");
-            return executePython("northbound_flow.py", null);
+            return callPythonTools("/api/stock/northbound-flow");
         }
 
         @Tool("查询行业板块涨跌排名")
         public String getIndustryRank() {
             System.out.println("  [Tool Called] getIndustryRank()");
-            return executePython("industry_rank.py", null);
+            return callPythonTools("/api/stock/industry-rank");
         }
 
-        private String executePython(String script, String arg) {
-            java.nio.file.Path tempDir = null;
+        /**
+         * 调用 python-tools HTTP 服务
+         */
+        private String callPythonTools(String path) {
             try {
-                // 从 classpath 加载脚本及公共模块到同一临时目录（保持 import 关系）
-                tempDir = java.nio.file.Files.createTempDirectory("ai_test_");
+                URL url = new URL(PYTHON_TOOLS_URL + path);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setConnectTimeout(10000);
+                conn.setReadTimeout(30000);
 
-                // 提取公共模块 em_helper.py
-                extractResource("scripts/em_helper.py", tempDir.resolve("em_helper.py"));
-                // 提取目标脚本
-                extractResource("scripts/" + script, tempDir.resolve(script));
-
-                String scriptPath = tempDir.resolve(script).toAbsolutePath().toString();
-                System.out.println("  [Script] " + scriptPath);
-
-                ProcessBuilder pb;
-                if (arg != null && !arg.isEmpty()) {
-                    pb = new ProcessBuilder("python", "-X", "utf8", scriptPath, arg);
-                } else {
-                    pb = new ProcessBuilder("python", "-X", "utf8", scriptPath);
-                }
-                pb.environment().put("PYTHONIOENCODING", "utf-8");
-                pb.environment().put("PYTHONUTF8", "1");
-                pb.redirectErrorStream(false);
-
-                Process p = pb.start();
-
-                // 读取 stdout
-                StringBuilder stdout = new StringBuilder();
+                int status = conn.getResponseCode();
+                StringBuilder sb = new StringBuilder();
                 try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(p.getInputStream(), StandardCharsets.UTF_8))) {
+                        new InputStreamReader(
+                                status == 200 ? conn.getInputStream() : conn.getErrorStream(),
+                                StandardCharsets.UTF_8))) {
                     String line;
                     while ((line = br.readLine()) != null) {
-                        stdout.append(line).append("\n");
+                        sb.append(line);
                     }
                 }
 
-                // 读取 stderr
-                StringBuilder stderr = new StringBuilder();
-                try (BufferedReader br = new BufferedReader(
-                        new InputStreamReader(p.getErrorStream(), StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        stderr.append(line).append("\n");
+                String body = sb.toString();
+                System.out.println("  [HTTP " + status + "] " + body.substring(0, Math.min(body.length(), 200)) + "...");
+
+                // 提取 data 字段
+                if (body.contains("\"code\":200")) {
+                    int dataIdx = body.indexOf("\"data\":");
+                    if (dataIdx > 0) {
+                        // 简单截取 data 内容返回给 LLM
+                        String data = body.substring(dataIdx + 7, body.length() - 1);
+                        return data;
                     }
                 }
-
-                boolean finished = p.waitFor(30, TimeUnit.SECONDS);
-                if (!finished) {
-                    p.destroyForcibly();
-                    return "{\"error\": \"脚本执行超时\"}";
-                }
-
-                int exitCode = p.exitValue();
-                String output = stdout.toString().trim();
-                String errOutput = stderr.toString().trim();
-
-                System.out.println("  [Exit] " + exitCode);
-                if (!errOutput.isEmpty()) {
-                    System.out.println("  [Stderr] " + errOutput.substring(0, Math.min(errOutput.length(), 300)));
-                }
-
-                if (exitCode != 0 || output.isEmpty()) {
-                    String errMsg = errOutput.isEmpty() ? "脚本无输出" : errOutput;
-                    String[] lines = errMsg.split("\n");
-                    String lastLine = lines[lines.length - 1];
-                    return "{\"error\": \"" + lastLine.replace("\"", "'").substring(0, Math.min(lastLine.length(), 100)) + "\"}";
-                }
-
-                System.out.println("  [Output] " + output.substring(0, Math.min(output.length(), 150)) + "...");
-                return output;
+                return body;
 
             } catch (Exception e) {
                 System.out.println("  [Exception] " + e.getClass().getSimpleName() + ": " + e.getMessage());
                 return "{\"error\": \"" + e.getMessage() + "\"}";
-            } finally {
-                // 清理临时目录
-                if (tempDir != null) {
-                    try {
-                        java.io.File[] files = tempDir.toFile().listFiles();
-                        if (files != null) {
-                            for (java.io.File f : files) {
-                                f.delete();
-                            }
-                        }
-                        tempDir.toFile().delete();
-                    } catch (Exception ignored) {
-                    }
-                }
             }
-        }
-
-        private void extractResource(String resourcePath, java.nio.file.Path target) throws Exception {
-            java.io.InputStream is = TestStockTools.class.getClassLoader().getResourceAsStream(resourcePath);
-            if (is == null) {
-                System.out.println("  [WARN] 资源不存在: " + resourcePath);
-                return;
-            }
-            StringBuilder sb = new StringBuilder();
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = br.readLine()) != null) {
-                    sb.append(line).append("\n");
-                }
-            }
-            java.nio.file.Files.write(target, sb.toString().getBytes(StandardCharsets.UTF_8));
         }
     }
 
     public static void main(String[] args) {
         System.out.println("=== AI 技能集成测试 (商汤 deepseek-v4-flash) ===");
-        System.out.println("工作目录: " + System.getProperty("user.dir"));
+        System.out.println("Python Tools 服务地址: " + PYTHON_TOOLS_URL);
         System.out.println();
+
+        // 先检查 python-tools 服务是否可用
+        try {
+            URL healthUrl = new URL(PYTHON_TOOLS_URL + "/health");
+            HttpURLConnection conn = (HttpURLConnection) healthUrl.openConnection();
+            conn.setConnectTimeout(3000);
+            if (conn.getResponseCode() != 200) {
+                System.out.println("❌ python-tools 服务未启动，请先运行: python-tools/run.bat");
+                return;
+            }
+            System.out.println("✓ python-tools 服务正常");
+        } catch (Exception e) {
+            System.out.println("❌ python-tools 服务未启动，请先运行: python-tools/run.bat");
+            System.out.println("   错误: " + e.getMessage());
+            return;
+        }
 
         ChatLanguageModel model = OpenAiChatModel.builder()
                 .apiKey(API_KEY)

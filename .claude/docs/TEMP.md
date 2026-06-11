@@ -1,6 +1,17 @@
 
 ---
 
+## 新增 Python 工具服务 python-tools（2026-06-10）
+
+- 基于 FastAPI 搭建独立 Python HTTP 服务，端口 8100，供 Spring Boot 后端内部调用
+- 分层架构：routers（路由）/ services（服务）/ schema（统一响应）/ config（配置）
+- 首个功能：PDF 转 Word（`/api/pdf/to-word`），基于 pdf2docx 库实现
+- 统一响应格式 `Result` 与后端保持一致（code/message/data）
+- 支持 .env 环境变量配置，pyproject.toml 集成 ruff/mypy/pytest 规范
+- 生命周期管理：启动创建临时目录，关闭自动清理
+
+---
+
 ## AI 技能扩展 — Function Calling（2026-06-10）
 
 - 新增 `AiSkillConfig` 配置类（`ai.skill` 配置节，控制 Python 路径、超时、开关）

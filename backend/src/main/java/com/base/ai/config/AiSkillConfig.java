@@ -5,7 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * AI 技能配置（Python 执行环境）
+ * AI 技能配置（Python 工具服务）
  *
  * @author base
  * @since 2026-06-10
@@ -21,12 +21,12 @@ public class AiSkillConfig {
     private Boolean enabled = true;
 
     /**
-     * Python 解释器路径（默认使用系统 PATH 中的 python）
+     * Python 工具服务地址
      */
-    private String pythonPath = "python";
+    private String pythonToolsUrl = "http://localhost:8100";
 
     /**
-     * 脚本执行超时时间（秒）
+     * HTTP 请求超时时间（秒）
      */
     private Integer timeout = 30;
 

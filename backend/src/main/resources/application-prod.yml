@@ -105,7 +105,7 @@ feishu:
   base-url: https://open.feishu.cn/open-apis
   timeout: 30000
   retry: 3
-  redirect-uri: https://wuecong.xyz/oauth/callback?platform=feishu
+  redirect-uri: https://xuecong.xyz/oauth/callback?platform=feishu
 
 oauth:
   enabled: true

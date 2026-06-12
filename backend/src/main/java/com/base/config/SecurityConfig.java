@@ -92,6 +92,7 @@ public class SecurityConfig {
                 .antMatchers(
                         "/auth/**",
                         "/open/**",
+                        "/dev/branch/**",
                         "/stock/list",
                         "/stock/search",
                         "/swagger-ui/**",

@@ -7,7 +7,6 @@
         <span class="indicator-label">PRODUCTION</span>
         <span class="indicator-value">{{ currentProdBranch || '—' }}</span>
         <button
-          v-permission="'dev:branch:edit'"
           class="btn-update"
           @click="handleEditProdBranch"
         >
@@ -15,6 +14,13 @@
         </button>
       </div>
       <div class="toolbar">
+        <button class="btn-theme" @click="toggleTheme">
+          <el-icon v-if="isDark"><Sunny /></el-icon>
+          <el-icon v-else><Moon /></el-icon>
+        </button>
+        <button class="btn-status" :class="{ active: showCompleted }" @click="toggleStatus">
+          {{ showCompleted ? '已完成' : '进行中' }}
+        </button>
         <el-input
           v-model="queryForm.title"
           placeholder="搜索标题或编号..."
@@ -28,7 +34,6 @@
           </template>
         </el-input>
         <button
-          v-permission="'dev:branch:add'"
           class="btn-add"
           @click="handleAdd"
         >
@@ -112,17 +117,10 @@
       <p>暂无分支记录</p>
     </div>
 
-    <!-- 分页 -->
-    <div class="pagination-bar" v-if="total > queryForm.size">
-      <el-pagination
-        v-model:current-page="queryForm.current"
-        v-model:page-size="queryForm.size"
-        :page-sizes="[12, 24, 48]"
-        :total="total"
-        layout="total, prev, pager, next"
-        @size-change="fetchList"
-        @current-change="fetchList"
-      />
+    <!-- 加载更多提示 -->
+    <div class="load-more" v-if="branchList.length > 0">
+      <span v-if="loadingMore">加载中...</span>
+      <span v-else-if="noMore" class="no-more">没有更多了</span>
     </div>
 
     <!-- 新增/编辑弹窗 -->
@@ -159,8 +157,11 @@
             <el-radio :label="2">特急</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="开发分支" v-if="!isEdit">
-          <code class="preview-branch">{{ previewDevBranch || 'dev_from_{prod}_{code}' }}</code>
+        <el-form-item label="开发分支" prop="devBranch">
+          <el-input v-model="form.devBranch" placeholder="留空则自动生成" />
+          <div class="form-hint" v-if="!isEdit && !form.devBranch">
+            默认：{{ previewDevBranch || 'dev_from_{prod}_{code}' }}
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -185,9 +186,9 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus, Calendar } from '@element-plus/icons-vue'
+import { Search, Plus, Calendar, Sunny, Moon } from '@element-plus/icons-vue'
 import {
   pageBranches,
   addBranch,
@@ -202,16 +203,37 @@ import {
 // 当前生产分支
 const currentProdBranch = ref('')
 const loading = ref(false)
+const loadingMore = ref(false)
+const noMore = ref(false)
 const total = ref(0)
 const branchList = ref([])
 const stats = ref({})
+const isDark = ref(sessionStorage.getItem('branch-theme') === 'dark' || (!sessionStorage.getItem('branch-theme') && document.documentElement.getAttribute('data-theme') === 'dark'))
+const showCompleted = ref(false)
+
+if (isDark.value) {
+  document.documentElement.setAttribute('data-theme', 'dark')
+}
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  const theme = isDark.value ? 'dark' : 'light'
+  document.documentElement.setAttribute('data-theme', theme)
+  sessionStorage.setItem('branch-theme', theme)
+}
+
+function toggleStatus() {
+  showCompleted.value = !showCompleted.value
+  resetList()
+}
 
 // 查询表单
 const queryForm = reactive({
   current: 1,
-  size: 12,
+  size: 20,
   title: '',
-  code: ''
+  code: '',
+  status: 0
 })
 
 // 弹窗相关
@@ -225,7 +247,8 @@ const form = reactive({
   title: '',
   prdLink: '',
   onlineTime: '',
-  priority: 0
+  priority: 0,
+  devBranch: ''
 })
 
 const rules = {
@@ -283,7 +306,7 @@ function getPriorityText(priority) {
 async function fetchList() {
   loading.value = true
   try {
-    const params = { ...queryForm }
+    const params = { ...queryForm, status: showCompleted.value ? 1 : 0 }
     if (queryForm.title) {
       params.title = queryForm.title
       params.code = queryForm.title
@@ -291,9 +314,36 @@ async function fetchList() {
     const res = await pageBranches(params)
     branchList.value = res.data.records || []
     total.value = res.data.total || 0
+    noMore.value = branchList.value.length >= total.value
   } finally {
     loading.value = false
   }
+}
+
+async function loadMore() {
+  if (loadingMore.value || noMore.value) return
+  loadingMore.value = true
+  try {
+    queryForm.current++
+    const params = { ...queryForm, status: showCompleted.value ? 1 : 0 }
+    if (queryForm.title) {
+      params.title = queryForm.title
+      params.code = queryForm.title
+    }
+    const res = await pageBranches(params)
+    const records = res.data.records || []
+    branchList.value.push(...records)
+    noMore.value = branchList.value.length >= (res.data.total || 0)
+  } finally {
+    loadingMore.value = false
+  }
+}
+
+function resetList() {
+  queryForm.current = 1
+  branchList.value = []
+  noMore.value = false
+  fetchList()
 }
 
 async function fetchProdBranch() {
@@ -311,14 +361,13 @@ async function fetchStats() {
 }
 
 function handleQuery() {
-  queryForm.current = 1
-  fetchList()
+  resetList()
 }
 
 // 新增
 function handleAdd() {
   isEdit.value = false
-  Object.assign(form, { id: null, code: '', title: '', prdLink: '', onlineTime: '', priority: 0 })
+  Object.assign(form, { id: null, code: '', title: '', prdLink: '', onlineTime: '', priority: 0, devBranch: '' })
   dialogVisible.value = true
 }
 
@@ -331,7 +380,8 @@ function handleEdit(item) {
     title: item.title,
     prdLink: item.prdLink,
     onlineTime: item.onlineTime,
-    priority: item.priority || 0
+    priority: item.priority || 0,
+    devBranch: item.devBranch || ''
   })
   dialogVisible.value = true
 }
@@ -379,7 +429,7 @@ function handleCopyBranch(text) {
 async function handleComplete(item) {
   await completeBranch(item.id)
   ElMessage.success('已完成')
-  fetchList()
+  resetList()
   fetchStats()
 }
 
@@ -409,7 +459,21 @@ onMounted(() => {
   fetchProdBranch()
   fetchList()
   fetchStats()
+  window.addEventListener('scroll', handleScroll)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
+
+function handleScroll() {
+  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop
+  const scrollHeight = document.documentElement.scrollHeight
+  const clientHeight = document.documentElement.clientHeight
+  if (scrollTop + clientHeight >= scrollHeight - 100) {
+    loadMore()
+  }
+}
 </script>
 
 <style>
@@ -564,6 +628,64 @@ onMounted(() => {
   gap: 12px;
 }
 
+.btn-theme {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid var(--bp-bar-border);
+  background: var(--bp-card-bg);
+  color: var(--bp-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 16px;
+}
+
+.btn-theme:hover {
+  border-color: var(--bp-blue);
+  color: var(--bp-blue);
+}
+
+.btn-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--bp-bar-border);
+  background: var(--bp-card-bg);
+  color: var(--bp-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.btn-status:hover {
+  border-color: var(--bp-blue);
+  color: var(--bp-blue);
+}
+
+.btn-status.active {
+  border-color: var(--bp-green);
+  color: var(--bp-green);
+  background: var(--bp-green-bg);
+}
+
+.load-more {
+  text-align: center;
+  padding: 16px 0;
+  font-size: 13px;
+  color: var(--bp-text-muted);
+}
+
+.no-more {
+  opacity: 0.6;
+}
+
 .search-input {
   width: 200px;
 }
@@ -695,6 +817,7 @@ onMounted(() => {
   font-weight: 600;
   color: var(--bp-stat-value);
   flex-shrink: 0;
+  min-width: 120px;
 }
 
 .card-title {
@@ -704,8 +827,8 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 80px;
-  max-width: 240px;
+  flex: 1;
+  min-width: 0;
 }
 
 .card-title.prd-link {
@@ -888,8 +1011,8 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 80px;
-  max-width: 240px;
+  flex: 1;
+  min-width: 0;
 }
 
 /* 分支信息块 */
@@ -1012,6 +1135,21 @@ onMounted(() => {
   font-size: 12px;
   color: var(--bp-branch-dev);
   word-break: break-all;
+}
+
+.form-hint {
+  font-size: 12px;
+  color: var(--bp-text-muted);
+  margin-top: 4px;
+}
+
+[data-theme="dark"] .branch-dialog .el-input.is-disabled .el-input__wrapper {
+  background-color: #1a1f2b;
+  box-shadow: 0 0 0 1px #30363d inset;
+}
+
+[data-theme="dark"] .branch-dialog .el-input.is-disabled .el-input__inner {
+  color: #8b949e;
 }
 
 /* 响应式 */

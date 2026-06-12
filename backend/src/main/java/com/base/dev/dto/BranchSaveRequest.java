@@ -48,4 +48,10 @@ public class BranchSaveRequest {
      * 紧急程度（0-普通 1-紧急 2-特急）
      */
     private Integer priority;
+
+    /**
+     * 开发分支（可选，为空时自动生成）
+     */
+    @Size(max = 255, message = "开发分支长度不能超过255个字符")
+    private String devBranch;
 }

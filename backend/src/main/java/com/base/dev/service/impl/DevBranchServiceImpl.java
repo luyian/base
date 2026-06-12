@@ -43,8 +43,15 @@ public class DevBranchServiceImpl implements DevBranchService {
         LambdaQueryWrapper<DevBranch> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.hasText(request.getCode()), DevBranch::getCode, request.getCode())
                .like(StringUtils.hasText(request.getTitle()), DevBranch::getTitle, request.getTitle())
-               .eq(StringUtils.hasText(request.getProdBranch()), DevBranch::getProdBranch, request.getProdBranch())
-               .orderByDesc(DevBranch::getOnlineTime);
+               .eq(StringUtils.hasText(request.getProdBranch()), DevBranch::getProdBranch, request.getProdBranch());
+        if (request.getStatus() != null) {
+            if (request.getStatus() == 1) {
+                wrapper.eq(DevBranch::getStatus, 1);
+            } else {
+                wrapper.and(w -> w.ne(DevBranch::getStatus, 1).or().isNull(DevBranch::getStatus));
+            }
+        }
+        wrapper.orderByAsc(DevBranch::getOnlineTime);
 
         Page<DevBranch> resultPage = devBranchMapper.selectPage(page, wrapper);
 
@@ -62,9 +69,12 @@ public class DevBranchServiceImpl implements DevBranchService {
         String prodBranch = getCurrentProdBranch();
         entity.setProdBranch(prodBranch);
 
-        // 生成开发分支名称：dev_from_{生产分支}_{编号}
-        String devBranch = "dev_from_" + prodBranch + "_" + request.getCode();
-        entity.setDevBranch(devBranch);
+        // 开发分支：优先使用自定义值，否则自动生成
+        if (StringUtils.hasText(request.getDevBranch())) {
+            entity.setDevBranch(request.getDevBranch());
+        } else {
+            entity.setDevBranch("dev_from_" + prodBranch + "_" + request.getCode());
+        }
 
         // 默认紧急程度为普通
         if (entity.getPriority() == null) {
@@ -86,9 +96,10 @@ public class DevBranchServiceImpl implements DevBranchService {
         entity.setOnlineTime(request.getOnlineTime());
         entity.setPriority(request.getPriority());
 
-        // 重新生成开发分支名称
-        String devBranch = "dev_from_" + entity.getProdBranch() + "_" + request.getCode();
-        entity.setDevBranch(devBranch);
+        // 开发分支：有值直接用，为空则保留原值
+        if (StringUtils.hasText(request.getDevBranch())) {
+            entity.setDevBranch(request.getDevBranch());
+        }
 
         devBranchMapper.updateById(entity);
     }

@@ -7,7 +7,8 @@
 - 表 `dev_branch`：编号、标题、PRD链接、生产分支、开发分支、上线时间
 - 当前生产分支从 `sys_config`（key=`branch.current_prod`）读取，页面提供更新入口
 - 开发分支自动生成：`dev_from_{生产分支}_{编号}`
-- 列表按上线时间倒序排列
+- 列表按上线时间正序排列（先上线的排前面）
+- 卡片标题固定宽度 200px，超长省略，保证各列对齐
 - 前端 API 封装 `api/branch.js`，页面由 Frontend Design 设计（卡片样式）
 - 权限 SQL：`init_branch.sql`（ID=115，菜单+按钮权限）
 - MybatisPlusConfig 新增 `com.base.dev.mapper` 扫描路径

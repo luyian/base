@@ -25,4 +25,9 @@ public class BranchQueryRequest extends BasePageRequest {
      * 生产分支
      */
     private String prodBranch;
+
+    /**
+     * 状态：0-进行中，1-已完成
+     */
+    private Integer status;
 }

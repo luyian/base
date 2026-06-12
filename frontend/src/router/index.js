@@ -28,6 +28,12 @@ const constantRoutes = [
     meta: { title: '绑定账号' }
   },
   {
+    path: '/dev/branch',
+    name: 'DevBranch',
+    component: () => import('@/views/dev/branch/index.vue'),
+    meta: { title: '分支管理' }
+  },
+  {
     path: '/',
     name: 'Layout',
     component: () => import('@/layout/Index.vue'),
@@ -163,13 +169,7 @@ const constantRoutes = [
         component: () => import('@/views/ocr/index.vue'),
         meta: { title: 'OCR识别', icon: 'PictureFilled' }
       },
-      // 分支管理模块路由
-      {
-        path: 'dev/branch',
-        name: 'DevBranch',
-        component: () => import('@/views/dev/branch/index.vue'),
-        meta: { title: '分支管理', icon: 'Connection' }
-      }
+      // 分支管理模块路由（已独立为无需认证的顶级路由）
     ]
   }
 ]
@@ -207,6 +207,12 @@ router.beforeEach(async (to, from, next) => {
 
   // OAuth 相关页面，直接放行
   if (to.path.startsWith('/oauth/')) {
+    next()
+    return
+  }
+
+  // 分支管理页面，直接放行
+  if (to.path.startsWith('/dev/branch')) {
     next()
     return
   }

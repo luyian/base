@@ -1,6 +1,19 @@
 
 ---
 
+## 新增代码分支管理模块（2026-06-12）
+
+- 新建 `com.base.dev` 模块（entity/dto/mapper/service/controller）
+- 表 `dev_branch`：编号、标题、PRD链接、生产分支、开发分支、上线时间
+- 当前生产分支从 `sys_config`（key=`branch.current_prod`）读取，页面提供更新入口
+- 开发分支自动生成：`dev_from_{生产分支}_{编号}`
+- 列表按上线时间倒序排列
+- 前端 API 封装 `api/branch.js`，页面由 Frontend Design 设计（卡片样式）
+- 权限 SQL：`init_branch.sql`（ID=115，菜单+按钮权限）
+- MybatisPlusConfig 新增 `com.base.dev.mapper` 扫描路径
+
+---
+
 ## 新增文件转换菜单（2026-06-10）
 
 - 后端新增 `FileConvertController`（`/system/file-convert/pdf-to-word`），通过 RestTemplate 调用 python-tools 转换

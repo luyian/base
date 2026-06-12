@@ -596,6 +596,39 @@ html, body, #app {
   border-color: var(--dk-border);
   color: var(--dk-text-1);
 }
+
+/* ---- 侧边栏收起悬浮菜单 ---- */
+[data-theme="dark"] .el-menu--vertical.el-menu--popup-container .el-menu--popup,
+[data-theme="dark"] .el-menu--popup {
+  background-color: var(--dk-bg-1) !important;
+  border-color: var(--dk-border);
+}
+
+[data-theme="dark"] .el-menu--popup .el-menu-item {
+  background-color: var(--dk-bg-1) !important;
+  color: var(--dk-text-2) !important;
+}
+
+[data-theme="dark"] .el-menu--popup .el-menu-item:hover {
+  background-color: var(--dk-bg-3) !important;
+  color: var(--dk-text-1) !important;
+}
+
+[data-theme="dark"] .el-menu--popup .el-menu-item.is-active {
+  color: #409eff !important;
+  background-color: rgba(64, 158, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .el-menu--popup .el-sub-menu__title {
+  background-color: var(--dk-bg-1) !important;
+  color: var(--dk-text-2) !important;
+}
+
+[data-theme="dark"] .el-menu--popup .el-sub-menu__title:hover {
+  background-color: var(--dk-bg-3) !important;
+  color: var(--dk-text-1) !important;
+}
+
 [data-theme="dark"] .el-tooltip__trigger {
   outline: none;
 }

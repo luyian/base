@@ -162,6 +162,13 @@ const constantRoutes = [
         name: 'OcrRecognize',
         component: () => import('@/views/ocr/index.vue'),
         meta: { title: 'OCR识别', icon: 'PictureFilled' }
+      },
+      // 分支管理模块路由
+      {
+        path: 'dev/branch',
+        name: 'DevBranch',
+        component: () => import('@/views/dev/branch/index.vue'),
+        meta: { title: '分支管理', icon: 'Connection' }
       }
     ]
   }

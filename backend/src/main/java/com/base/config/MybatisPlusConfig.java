@@ -23,7 +23,8 @@ import org.springframework.context.annotation.Configuration;
     "com.base.message.mapper",
     "com.base.ai.mapper",
     "com.base.workflow.mapper",
-    "com.base.approval.mapper"
+    "com.base.approval.mapper",
+    "com.base.dev.mapper"
 })
 public class MybatisPlusConfig {
 

@@ -4096,6 +4096,13 @@ INSERT INTO `sys_ai_config` (`id`, `config_name`, `base_url`, `api_key`, `model`
 (7, '商汤日日新', 'https://token.sensenova.cn/v1', 'YOUR_SENSENOVA_API_KEY', 'sensenova-u1-fast', 30000, 2, 2000, 5000, 0, 1, 0, '', '2026-05-28 14:50:18', 'system', '2026-05-28 14:50:50', 'system', 0);
 
 -- ----------------------------
+-- Data for table: sys_export_config (1 rows)
+-- ----------------------------
+DELETE FROM `sys_export_config`;
+INSERT INTO `sys_export_config` (`id`, `config_code`, `config_name`, `description`, `data_source_type`, `data_source_bean`, `data_source_method`, `data_source_sql`, `query_param_class`, `batch_size`, `max_export_count`, `file_name_pattern`, `enable_multi_sheet`, `sheet_max_rows`, `permission_code`, `status`, `sort`, `remark`, `create_time`, `create_by`, `update_time`, `update_by`, `deleted`) VALUES
+(1, 'login_log', '登录日志导出', '导出系统登录日志记录', 'SERVICE', 'loginLogServiceImpl', 'exportPage', NULL, 'com.base.system.dto.log.LoginLogQueryRequest', 5000, 1000000, '登录日志_{date}', 0, 100000, 'monitor:loginLog:export', 1, 1, NULL, '2026-06-16 16:00:00', 'system', '2026-06-16 16:00:00', 'system', 0);
+
+-- ----------------------------
 -- Data for table: sys_export_field (27 rows)
 -- ----------------------------
 DELETE FROM `sys_export_field`;

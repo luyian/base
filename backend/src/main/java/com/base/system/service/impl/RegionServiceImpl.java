@@ -10,6 +10,7 @@ import com.base.system.entity.Region;
 import com.base.system.mapper.RegionMapper;
 import com.base.system.service.RegionService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +24,7 @@ import java.util.stream.Collectors;
 /**
  * 行政区划服务实现类
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RegionServiceImpl implements RegionService {
@@ -224,7 +226,7 @@ public class RegionServiceImpl implements RegionService {
                     total++;
                 } catch (Exception e) {
                     // 忽略重复数据等错误，继续导入
-                    System.err.println("导入区划失败: " + region.getRegionCode() + " - " + e.getMessage());
+                    log.warn("导入区划失败: {} - {}", region.getRegionCode(), e.getMessage());
                 }
             }
         }

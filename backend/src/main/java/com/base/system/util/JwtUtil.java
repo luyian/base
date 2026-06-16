@@ -117,7 +117,7 @@ public class JwtUtil {
             Claims claims = getClaimsFromToken(token);
             return claims.get("username", String.class);
         } catch (Exception e) {
-            log.error("从 Token 中获取用户名失败", e);
+            log.warn("从 Token 中获取用户名失败: {}", e.getMessage());
             return null;
         }
     }
@@ -137,7 +137,7 @@ public class JwtUtil {
             }
             return null;
         } catch (Exception e) {
-            log.error("从 Token 中获取用户ID失败", e);
+            log.warn("从 Token 中获取用户ID失败: {}", e.getMessage());
             return null;
         }
     }
@@ -168,7 +168,7 @@ public class JwtUtil {
             String tokenUsername = getUsernameFromToken(token);
             return tokenUsername.equals(username) && !isTokenExpired(token);
         } catch (Exception e) {
-            log.error("验证 Token 失败", e);
+            log.warn("验证 Token 失败: {}", e.getMessage());
             return false;
         }
     }
@@ -184,7 +184,7 @@ public class JwtUtil {
             Date expiration = getExpirationDateFromToken(token);
             return expiration.before(new Date());
         } catch (Exception e) {
-            log.error("判断 Token 是否过期失败", e);
+            log.warn("判断 Token 是否过期失败: {}", e.getMessage());
             return true;
         }
     }
@@ -212,7 +212,7 @@ public class JwtUtil {
             claims.setIssuedAt(new Date());
             return generateToken(claims);
         } catch (Exception e) {
-            log.error("刷新 Token 失败", e);
+            log.warn("刷新 Token 失败: {}", e.getMessage());
             return null;
         }
     }

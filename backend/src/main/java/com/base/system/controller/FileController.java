@@ -9,6 +9,7 @@ import com.base.system.entity.SysFile;
 import com.base.system.service.FileService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,6 +24,7 @@ import java.util.Map;
  * 文件管理控制器
  */
 @Api(tags = "文件管理")
+@Slf4j
 @RestController
 @RequestMapping("/system/file")
 public class FileController {
@@ -48,7 +50,8 @@ public class FileController {
             );
             return Result.success(sysFile);
         } catch (Exception e) {
-            return Result.error(e.getMessage());
+            log.error("文件上传失败", e);
+            return Result.error("文件上传失败，请稍后重试");
         }
     }
 

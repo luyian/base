@@ -4,6 +4,7 @@ import com.base.common.export.engine.ExportContext;
 import com.base.system.dto.dict.DictDataResponse;
 import com.base.system.export.entity.ExportField;
 import com.base.system.service.DictDataService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -19,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author base
  * @since 2026-02-04
  */
+@Slf4j
 @Component("dictConverter")
 public class DictConverter implements DataConverter {
 
@@ -66,7 +68,7 @@ public class DictConverter implements DataConverter {
                 }
             }
         } catch (Exception e) {
-            // 忽略异常，返回空映射
+            log.warn("加载字典数据失败: dictType={}, error={}", dictType, e.getMessage());
         }
         return map;
     }

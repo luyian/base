@@ -141,7 +141,7 @@ public class DataFactoryImpl implements DataFactory {
             return target;
         } catch (Exception e) {
             log.error("对象转换失败", e);
-            return null;
+            throw new RuntimeException("数据对象转换失败: " + e.getMessage(), e);
         }
     }
 

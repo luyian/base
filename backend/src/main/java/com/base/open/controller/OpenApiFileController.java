@@ -61,7 +61,7 @@ public class OpenApiFileController {
             return Result.success(response);
         } catch (Exception e) {
             log.error("开放接口文件上传失败", e);
-            return Result.error(e.getMessage());
+            return Result.error("文件上传失败，请稍后重试");
         }
     }
 

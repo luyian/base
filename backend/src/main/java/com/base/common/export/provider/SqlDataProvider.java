@@ -51,7 +51,7 @@ public class SqlDataProvider implements ExportDataProvider {
             return count != null ? count : 0;
         } catch (Exception e) {
             log.error("执行 count SQL 失败", e);
-            return 0;
+            throw new RuntimeException("导出数据统计失败: " + e.getMessage(), e);
         }
     }
 
@@ -69,7 +69,7 @@ public class SqlDataProvider implements ExportDataProvider {
             return jdbcTemplate.queryForList(pageSql);
         } catch (Exception e) {
             log.error("执行分页 SQL 失败", e);
-            return Collections.emptyList();
+            throw new RuntimeException("导出数据查询失败: " + e.getMessage(), e);
         }
     }
 

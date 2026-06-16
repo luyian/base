@@ -34,7 +34,7 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessException.class)
     public Result<Void> handleBusinessException(BusinessException e) {
-        log.error("业务异常：{}", e.getMessage());
+        log.warn("业务异常：{}", e.getMessage());
         return Result.error(e.getCode(), e.getMessage());
     }
 
@@ -107,15 +107,17 @@ public class GlobalExceptionHandler {
      * 空指针异常
      */
     @ExceptionHandler(NullPointerException.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleNullPointerException(NullPointerException e) {
         log.error("空指针异常", e);
-        return Result.error(ResultCode.INTERNAL_SERVER_ERROR.getCode(), "系统内部错误：空指针异常");
+        return Result.error(ResultCode.INTERNAL_SERVER_ERROR.getCode(), "系统内部错误，请联系管理员");
     }
 
     /**
      * 数据库唯一约束冲突异常
      */
     @ExceptionHandler(java.sql.SQLIntegrityConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
     public Result<Void> handleSQLIntegrityConstraintViolationException(java.sql.SQLIntegrityConstraintViolationException e) {
         String message = e.getMessage();
         if (message != null && message.contains("Duplicate entry")) {
@@ -136,6 +138,7 @@ public class GlobalExceptionHandler {
      * 其他异常
      */
     @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleException(Exception e) {
         log.error("系统异常", e);
         return Result.error(ResultCode.INTERNAL_SERVER_ERROR);

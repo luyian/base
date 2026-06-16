@@ -18,6 +18,7 @@ import com.base.system.mapper.ExportFieldMapper;
 import com.base.system.mapper.ExportTaskMapper;
 import com.base.system.export.service.ExportConfigService;
 import com.base.system.export.service.ExportTaskService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
  * @author base
  * @since 2026-02-04
  */
+@Slf4j
 @Service
 public class ExportTaskServiceImpl implements ExportTaskService {
 
@@ -145,11 +147,11 @@ public class ExportTaskServiceImpl implements ExportTaskService {
                         Object queryParam = JSON.parseObject(request.getQueryParams(), paramClass);
                         context.setQueryParam(queryParam);
                     } catch (ClassNotFoundException e) {
-                        // 忽略，使用 Map
+                        log.debug("查询参数类未找到，使用 Map: {}", config.getQueryParamClass());
                     }
                 }
             } catch (Exception e) {
-                // 忽略解析错误
+                log.warn("解析导出查询参数失败: {}", e.getMessage());
             }
         }
 

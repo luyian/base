@@ -62,7 +62,7 @@ public class ServiceDataProvider implements ExportDataProvider {
             return 0;
         } catch (Exception e) {
             log.error("获取数据总数失败", e);
-            return 0;
+            throw new RuntimeException("导出数据统计失败: " + e.getMessage(), e);
         }
     }
 
@@ -110,7 +110,7 @@ public class ServiceDataProvider implements ExportDataProvider {
             return mapList;
         } catch (Exception e) {
             log.error("获取数据失败", e);
-            return Collections.emptyList();
+            throw new RuntimeException("导出数据查询失败: " + e.getMessage(), e);
         }
     }
 

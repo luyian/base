@@ -1,6 +1,7 @@
 package com.base.system.service.impl;
 
 import com.base.ai.config.AiSkillConfig;
+import com.base.common.exception.BusinessException;
 import com.base.common.service.CosService;
 import com.base.system.entity.SysFile;
 import com.base.system.mapper.SysFileMapper;
@@ -95,7 +96,7 @@ public class FileConvertServiceImpl implements FileConvertService {
 
         } catch (Exception e) {
             log.error("调用 python-tools PDF 转 Word 失败", e);
-            throw new RuntimeException("PDF 转换服务异常: " + e.getMessage());
+            throw new BusinessException("PDF 转换服务异常，请稍后重试");
         }
     }
 
@@ -108,7 +109,7 @@ public class FileConvertServiceImpl implements FileConvertService {
             return saveSysFile(file.getOriginalFilename(), fileExt, file.getSize(),
                     file.getContentType(), cosKey);
         } catch (Exception e) {
-            throw new RuntimeException("源文件上传失败: " + e.getMessage());
+            throw new BusinessException("源文件上传失败，请稍后重试");
         }
     }
 

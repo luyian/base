@@ -1,6 +1,7 @@
 package com.base.common.export.registry;
 
 import com.base.common.export.converter.DataConverter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import java.util.Map;
  * @author base
  * @since 2026-02-04
  */
+@Slf4j
 @Component
 public class ConverterRegistry {
 
@@ -52,6 +54,7 @@ public class ConverterRegistry {
         try {
             return applicationContext.getBean(name, DataConverter.class);
         } catch (Exception e) {
+            log.debug("转换器未找到: {}", name);
             return null;
         }
     }

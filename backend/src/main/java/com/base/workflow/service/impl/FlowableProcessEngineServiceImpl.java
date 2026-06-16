@@ -6,6 +6,7 @@ import com.base.workflow.dto.*;
 import com.base.workflow.handler.NodeEventHandlerManager;
 import com.base.workflow.handler.ProcessContext;
 import com.base.workflow.service.ProcessEngineService;
+import lombok.extern.slf4j.Slf4j;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.ExtensionElement;
 import org.flowable.bpmn.model.FlowElement;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 /**
  * 基于 Flowable 的流程引擎服务实现
  */
+@Slf4j
 @Service
 public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
 
@@ -119,7 +121,8 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
                 if (instance != null) {
                     runtimeService.deleteProcessInstance(processInstanceId, "审批拒绝");
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                log.warn("删除已拒绝的流程实例失败: processInstanceId={}", processInstanceId, e);
             }
         }
 
@@ -144,6 +147,7 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
             }
             allVariables = list.get(0).getProcessVariables();
         } catch (Exception e) {
+            log.warn("获取流程历史变量失败: processInstanceId={}", processInstanceId, e);
             return;
         }
 
@@ -198,7 +202,7 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
                 }
             }
         } catch (Exception e) {
-            // 读取失败降级到流程变量
+            log.debug("读取BPMN扩展属性失败，降级到流程变量: activityId={}", activityId);
         }
         return null;
     }

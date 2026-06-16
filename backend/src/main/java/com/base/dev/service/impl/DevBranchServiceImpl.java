@@ -11,6 +11,7 @@ import com.base.dev.enums.PriorityEnum;
 import com.base.dev.mapper.DevBranchMapper;
 import com.base.dev.service.DevBranchService;
 import com.base.system.service.ConfigService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
  *
  * @author base
  */
+@Slf4j
 @Service
 public class DevBranchServiceImpl implements DevBranchService {
 
@@ -120,7 +122,8 @@ public class DevBranchServiceImpl implements DevBranchService {
                     com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                     java.util.Map<String, String> map = mapper.readValue(value, java.util.Map.class);
                     value = map.getOrDefault("prodBranch", value);
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    log.debug("解析 prodBranch JSON 配置失败，使用原始值: {}", e.getMessage());
                 }
             }
             // 去除多余引号

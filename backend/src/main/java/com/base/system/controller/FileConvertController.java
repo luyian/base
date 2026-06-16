@@ -5,6 +5,7 @@ import com.base.system.entity.SysFile;
 import com.base.system.service.FileConvertService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +20,7 @@ import java.util.Map;
  * @since 2026-06-10
  */
 @Api(tags = "文件转换")
+@Slf4j
 @RestController
 @RequestMapping("/system/file-convert")
 public class FileConvertController {
@@ -47,7 +49,8 @@ public class FileConvertController {
             Map<String, Object> result = fileConvertService.pdfToWord(file);
             return Result.success(result);
         } catch (Exception e) {
-            return Result.error("转换失败: " + e.getMessage());
+            log.error("PDF转Word失败", e);
+            return Result.error("文件转换失败，请稍后重试");
         }
     }
 }

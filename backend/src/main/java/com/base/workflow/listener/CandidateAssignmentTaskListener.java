@@ -6,6 +6,7 @@ import com.base.system.entity.SysUserRole;
 import com.base.system.mapper.SysUserMapper;
 import com.base.system.mapper.SysUserRoleMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.flowable.bpmn.model.BpmnModel;
 import org.flowable.bpmn.model.ExtensionElement;
 import org.flowable.bpmn.model.FlowElement;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
  * 读取流程变量 candidateType_{activityId} 和 candidateConfig_{activityId} 动态分配候选人。
  * </p>
  */
+@Slf4j
 @Component("candidateAssignmentListener")
 public class CandidateAssignmentTaskListener implements TaskListener {
 
@@ -99,7 +101,7 @@ public class CandidateAssignmentTaskListener implements TaskListener {
                 }
             }
         } catch (Exception e) {
-            // 读取扩展属性失败时降级到流程变量
+            log.debug("读取BPMN扩展属性失败，降级到流程变量: {}", e.getMessage());
         }
         return result;
     }
@@ -114,6 +116,7 @@ public class CandidateAssignmentTaskListener implements TaskListener {
         try {
             config = JSONUtil.toBean(candidateConfig, Map.class);
         } catch (Exception e) {
+            log.warn("解析候选人配置失败: {}", e.getMessage());
             return Collections.emptyList();
         }
 

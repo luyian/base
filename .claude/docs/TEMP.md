@@ -1,7 +1,22 @@
 
 ---
 
-## 新增代码分支管理模块（2026-06-12）
+## 全局异常处理修复（2026-06-16）
+
+- DataScopeAspect：数据权限过滤失败时抛出 AccessDeniedException 阻断请求（原先静默吞异常导致权限失效）
+- GlobalExceptionHandler：BusinessException 日志级别从 error 降为 warn；NullPointerException/兜底 Exception 加 @ResponseStatus(500)；SQLIntegrityConstraintViolation 加 @ResponseStatus(409)；空指针异常提示文本不再暴露异常类型
+- Controller 信息泄露修复：FileController、OpenApiFileController、FileConvertController 不再将 e.getMessage() 返回前端
+- RuntimeException 替换为 BusinessException：FileConvertServiceImpl（PDF转换/源文件上传）、FileServiceImpl（批量下载）
+- FlowableProcessEngineServiceImpl：静默 return/空 catch 改为记录日志
+- CandidateAssignmentTaskListener：空 catch 改为 debug 日志
+- SqlDataProvider/ServiceDataProvider：count 和 fetchData 失败时抛异常让 ExportEngine 标记任务失败（原先返回 0/空列表掩盖错误）
+- DataFactoryImpl：对象转换失败抛异常（原先返回 null）
+- ConverterRegistry/DictConverter：空 catch 加 debug/warn 日志
+- ExportTaskServiceImpl：静默忽略的 catch 加 warn/debug 日志
+- RegionServiceImpl：System.err.println 改为 log.warn
+- SecurityUtils（common 和 system 两处）：空 catch 注释改为 debug 日志；移除遗留的 log.info 调试语句
+
+---
 
 - 新建 `com.base.dev` 模块（entity/dto/mapper/service/controller）
 - 表 `dev_branch`：编号、标题、PRD链接、生产分支、开发分支、上线时间

@@ -80,7 +80,6 @@ public class SecurityUtils {
     public static Long getCurrentUserId() {
         // 首先尝试从ThreadLocal获取
         Long userId = CURRENT_USER_ID.get();
-        log.info("从ThreadLocal获取用户ID: {}", userId);
         if (userId != null) {
             return userId;
         }
@@ -162,13 +161,13 @@ public class SecurityUtils {
      */
     private static UserMapper getUserMapper() {
         try {
-            org.springframework.web.context.WebApplicationContext context = 
+            org.springframework.web.context.WebApplicationContext context =
                 org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext();
             if (context != null) {
                 return context.getBean(UserMapper.class);
             }
         } catch (Exception e) {
-            // 忽略
+            log.debug("获取 UserMapper 实例失败: {}", e.getMessage());
         }
         return null;
     }

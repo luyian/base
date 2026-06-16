@@ -2,6 +2,7 @@ package com.base.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.base.common.exception.BusinessException;
 import com.base.common.service.CosService;
 import com.base.system.entity.SysFile;
 import com.base.system.entity.SysFileLog;
@@ -414,7 +415,7 @@ public class FileServiceImpl implements FileService {
 
         } catch (Exception e) {
             logger.error("批量下载失败", e);
-            throw new RuntimeException("批量下载失败: " + e.getMessage());
+            throw new BusinessException("批量下载失败，请稍后重试");
         }
     }
 

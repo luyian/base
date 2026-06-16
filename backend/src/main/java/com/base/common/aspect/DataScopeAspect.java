@@ -17,6 +17,7 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.After;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -73,6 +74,7 @@ public class DataScopeAspect {
             log.debug("数据权限SQL: {}", sqlCondition);
         } catch (Exception e) {
             log.error("数据权限过滤失败", e);
+            throw new AccessDeniedException("数据权限校验异常，拒绝访问");
         }
     }
 

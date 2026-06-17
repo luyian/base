@@ -59,3 +59,49 @@ async def pdf_to_word(file: UploadFile) -> FileResponse:
     finally:
         # 清理上传的临时文件
         temp_path.unlink(missing_ok=True)
+
+
+@router.post("/to-markdown", summary="PDF 转 Markdown")
+async def pdf_to_markdown(file: UploadFile) -> FileResponse:
+    """
+    上传 PDF 文件，转换为 Markdown 文档后返回下载
+
+    - 最大支持 50MB
+    - 返回 .md 文件流
+    """
+    # 校验文件
+    content = await file.read()
+    error = pdf_service.validate_file(file.filename or "unknown.pdf", len(content))
+    if error:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(  # type: ignore[return-value]
+            status_code=400,
+            content=Result.fail(message=error, code=400).model_dump(),
+        )
+
+    # 保存临时文件
+    temp_filename = f"{uuid.uuid4().hex}.pdf"
+    temp_path = settings.upload_dir / temp_filename
+
+    try:
+        temp_path.write_bytes(content)
+
+        # 执行转换
+        output_path = pdf_service.convert_to_markdown(temp_path)
+
+        # 返回文件下载
+        download_name = Path(file.filename or "output").stem + ".md"
+        return FileResponse(
+            path=str(output_path),
+            filename=download_name,
+            media_type="text/markdown; charset=utf-8",
+        )
+    except RuntimeError as e:
+        from fastapi.responses import JSONResponse
+        return JSONResponse(  # type: ignore[return-value]
+            status_code=500,
+            content=Result.fail(message=str(e)).model_dump(),
+        )
+    finally:
+        # 清理上传的临时文件
+        temp_path.unlink(missing_ok=True)

@@ -7,8 +7,8 @@
 
       <!-- 转换类型 Tab -->
       <el-tabs v-model="activeType" type="border-card">
-        <!-- PDF 转 Word -->
-        <el-tab-pane label="PDF → Word" name="pdfToWord">
+        <!-- PDF 转换 -->
+        <el-tab-pane label="PDF 转换" name="pdfConvert">
           <div class="convert-content">
             <div class="upload-section">
               <el-upload
@@ -30,6 +30,15 @@
                   <div class="upload-tip">支持 .pdf 格式，最大 50MB</div>
                 </div>
               </el-upload>
+
+              <!-- 输出格式选择 -->
+              <div class="format-section">
+                <span class="format-label">输出格式：</span>
+                <el-radio-group v-model="outputFormat">
+                  <el-radio-button label="word">Word (.docx)</el-radio-button>
+                  <el-radio-button label="markdown">Markdown (.md)</el-radio-button>
+                </el-radio-group>
+              </div>
 
               <div class="action-bar">
                 <el-button
@@ -64,16 +73,11 @@
               </el-descriptions>
               <div class="download-bar">
                 <el-button type="success" @click="downloadResult">
-                  <el-icon><Download /></el-icon> 下载 Word 文件
+                  <el-icon><Download /></el-icon> 下载{{ formatLabel }}文件
                 </el-button>
               </div>
             </div>
           </div>
-        </el-tab-pane>
-
-        <!-- 预留：后续扩展其他转换类型 -->
-        <el-tab-pane label="更多格式" name="more" disabled>
-          <div class="coming-soon">更多转换格式即将上线...</div>
         </el-tab-pane>
       </el-tabs>
     </el-card>
@@ -81,15 +85,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document, UploadFilled, Download } from '@element-plus/icons-vue'
-import { pdfToWord } from '@/api/fileConvert'
+import { pdfToWord, pdfToMarkdown } from '@/api/fileConvert'
 
-const activeType = ref('pdfToWord')
+const activeType = ref('pdfConvert')
+const outputFormat = ref('word')
 const selectedFile = ref(null)
 const converting = ref(false)
 const convertResult = ref(null)
+
+const formatLabel = computed(() => {
+  return outputFormat.value === 'word' ? ' Word ' : ' Markdown '
+})
 
 function handleFileChange(uploadFile) {
   const file = uploadFile.raw
@@ -115,7 +124,8 @@ async function doConvert() {
   converting.value = true
   convertResult.value = null
   try {
-    const res = await pdfToWord(selectedFile.value)
+    const convertFn = outputFormat.value === 'word' ? pdfToWord : pdfToMarkdown
+    const res = await convertFn(selectedFile.value)
     convertResult.value = res.data
     ElMessage.success('转换成功')
   } catch (e) {
@@ -209,6 +219,18 @@ function formatSize(bytes) {
   color: #909399;
 }
 
+.format-section {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.format-label {
+  font-size: 14px;
+  color: #606266;
+}
+
 .action-bar {
   margin-top: 20px;
   display: flex;
@@ -222,12 +244,5 @@ function formatSize(bytes) {
 .download-bar {
   margin-top: 16px;
   text-align: center;
-}
-
-.coming-soon {
-  text-align: center;
-  padding: 60px 0;
-  color: #909399;
-  font-size: 14px;
 }
 </style>

@@ -6,6 +6,7 @@ import logging
 import uuid
 from pathlib import Path
 
+import pymupdf4llm
 from pdf2docx import Converter
 
 from app.config import settings
@@ -48,6 +49,38 @@ class PdfService:
             raise RuntimeError("转换完成但输出文件未生成")
 
         logger.info("PDF 转 Word 成功: %s -> %s", input_path.name, output_filename)
+        return output_path
+
+    @staticmethod
+    def convert_to_markdown(input_path: Path) -> Path:
+        """
+        将 PDF 文件转换为 Markdown 文档
+
+        Args:
+            input_path: PDF 文件路径
+
+        Returns:
+            生成的 Markdown 文件路径
+
+        Raises:
+            RuntimeError: 转换失败时抛出
+        """
+        output_filename = f"{input_path.stem}_{uuid.uuid4().hex[:8]}.md"
+        output_path = settings.output_dir / output_filename
+
+        try:
+            md_text = pymupdf4llm.to_markdown(str(input_path))
+            output_path.write_text(md_text, encoding="utf-8")
+        except Exception as e:
+            logger.exception("PDF 转 Markdown 失败: %s", input_path.name)
+            if output_path.exists():
+                output_path.unlink(missing_ok=True)
+            raise RuntimeError(f"PDF 转 Markdown 失败: {e!s}") from e
+
+        if not output_path.exists():
+            raise RuntimeError("转换完成但输出文件未生成")
+
+        logger.info("PDF 转 Markdown 成功: %s -> %s", input_path.name, output_filename)
         return output_path
 
     @staticmethod

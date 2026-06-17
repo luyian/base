@@ -47,13 +47,38 @@ public class FileConvertServiceImpl implements FileConvertService {
         SysFile sourceSysFile = uploadAndRecord(file, "pdf");
 
         // 2. 调用 python-tools 转换
-        byte[] docxBytes = callPythonToolsConvert(file);
+        byte[] docxBytes = callPythonToolsConvert(file, "/api/pdf/to-word");
 
         // 3. 上传转换后的 docx 到 COS 并记录
         String docxName = originalName != null
                 ? originalName.replaceAll("(?i)\\.pdf$", ".docx")
                 : "output.docx";
-        SysFile targetSysFile = uploadBytesAndRecord(docxBytes, docxName, "docx");
+        String contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        SysFile targetSysFile = uploadBytesAndRecord(docxBytes, docxName, "docx", contentType);
+
+        // 4. 组装返回结果
+        Map<String, Object> result = new HashMap<>(4);
+        result.put("sourceFile", buildFileInfo(sourceSysFile));
+        result.put("targetFile", buildFileInfo(targetSysFile));
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> pdfToMarkdown(MultipartFile file) {
+        String originalName = file.getOriginalFilename();
+        log.info("开始 PDF 转 Markdown: {}", originalName);
+
+        // 1. 上传源 PDF 到 COS 并记录
+        SysFile sourceSysFile = uploadAndRecord(file, "pdf");
+
+        // 2. 调用 python-tools 转换
+        byte[] mdBytes = callPythonToolsConvert(file, "/api/pdf/to-markdown");
+
+        // 3. 上传转换后的 md 到 COS 并记录
+        String mdName = originalName != null
+                ? originalName.replaceAll("(?i)\\.pdf$", ".md")
+                : "output.md";
+        SysFile targetSysFile = uploadBytesAndRecord(mdBytes, mdName, "md", "text/markdown");
 
         // 4. 组装返回结果
         Map<String, Object> result = new HashMap<>(4);
@@ -63,10 +88,14 @@ public class FileConvertServiceImpl implements FileConvertService {
     }
 
     /**
-     * 调用 python-tools PDF 转 Word 接口
+     * 调用 python-tools PDF 转换接口
+     *
+     * @param file PDF 文件
+     * @param apiPath 接口路径
+     * @return 转换后的文件字节
      */
-    private byte[] callPythonToolsConvert(MultipartFile file) {
-        String url = aiSkillConfig.getPythonToolsUrl() + "/api/pdf/to-word";
+    private byte[] callPythonToolsConvert(MultipartFile file, String apiPath) {
+        String url = aiSkillConfig.getPythonToolsUrl() + apiPath;
 
         try {
             // 构建 multipart 请求
@@ -91,11 +120,11 @@ public class FileConvertServiceImpl implements FileConvertService {
                 throw new RuntimeException("python-tools 返回异常: " + response.getStatusCode());
             }
 
-            log.info("PDF 转 Word 成功，文件大小: {} bytes", response.getBody().length);
+            log.info("PDF 转换成功，接口: {}，文件大小: {} bytes", apiPath, response.getBody().length);
             return response.getBody();
 
         } catch (Exception e) {
-            log.error("调用 python-tools PDF 转 Word 失败", e);
+            log.error("调用 python-tools PDF 转换失败，接口: {}", apiPath, e);
             throw new BusinessException("PDF 转换服务异常，请稍后重试");
         }
     }
@@ -116,9 +145,8 @@ public class FileConvertServiceImpl implements FileConvertService {
     /**
      * 上传 byte[] 到 COS 并写入 sys_file 记录
      */
-    private SysFile uploadBytesAndRecord(byte[] data, String fileName, String fileExt) {
+    private SysFile uploadBytesAndRecord(byte[] data, String fileName, String fileExt, String contentType) {
         String cosKey = cosService.uploadFile(data, "convert", fileExt);
-        String contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
         return saveSysFile(fileName, fileExt, (long) data.length, contentType, cosKey);
     }
 

@@ -15,3 +15,19 @@ export function pdfToWord(file) {
     timeout: 60000
   })
 }
+
+/**
+ * PDF 转 Markdown
+ * @param {File} file PDF 文件
+ */
+export function pdfToMarkdown(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  return request({
+    url: '/system/file-convert/pdf-to-markdown',
+    method: 'post',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000
+  })
+}

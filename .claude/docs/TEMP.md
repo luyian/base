@@ -1,6 +1,14 @@
 
 ---
 
+## 文件转换新增 PDF 转 Markdown 功能（2026-06-17）
+
+- Python-tools：`pdf_service.py` 新增 `convert_to_markdown` 方法（基于 pymupdf4llm），`pdf.py` 新增 `/api/pdf/to-markdown` 端点，`requirements.txt` 添加 `pymupdf4llm==0.0.17`
+- 后端：`FileConvertService` 接口新增 `pdfToMarkdown` 方法，`FileConvertServiceImpl` 实现调用 python-tools 新端点，`FileConvertController` 新增 `/pdf-to-markdown` 端点，校验逻辑提取为 `validatePdfFile` 私有方法复用
+- 前端：`FileConvert.vue` 改造为单个"PDF 转换"Tab，新增输出格式 Radio 选择（Word/Markdown），`api/fileConvert.js` 新增 `pdfToMarkdown` 接口
+
+---
+
 ## 全局异常处理修复（2026-06-16）
 
 - DataScopeAspect：数据权限过滤失败时抛出 AccessDeniedException 阻断请求（原先静默吞异常导致权限失效）

@@ -1,5 +1,11 @@
 import request from '@/utils/request'
 
+/** 从 localStorage 获取开发工具访问令牌 */
+function getDevTokenHeader() {
+  const token = localStorage.getItem('dev_access_token') || ''
+  return { 'X-Dev-Token': token }
+}
+
 /**
  * 分页查询分支列表
  */
@@ -7,6 +13,7 @@ export function pageBranches(data) {
   return request({
     url: '/dev/branch/page',
     method: 'post',
+    headers: getDevTokenHeader(),
     data
   })
 }
@@ -18,6 +25,7 @@ export function addBranch(data) {
   return request({
     url: '/dev/branch',
     method: 'post',
+    headers: getDevTokenHeader(),
     data
   })
 }
@@ -29,6 +37,7 @@ export function updateBranch(data) {
   return request({
     url: '/dev/branch',
     method: 'put',
+    headers: getDevTokenHeader(),
     data
   })
 }
@@ -39,7 +48,8 @@ export function updateBranch(data) {
 export function deleteBranch(id) {
   return request({
     url: `/dev/branch/${id}`,
-    method: 'delete'
+    method: 'delete',
+    headers: getDevTokenHeader()
   })
 }
 
@@ -49,7 +59,8 @@ export function deleteBranch(id) {
 export function getCurrentProdBranch() {
   return request({
     url: '/dev/branch/current-prod',
-    method: 'get'
+    method: 'get',
+    headers: getDevTokenHeader()
   })
 }
 
@@ -60,6 +71,7 @@ export function updateCurrentProdBranch(prodBranch) {
   return request({
     url: '/dev/branch/current-prod',
     method: 'put',
+    headers: getDevTokenHeader(),
     data: { prodBranch }
   })
 }
@@ -70,7 +82,8 @@ export function updateCurrentProdBranch(prodBranch) {
 export function getBranchStats() {
   return request({
     url: '/dev/branch/stats',
-    method: 'get'
+    method: 'get',
+    headers: getDevTokenHeader()
   })
 }
 
@@ -80,6 +93,7 @@ export function getBranchStats() {
 export function completeBranch(id) {
   return request({
     url: `/dev/branch/complete/${id}`,
-    method: 'put'
+    method: 'put',
+    headers: getDevTokenHeader()
   })
 }

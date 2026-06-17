@@ -182,6 +182,28 @@
         <el-button type="primary" :loading="prodUpdating" @click="handleSubmitProdBranch">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 访问码验证弹窗 -->
+    <el-dialog
+      v-model="accessDialogVisible"
+      title="访问验证"
+      width="380px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+      class="branch-dialog"
+    >
+      <div class="access-hint">请输入访问码以使用分支管理功能</div>
+      <el-input
+        v-model="accessCode"
+        placeholder="输入访问码"
+        show-password
+        @keyup.enter="handleVerifyAccess"
+      />
+      <template #footer>
+        <el-button type="primary" :loading="accessVerifying" @click="handleVerifyAccess">验证</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -199,6 +221,41 @@ import {
   getBranchStats,
   completeBranch
 } from '@/api/branch'
+
+// 访问码验证
+const accessDialogVisible = ref(false)
+const accessCode = ref('')
+const accessVerifying = ref(false)
+// 已登录用户（有 JWT）或已输入过访问码的用户，均视为已验证
+const accessVerified = ref(!!localStorage.getItem('token') || !!localStorage.getItem('dev_access_token'))
+
+async function handleVerifyAccess() {
+  if (!accessCode.value.trim()) {
+    ElMessage.warning('请输入访问码')
+    return
+  }
+  accessVerifying.value = true
+  try {
+    // 将访问码存入 localStorage，尝试请求验证
+    localStorage.setItem('dev_access_token', accessCode.value.trim())
+    await getBranchStats()
+    // 请求成功说明验证通过
+    accessVerified.value = true
+    accessDialogVisible.value = false
+    ElMessage.success('验证通过')
+    initPageData()
+  } catch (e) {
+    // 验证失败，清除存储
+    localStorage.removeItem('dev_access_token')
+    if (e.response && e.response.status === 403) {
+      ElMessage.error('访问码无效')
+    } else {
+      ElMessage.error('验证失败，请稍后重试')
+    }
+  } finally {
+    accessVerifying.value = false
+  }
+}
 
 // 当前生产分支
 const currentProdBranch = ref('')
@@ -456,11 +513,19 @@ async function handleSubmitProdBranch() {
 }
 
 onMounted(() => {
+  if (accessVerified.value) {
+    initPageData()
+  } else {
+    accessDialogVisible.value = true
+  }
+  window.addEventListener('scroll', handleScroll)
+})
+
+function initPageData() {
   fetchProdBranch()
   fetchList()
   fetchStats()
-  window.addEventListener('scroll', handleScroll)
-})
+}
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
@@ -1126,6 +1191,12 @@ function handleScroll() {
 }
 
 /* 弹窗样式 */
+.access-hint {
+  font-size: 13px;
+  color: var(--bp-text-secondary);
+  margin-bottom: 16px;
+}
+
 .preview-branch {
   display: block;
   padding: 8px 12px;

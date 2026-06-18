@@ -43,9 +43,18 @@ public class DevBranchServiceImpl implements DevBranchService {
         Page<DevBranch> page = request.buildPage();
 
         LambdaQueryWrapper<DevBranch> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(StringUtils.hasText(request.getCode()), DevBranch::getCode, request.getCode())
-               .like(StringUtils.hasText(request.getTitle()), DevBranch::getTitle, request.getTitle())
-               .eq(StringUtils.hasText(request.getProdBranch()), DevBranch::getProdBranch, request.getProdBranch());
+        // keyword 为标题或编号的 OR 模糊查询
+        String keyword = request.getKeyword();
+        if (StringUtils.hasText(keyword)) {
+            wrapper.and(w -> w.like(DevBranch::getTitle, keyword).or().like(DevBranch::getCode, keyword));
+        }
+        if (StringUtils.hasText(request.getTitle())) {
+            wrapper.like(DevBranch::getTitle, request.getTitle());
+        }
+        if (StringUtils.hasText(request.getCode())) {
+            wrapper.like(DevBranch::getCode, request.getCode());
+        }
+        wrapper.eq(StringUtils.hasText(request.getProdBranch()), DevBranch::getProdBranch, request.getProdBranch());
         if (request.getStatus() != null) {
             if (request.getStatus() == 1) {
                 wrapper.eq(DevBranch::getStatus, 1);

@@ -22,7 +22,7 @@
           {{ showCompleted ? '已完成' : '进行中' }}
         </button>
         <el-input
-          v-model="queryForm.title"
+          v-model="queryForm.keyword"
           placeholder="搜索标题或编号..."
           clearable
           class="search-input"
@@ -297,8 +297,7 @@ function toggleStatus() {
 const queryForm = reactive({
   current: 1,
   size: 20,
-  title: '',
-  code: '',
+  keyword: '',
   status: 0
 })
 
@@ -373,10 +372,6 @@ async function fetchList() {
   loading.value = true
   try {
     const params = { ...queryForm, status: showCompleted.value ? 1 : 0 }
-    if (queryForm.title) {
-      params.title = queryForm.title
-      params.code = queryForm.title
-    }
     const res = await pageBranches(params)
     branchList.value = res.data.records || []
     total.value = res.data.total || 0
@@ -392,10 +387,6 @@ async function loadMore() {
   try {
     queryForm.current++
     const params = { ...queryForm, status: showCompleted.value ? 1 : 0 }
-    if (queryForm.title) {
-      params.title = queryForm.title
-      params.code = queryForm.title
-    }
     const res = await pageBranches(params)
     const records = res.data.records || []
     branchList.value.push(...records)

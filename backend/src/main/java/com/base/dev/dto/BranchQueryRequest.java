@@ -12,6 +12,11 @@ import lombok.EqualsAndHashCode;
 public class BranchQueryRequest extends BasePageRequest {
 
     /**
+     * 关键词（标题或编号模糊搜索，OR 查询）
+     */
+    private String keyword;
+
+    /**
      * 编号
      */
     private String code;

@@ -2,6 +2,7 @@ package com.base.system.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.common.result.Result;
+import com.base.system.annotation.OperationLog;
 import com.base.system.dto.FileBatchDownloadRequest;
 import com.base.system.dto.FilePageRequest;
 import com.base.system.dto.FileUploadRequest;
@@ -110,6 +111,7 @@ public class FileController {
     @ApiOperation("下载文件")
     @GetMapping("/download/{id}")
     @PreAuthorize("hasAuthority('file:download')")
+    @OperationLog(module = "文件管理", operation = "下载文件", saveResult = false)
     public void downloadFile(@PathVariable Long id, HttpServletResponse response, HttpServletRequest request) {
         fileService.downloadFile(id, response, request);
     }
@@ -120,6 +122,7 @@ public class FileController {
     @ApiOperation("批量下载文件")
     @PostMapping("/download/batch")
     @PreAuthorize("hasAuthority('file:download')")
+    @OperationLog(module = "文件管理", operation = "批量下载文件", saveResult = false)
     public void batchDownloadFiles(@RequestBody FileBatchDownloadRequest request,
                                    HttpServletResponse response, HttpServletRequest httpRequest) {
         fileService.batchDownloadFiles(request.getIds(), response, httpRequest);

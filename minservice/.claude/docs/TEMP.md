@@ -1,5 +1,25 @@
 # 代码修改记录
 
+## 2026-06-23 小程序首页自选基金置顶功能
+
+### 修改的功能模块
+- 小程序首页（`minservice/pages/index/index.wxml`、`index.js`、`index.wxss`）
+- 小程序基金 API（`minservice/api/fund.js`）
+
+### 业务逻辑变更说明
+1. **新增自选基金长按操作交互**
+   - 「我的自选」卡片绑定 `bindlongpress`，长按浮现深色玻璃操作层：左侧保留基金上下文（操作 / 基金名），右侧两个操作块（置顶 / 删除）依次从右滑入
+   - 「置顶」调用 `topWatchlist` 接口，成功后 toast 提示并重新加载列表
+   - 「删除」弹确认框，确认后调用 `removeFromWatchlist` 取消自选，成功后刷新列表
+   - 点击空白蒙层（`top-mask`）关闭浮层；浮层激活时单击卡片只关闭浮层，不跳转详情
+2. **API 接口**
+   - `api/fund.js` 新增 `topWatchlist(fundId)`，对应后端 `PUT /stock/fund/watchlist/{fundId}/top`
+   - 删除复用已有的 `removeFromWatchlist(fundId)`（`DELETE /stock/fund/watchlist/{fundId}`）
+
+### 与其他模块的关联影响
+- 依赖后端 `stk_fund_watchlist` 新增的 `sort_order` 字段及置顶接口
+- 自选列表排序由后端按 `sort_order` 返回，前端无需额外排序
+
 ## 2026-05-06 小程序基金编辑页面权重输入修复
 
 ### 修改的功能模块

@@ -95,6 +95,17 @@ public class WatchlistController {
     }
 
     /**
+     * 置顶自选股票
+     */
+    @ApiOperation("置顶自选股票")
+    @PutMapping("/{id}/top")
+    @PreAuthorize("hasAuthority('stock:watchlist:edit')")
+    public Result<Void> top(@PathVariable Long id) {
+        watchlistService.topWatchlist(id);
+        return Result.success();
+    }
+
+    /**
      * 检查是否已添加自选
      */
     @ApiOperation("检查是否已添加自选")

@@ -190,6 +190,38 @@ public class FundServiceImpl implements FundService {
         return listWatchlistFundsByUserId(userId);
     }
 
+    @Override
+    public void topWatchlist(Long fundId) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        if (userId == null) {
+            throw new RuntimeException("用户未登录");
+        }
+        // 查询目标自选记录
+        LambdaQueryWrapper<FundWatchlist> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FundWatchlist::getFundId, fundId)
+                .eq(FundWatchlist::getUserId, userId);
+        FundWatchlist target = fundWatchlistMapper.selectOne(wrapper);
+        if (target == null) {
+            throw new RuntimeException("该基金不在自选列表中");
+        }
+        // 查询当前用户最小排序号，置顶值取其减一（保证排在最前）
+        LambdaQueryWrapper<FundWatchlist> minWrapper = new LambdaQueryWrapper<>();
+        minWrapper.eq(FundWatchlist::getUserId, userId)
+                .orderByAsc(FundWatchlist::getSortOrder)
+                .last("LIMIT 1");
+        FundWatchlist minRecord = fundWatchlistMapper.selectOne(minWrapper);
+        int minSortOrder = (minRecord != null && minRecord.getSortOrder() != null)
+                ? minRecord.getSortOrder() : 0;
+        // 已是最前则无需处理
+        if (target.getSortOrder() != null && target.getSortOrder() <= minSortOrder
+                && target.getId().equals(minRecord.getId())) {
+            return;
+        }
+        target.setSortOrder(minSortOrder - 1);
+        fundWatchlistMapper.updateById(target);
+        log.info("基金置顶成功，userId: {}, fundId: {}, sortOrder: {}", userId, fundId, minSortOrder - 1);
+    }
+
     // ========== 估值 ==========
 
     @Override
@@ -479,11 +511,13 @@ public class FundServiceImpl implements FundService {
     }
 
     /**
-     * 按用户ID查询自选基金列表
+     * 按用户ID查询自选基金列表（按自选排序号升序，其次按创建时间倒序）
      */
     private List<FundConfig> listWatchlistFundsByUserId(Long userId) {
         LambdaQueryWrapper<FundWatchlist> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(FundWatchlist::getUserId, userId);
+        wrapper.eq(FundWatchlist::getUserId, userId)
+                .orderByAsc(FundWatchlist::getSortOrder)
+                .orderByDesc(FundWatchlist::getCreateTime);
         List<FundWatchlist> watchlist = fundWatchlistMapper.selectList(wrapper);
         if (watchlist.isEmpty()) {
             return Collections.emptyList();
@@ -492,9 +526,19 @@ public class FundServiceImpl implements FundService {
                 .map(FundWatchlist::getFundId)
                 .collect(Collectors.toList());
         LambdaQueryWrapper<FundConfig> fundWrapper = new LambdaQueryWrapper<>();
-        fundWrapper.in(FundConfig::getId, fundIds)
-                .orderByDesc(FundConfig::getCreateTime);
-        return fundConfigMapper.selectList(fundWrapper);
+        fundWrapper.in(FundConfig::getId, fundIds);
+        List<FundConfig> funds = fundConfigMapper.selectList(fundWrapper);
+        // 按自选表的排序顺序重新组织基金列表（in 查询不保证顺序）
+        Map<Long, FundConfig> fundMap = funds.stream()
+                .collect(Collectors.toMap(FundConfig::getId, f -> f, (v1, v2) -> v1));
+        List<FundConfig> orderedFunds = new ArrayList<>(fundIds.size());
+        for (Long fundId : fundIds) {
+            FundConfig fund = fundMap.get(fundId);
+            if (fund != null) {
+                orderedFunds.add(fund);
+            }
+        }
+        return orderedFunds;
     }
 
     /**

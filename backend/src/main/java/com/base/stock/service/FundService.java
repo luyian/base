@@ -78,6 +78,13 @@ public interface FundService {
      */
     List<FundConfig> listMyWatchlistFunds();
 
+    /**
+     * 将自选基金置顶（排序号设为当前用户最小值减一，使其排在最前）
+     *
+     * @param fundId 基金ID
+     */
+    void topWatchlist(Long fundId);
+
     // ========== 估值（所有用户） ==========
 
     /**

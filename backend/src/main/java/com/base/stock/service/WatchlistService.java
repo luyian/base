@@ -61,6 +61,13 @@ public interface WatchlistService {
     void updateSortOrder(Long id, Integer sortOrder);
 
     /**
+     * 自选股票置顶（将排序号设为当前用户最小值减一，排在最前）
+     *
+     * @param id 自选ID
+     */
+    void topWatchlist(Long id);
+
+    /**
      * 检查是否已添加自选
      *
      * @param userId    用户ID

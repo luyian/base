@@ -41,5 +41,8 @@ module.exports = {
   addToWatchlist: (fundId) => request.post(`/stock/fund/watchlist/${fundId}`),
   
   // Remove fund from watchlist
-  removeFromWatchlist: (fundId) => request.delete(`/stock/fund/watchlist/${fundId}`)
+  removeFromWatchlist: (fundId) => request.delete(`/stock/fund/watchlist/${fundId}`),
+
+  // Top fund in watchlist (置顶)
+  topWatchlist: (fundId) => request.put(`/stock/fund/watchlist/${fundId}/top`)
 };

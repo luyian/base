@@ -89,6 +89,16 @@ public class FundController {
     }
 
     /**
+     * 自选基金置顶
+     */
+    @ApiOperation("自选基金置顶")
+    @PutMapping("/watchlist/{fundId}/top")
+    public Result<Void> topWatchlist(@PathVariable Long fundId) {
+        fundService.topWatchlist(fundId);
+        return Result.success();
+    }
+
+    /**
      * 我的自选基金列表
      */
     @ApiOperation("我的自选基金列表")

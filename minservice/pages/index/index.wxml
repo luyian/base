@@ -21,10 +21,11 @@
     </view>
 
     <view class="watchlist" wx:if="{{watchlist.length > 0}}">
-      <view class="fund-card watchlist-card" 
-            wx:for="{{watchlist}}" 
-            wx:key="id" 
-            bindtap="goToDetail" 
+      <view class="fund-card watchlist-card {{topActiveId === item.fundId ? 'top-active' : ''}}"
+            wx:for="{{watchlist}}"
+            wx:key="id"
+            bindtap="goToDetail"
+            bindlongpress="onWatchlistLongPress"
             data-id="{{item.fundId}}">
         <view class="fund-info">
           <text class="fund-name">{{item.fundName}}</text>
@@ -33,8 +34,25 @@
         <view class="fund-change {{item.estimatedChangePercent > 0 ? 'positive' : (item.estimatedChangePercent < 0 ? 'negative' : '')}}">
           <text class="change-value">{{item.estimatedChangePercent > 0 ? '+' : ''}}{{item.estimatedChangePercent}}%</text>
         </view>
+        <!-- 长按弹出的气泡操作菜单（浮于卡片上方） -->
+        <view wx:if="{{topActiveId === item.fundId}}" class="action-popover">
+          <view class="action-item" catchtap="onTopFund" data-id="{{item.fundId}}">
+            <text class="action-icon">↑</text>
+            <text class="action-label">置顶</text>
+          </view>
+          <view class="action-divider"></view>
+          <view class="action-item action-item-danger" catchtap="onRemoveFund" data-id="{{item.fundId}}" data-name="{{item.fundName}}">
+            <text class="action-icon">🗑</text>
+            <text class="action-label">删除</text>
+          </view>
+          <view class="action-arrow"></view>
+        </view>
       </view>
     </view>
+
+    <!-- 置顶操作蒙层（点击空白关闭浮层） -->
+    <view wx:if="{{topActiveId}}" class="top-mask" catchtap="closeTopMenu"></view>
+
 
     <!-- All Funds Section -->
     <view class="section-title">

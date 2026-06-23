@@ -30,6 +30,9 @@ public class FundWatchlist implements Serializable {
     /** 用户ID */
     private Long userId;
 
+    /** 排序号（值越小越靠前，置顶时取当前用户最小值减1） */
+    private Integer sortOrder;
+
     /** 创建时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;

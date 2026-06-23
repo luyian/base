@@ -122,6 +122,99 @@ page {
 .fund-name-row { display: flex; align-items: center; gap: 8rpx; }
 .star { color: #F59E0B; font-size: 26rpx; }
 
+/* 置顶操作浮层与蒙层 */
+.top-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+}
+
+.watchlist-card.top-active {
+  position: relative;
+  z-index: 95;
+}
+
+/* 长按弹出的气泡操作菜单：浮于卡片上方，深色圆角条 + 底部小三角 */
+.action-popover {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 18rpx);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: stretch;
+  padding: 8rpx 6rpx;
+  border-radius: 20rpx;
+  background: #1F2733;
+  box-shadow: 0 12rpx 36rpx rgba(15, 23, 42, 0.32);
+  z-index: 97;
+  transform-origin: bottom center;
+  animation: popoverIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 居中对齐时避免溢出屏幕：靠左/靠右的卡片仍能完整显示菜单 */
+.action-popover {
+  white-space: nowrap;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  min-width: 104rpx;
+  padding: 16rpx 12rpx;
+  border-radius: 14rpx;
+  transition: background 0.15s ease;
+}
+
+.action-item:active { background: rgba(255, 255, 255, 0.08); }
+
+.action-icon {
+  font-size: 38rpx;
+  line-height: 1;
+  color: #F1F5F9;
+}
+
+.action-label {
+  font-size: 22rpx;
+  font-weight: 500;
+  letter-spacing: 1rpx;
+  color: #CBD5E1;
+}
+
+/* 删除项：图标与文字标红，弱化误触 */
+.action-item-danger .action-icon { color: #FB7185; }
+.action-item-danger .action-label { color: #FB7185; }
+
+/* 项间细分隔线 */
+.action-divider {
+  width: 1rpx;
+  margin: 14rpx 2rpx;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 底部指向卡片的小三角 */
+.action-arrow {
+  position: absolute;
+  left: 50%;
+  bottom: -10rpx;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 12rpx solid transparent;
+  border-right: 12rpx solid transparent;
+  border-top: 12rpx solid #1F2733;
+}
+
+@keyframes popoverIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(8rpx) scale(0.92); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
 .fund-card { 
   background: var(--card);
   padding: 28rpx 24rpx;

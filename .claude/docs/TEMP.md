@@ -1,6 +1,23 @@
 
 ---
 
+## 小程序首页自选基金置顶功能（2026-06-23）
+
+- 数据库：`stk_fund_watchlist` 表新增 `sort_order` 字段（增量脚本 `db/alter_fund_watchlist_sort.sql`，schema.sql 同步）
+- 后端：`FundWatchlist` 实体加 `sortOrder`；`listWatchlistFundsByUserId` 改为按 `sort_order ASC, create_time DESC` 排序并在 Java 层保持顺序；`FundService` 新增 `topWatchlist(fundId)`，置顶值取当前用户最小 sort_order 减一；`FundController` 新增 `PUT /stock/fund/watchlist/{fundId}/top`
+- 小程序：首页「我的自选」卡片长按弹出置顶浮层，点击调用置顶接口后刷新；点击空白蒙层关闭浮层（`minservice/pages/index/`、`api/fund.js`）
+
+---
+
+## 分支管理模块添加访问码验证（2026-06-17）
+
+- 新增 `DevApiTokenFilter`：拦截 `/api/dev/**`，双通道验证（JWT 放行 + X-Dev-Token 访问码）
+- token 从 `sys_config` 表读取（key=`dev.api.token`），可动态修改无需重启
+- 前端免登录场景：首次访问弹访问码输入框，存 localStorage 后免输；已登录用户自动跳过
+- 访问码失效时（后端改密码）自动检测 403 并重新弹出验证框
+
+---
+
 ## 文件转换新增 PDF 转 Markdown 功能（2026-06-17）
 
 - Python-tools：`pdf_service.py` 新增 `convert_to_markdown` 方法（基于 pymupdf4llm），`pdf.py` 新增 `/api/pdf/to-markdown` 端点，`requirements.txt` 添加 `pymupdf4llm==0.0.17`

@@ -115,6 +115,30 @@ public class WatchlistServiceImpl implements WatchlistService {
     }
 
     @Override
+    public void topWatchlist(Long id) {
+        Watchlist target = watchlistMapper.selectById(id);
+        if (target == null) {
+            return;
+        }
+        // 查询当前用户最小排序号，置顶值取其减一（保证排在最前）
+        LambdaQueryWrapper<Watchlist> minWrapper = new LambdaQueryWrapper<>();
+        minWrapper.eq(Watchlist::getUserId, target.getUserId())
+                .eq(Watchlist::getDeleted, 0)
+                .orderByAsc(Watchlist::getSortOrder)
+                .last("LIMIT 1");
+        Watchlist minRecord = watchlistMapper.selectOne(minWrapper);
+        int minSortOrder = (minRecord != null && minRecord.getSortOrder() != null)
+                ? minRecord.getSortOrder() : 0;
+        // 已在最前则无需处理
+        if (minRecord != null && target.getId().equals(minRecord.getId())) {
+            return;
+        }
+        target.setSortOrder(minSortOrder - 1);
+        watchlistMapper.updateById(target);
+        log.info("自选股票置顶成功，id: {}, sortOrder: {}", id, minSortOrder - 1);
+    }
+
+    @Override
     public boolean isInWatchlist(Long userId, String stockCode) {
         LambdaQueryWrapper<Watchlist> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Watchlist::getUserId, userId)

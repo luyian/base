@@ -357,6 +357,7 @@ CREATE TABLE `stk_fund_watchlist` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
   `fund_id` bigint NOT NULL COMMENT '基金ID',
   `user_id` bigint NOT NULL COMMENT '用户ID',
+  `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序号（越小越靠前，置顶用）',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uk_fund_user` (`fund_id`,`user_id`) USING BTREE,

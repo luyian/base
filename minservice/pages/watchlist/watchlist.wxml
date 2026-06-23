@@ -27,7 +27,9 @@
 
   <!-- Watchlist -->
   <view class="watchlist" wx:elif="{{watchlist.length > 0}}">
-    <view class="stock-card" wx:for="{{watchlist}}" wx:key="id">
+    <view class="stock-card {{activeId === item.id ? 'card-active' : ''}}"
+          wx:for="{{watchlist}}" wx:key="id"
+          bindlongpress="onLongPress" data-id="{{item.id}}" data-name="{{item.stockName}}">
       <view class="card-left">
         <text class="stock-name">{{item.stockName}}</text>
         <text class="stock-code">{{item.market}}-{{item.stockCode}}</text>
@@ -43,11 +45,24 @@
         </view>
         <text class="change-val">{{item.change > 0 ? '+' : ''}}{{item.changeStr || '--'}}</text>
       </view>
-      <view class="card-action">
-        <text class="delete-icon" catchtap="removeStock" data-id="{{item.id}}">×</text>
+      <!-- 长按气泡菜单 -->
+      <view wx:if="{{activeId === item.id}}" class="action-popover">
+        <view class="action-item" catchtap="onTopStock" data-id="{{item.id}}">
+          <text class="action-icon">↑</text>
+          <text class="action-label">置顶</text>
+        </view>
+        <view class="action-divider"></view>
+        <view class="action-item action-item-danger" catchtap="onRemoveStock" data-id="{{item.id}}" data-name="{{item.stockName}}">
+          <text class="action-icon">🗑</text>
+          <text class="action-label">删除</text>
+        </view>
+        <view class="action-arrow"></view>
       </view>
     </view>
   </view>
+
+  <!-- 气泡菜单蒙层 -->
+  <view wx:if="{{activeId}}" class="action-mask" catchtap="closeMenu"></view>
 
   <!-- Empty -->
   <view class="empty-state" wx:elif="{{!loading}}">

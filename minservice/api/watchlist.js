@@ -12,6 +12,9 @@ module.exports = {
     // 删除自选
     removeFromWatchlist: (id) => request.delete('/stock/watchlist/' + id),
 
+    // 置顶自选
+    topWatchlist: (id) => request.put('/stock/watchlist/' + id + '/top'),
+
     // 批量获取实时行情（复用基金估值的 QuoteProvider）
     getQuotes: (codes) => request.post('/stock/watchlist/quotes', codes)
 };

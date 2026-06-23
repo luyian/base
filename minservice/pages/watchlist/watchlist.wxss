@@ -302,3 +302,87 @@ page {
 .dark-theme .refresh-btn {
     border: 1rpx solid var(--border);
 }
+
+/* ==================== 长按气泡菜单 ==================== */
+.action-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90;
+}
+
+.stock-card.card-active {
+    position: relative;
+    z-index: 95;
+}
+
+.action-popover {
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 18rpx);
+    transform: translateX(-50%);
+    display: flex;
+    align-items: stretch;
+    padding: 8rpx 6rpx;
+    border-radius: 20rpx;
+    background: #1F2733;
+    box-shadow: 0 12rpx 36rpx rgba(15, 23, 42, 0.32);
+    z-index: 97;
+    white-space: nowrap;
+    transform-origin: bottom center;
+    animation: popoverIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
+    min-width: 104rpx;
+    padding: 16rpx 12rpx;
+    border-radius: 14rpx;
+}
+
+.action-item:active { background: rgba(255, 255, 255, 0.08); }
+
+.action-icon {
+    font-size: 38rpx;
+    line-height: 1;
+    color: #F1F5F9;
+}
+
+.action-label {
+    font-size: 22rpx;
+    font-weight: 500;
+    letter-spacing: 1rpx;
+    color: #CBD5E1;
+}
+
+.action-item-danger .action-icon { color: #FB7185; }
+.action-item-danger .action-label { color: #FB7185; }
+
+.action-divider {
+    width: 1rpx;
+    margin: 14rpx 2rpx;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.action-arrow {
+    position: absolute;
+    left: 50%;
+    bottom: -10rpx;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 12rpx solid transparent;
+    border-right: 12rpx solid transparent;
+    border-top: 12rpx solid #1F2733;
+}
+
+@keyframes popoverIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(8rpx) scale(0.92); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}

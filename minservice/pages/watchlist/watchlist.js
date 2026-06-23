@@ -8,7 +8,8 @@ Page({
         loading: true,
         refreshing: false,
         updateTime: '',
-        themeClass: ''
+        themeClass: '',
+        activeId: null
     },
 
     onLoad() {
@@ -112,6 +113,53 @@ Page({
                             wx.showToast({ title: '已删除', icon: 'success' });
                         });
                 }
+            }
+        });
+    },
+
+    // 长按弹出气泡菜单
+    onLongPress(e) {
+        const id = e.currentTarget.dataset.id;
+        this.setData({ activeId: id });
+    },
+
+    // 关闭气泡菜单
+    closeMenu() {
+        if (this.data.activeId !== null) {
+            this.setData({ activeId: null });
+        }
+    },
+
+    // 置顶自选股票（前端乐观更新，接口后台静默执行）
+    onTopStock(e) {
+        const id = e.currentTarget.dataset.id;
+        const watchlist = this.data.watchlist.slice();
+        const index = watchlist.findIndex(item => item.id === id);
+        if (index > 0) {
+            const [target] = watchlist.splice(index, 1);
+            watchlist.unshift(target);
+        }
+        this.setData({ watchlist, activeId: null });
+        wx.showToast({ title: '已置顶', icon: 'success' });
+        watchlistApi.topWatchlist(id).catch(() => {});
+    },
+
+    // 取消自选（前端乐观更新，接口后台静默执行）
+    onRemoveStock(e) {
+        const id = e.currentTarget.dataset.id;
+        const name = e.currentTarget.dataset.name || '该股票';
+        this.setData({ activeId: null });
+        wx.showModal({
+            title: '取消自选',
+            content: `确定将「${name}」移出自选？`,
+            success: (res) => {
+                if (!res.confirm) {
+                    return;
+                }
+                const watchlist = this.data.watchlist.filter(item => item.id !== id);
+                this.setData({ watchlist });
+                wx.showToast({ title: '已取消自选', icon: 'success' });
+                watchlistApi.removeFromWatchlist(id).catch(() => {});
             }
         });
     }

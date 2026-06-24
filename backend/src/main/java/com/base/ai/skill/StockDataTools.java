@@ -42,6 +42,40 @@ public class StockDataTools {
         return pythonToolsClient.call("/api/stock/quote?codes=" + sanitized);
     }
 
+    @Tool("A股资金流向综合分析（优先使用此工具）：当用户问【A股资金流向】、【今天资金面怎么样】、【市场资金分析】等宽泛问题时，调用此工具。"
+            + "它一次性返回近5日大盘主力资金流向、行业板块资金净流入/净流出前10、个股主力资金净流入TOP20。"
+            + "仅当用户明确指定单个维度（如【大盘主力流入多少】或【半导体行业资金】）时，才用对应的单独工具。\n"
+            + "拿到数据后请按以下思路分析并输出：\n"
+            + "1. 大盘资金流向：近几日主力净流入/流出趋势，判断市场整体资金态度（流入=积极进攻，流出=谨慎防守）\n"
+            + "2. 行业板块资金流向：主力净流入前10行业（资金主攻方向）和净流出前10行业（资金撤退方向），归纳资金主线逻辑\n"
+            + "3. 个股主力资金TOP20：主力重点加仓标的，结合行业分析判断资金集中方向\n"
+            + "4. 综合判断：总结当前市场风格（进攻/防御/分化）、资金主线方向、风险提示")
+    public String getAstockFundFlowSummary() {
+        log.info("AI 技能调用: getAstockFundFlowSummary()");
+        return pythonToolsClient.call("/api/stock/astock-fund-flow-summary");
+    }
+
+    @Tool("查询沪深两市大盘资金流向（日K级别），包括近N日主力净流入、超大单、大单、中单、小单净流入金额及占比。仅当用户明确只问大盘主力资金趋势时使用，宽泛的【资金流向】问题请用getAstockFundFlowSummary。")
+    public String getMarketFundFlow(
+            @P("查询天数，默认5天，最大30天") String days) {
+        log.info("AI 技能调用: getMarketFundFlow({})", days);
+        int d = 5;
+        if (days != null && !days.trim().isEmpty()) {
+            try {
+                d = Integer.parseInt(days.trim());
+                if (d < 1) {
+                    d = 1;
+                }
+                if (d > 30) {
+                    d = 30;
+                }
+            } catch (NumberFormatException e) {
+                d = 5;
+            }
+        }
+        return pythonToolsClient.call("/api/stock/market-fund-flow?days=" + d);
+    }
+
     @Tool("查询个股当日资金流向（分钟级），包括主力净流入、超大单、大单、中单、小单净流入金额，判断主力资金动向。")
     public String getStockFundFlow(
             @P("6位股票代码，如 600519") String code) {
@@ -68,6 +102,18 @@ public class StockDataTools {
     public String getIndustryRank() {
         log.info("AI 技能调用: getIndustryRank()");
         return pythonToolsClient.call("/api/stock/industry-rank");
+    }
+
+    @Tool("查询行业板块主力资金流向排名，返回净流入前10和净流出前10。仅当用户明确问某个行业或行业间资金对比时使用，宽泛的【资金流向】问题请用getAstockFundFlowSummary。")
+    public String getIndustryFundFlow() {
+        log.info("AI 技能调用: getIndustryFundFlow()");
+        return pythonToolsClient.call("/api/stock/industry-fund-flow");
+    }
+
+    @Tool("查询全市场个股主力资金净流入排名TOP20。仅当用户明确问【哪些个股主力加仓】时使用，宽泛的【资金流向】问题请用getAstockFundFlowSummary。")
+    public String getStockFundFlowRank() {
+        log.info("AI 技能调用: getStockFundFlowRank()");
+        return pythonToolsClient.call("/api/stock/stock-fund-flow-rank");
     }
 
     @Tool("查询北向资金（沪股通/深股通）当日实时分钟流向，判断外资态度。")

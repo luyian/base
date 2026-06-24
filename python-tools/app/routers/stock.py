@@ -21,6 +21,24 @@ async def stock_quote(
     return Result.ok(data=data)
 
 
+@router.get("/market-fund-flow", summary="大盘资金流向")
+async def market_fund_flow(
+    days: int = Query(5, description="查询天数，默认5天", ge=1, le=30),
+) -> Result:
+    """查询沪深两市大盘主力资金流向（日K级别）"""
+    data = stock_service.get_market_fund_flow(days)
+    if "error" in data:
+        return Result.fail(message=data["error"])
+    return Result.ok(data=data)
+
+
+@router.get("/astock-fund-flow-summary", summary="A股资金流向综合分析")
+async def astock_fund_flow_summary() -> Result:
+    """一次性获取大盘资金流向 + 行业板块资金流向 + 个股主力资金排名，供AI综合分析"""
+    data = stock_service.get_astock_fund_flow_summary()
+    return Result.ok(data=data)
+
+
 @router.get("/fund-flow", summary="个股资金流向")
 async def stock_fund_flow(
     code: str = Query(..., description="6位股票代码，如 600519"),
@@ -47,6 +65,24 @@ async def stock_news(
 async def industry_rank() -> Result:
     """查询全市场行业板块涨跌幅排名"""
     data = stock_service.get_industry_rank()
+    if "error" in data:
+        return Result.fail(message=data["error"])
+    return Result.ok(data=data)
+
+
+@router.get("/industry-fund-flow", summary="行业板块资金流向")
+async def industry_fund_flow() -> Result:
+    """查询行业板块主力资金流向排名（净流入/净流出前10）"""
+    data = stock_service.get_industry_fund_flow()
+    if "error" in data:
+        return Result.fail(message=data["error"])
+    return Result.ok(data=data)
+
+
+@router.get("/stock-fund-flow-rank", summary="个股主力资金排名")
+async def stock_fund_flow_rank() -> Result:
+    """查询全市场个股主力资金净流入排名TOP20"""
+    data = stock_service.get_stock_fund_flow_rank()
     if "error" in data:
         return Result.fail(message=data["error"])
     return Result.ok(data=data)

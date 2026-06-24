@@ -1,6 +1,20 @@
 
 ---
 
+## AI 技能新增大盘资金流向查询（2026-06-24）
+
+- Python 服务层：`stock_service.py` 新增 `get_market_fund_flow(days)` 方法，调用东财 `push2his.eastmoney.com` 日K资金流接口（secid=1.000001 上证指数）
+- Python 路由层：`stock.py` 新增 `GET /api/stock/market-fund-flow?days=5`，支持 1-30 天参数
+- Java Tool 层：`StockDataTools.java` 新增 `getMarketFundFlow(days)` 方法，AI 对话可自动调用查询沪深两市主力/超大单/大单/中单/小单净流入
+
+## AI 技能新增行业板块资金流向 + 个股资金排名（2026-06-24）
+
+- Python 服务层：`stock_service.py` 新增 `get_industry_fund_flow()` — 行业板块主力资金流向排名（fid=f62 按主力净流入排序），返回净流入前10和净流出前10；新增 `get_stock_fund_flow_rank()` — 全市场个股主力净流入TOP20
+- Python 路由层：`stock.py` 新增 `GET /api/stock/industry-fund-flow` 和 `GET /api/stock/stock-fund-flow-rank`
+- Java Tool 层：`StockDataTools.java` 新增 `getIndustryFundFlow()` 和 `getStockFundFlowRank()`
+
+---
+
 ## 小程序首页自选基金置顶功能（2026-06-23）
 
 - 数据库：`stk_fund_watchlist` 表新增 `sort_order` 字段（增量脚本 `db/alter_fund_watchlist_sort.sql`，schema.sql 同步）

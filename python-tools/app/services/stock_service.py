@@ -6,6 +6,7 @@ import json
 import logging
 import math
 import re
+import time
 import urllib.request
 from datetime import date, datetime, timedelta
 
@@ -77,6 +78,48 @@ class StockService:
             })
 
         return result
+
+    def get_market_fund_flow(self, days: int = 5) -> dict:
+        """查询大盘资金流向（沪深两市主力/超大单/大单/中单/小单净流入，日K级别）"""
+        url = "https://push2his.eastmoney.com/api/qt/stock/fflow/daykline/get"
+        params = {
+            "lmt": str(days),
+            "klt": "101",
+            "secid": "1.000001",
+            "fields1": "f1,f2,f3,f7",
+            "fields2": "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63,f64,f65",
+        }
+        headers = {"User-Agent": UA, "Referer": "https://data.eastmoney.com/"}
+        try:
+            r = em_get(url, params=params, headers=headers, timeout=10)
+            d = r.json()
+        except Exception as e:
+            return {"error": f"请求失败: {e}"}
+
+        klines = (d.get("data") or {}).get("klines") or []
+        if not klines:
+            return {"error": "暂无大盘资金流数据（非交易时间或接口异常）"}
+
+        rows = []
+        for line in klines:
+            parts = line.split(",")
+            if len(parts) >= 7:
+                rows.append({
+                    "date": parts[0],
+                    "main_net_yi": round(float(parts[1]) / 1e8, 2),
+                    "small_net_yi": round(float(parts[2]) / 1e8, 2),
+                    "mid_net_yi": round(float(parts[3]) / 1e8, 2),
+                    "large_net_yi": round(float(parts[4]) / 1e8, 2),
+                    "super_net_yi": round(float(parts[5]) / 1e8, 2),
+                    "main_net_pct": float(parts[6]),
+                })
+
+        return {
+            "index": "上证指数(000001)",
+            "unit": "亿元",
+            "days": len(rows),
+            "records": rows,
+        }
 
     def get_stock_fund_flow(self, code: str) -> dict:
         """查询个股资金流向（东财 push2）"""
@@ -189,6 +232,87 @@ class StockService:
             })
 
         return {"total": len(rows), "top10": rows[:10], "bottom5": rows[-5:]}
+
+    def get_industry_fund_flow(self) -> dict:
+        """查询行业板块资金流向排名（按主力净流入排序）"""
+        url = "https://push2.eastmoney.com/api/qt/clist/get"
+        params = {
+            "pn": "1", "pz": "50", "po": "1", "np": "1",
+            "fltt": "2", "invt": "2",
+            "fs": "m:90+t:2",
+            "fields": "f2,f3,f12,f14,f62,f184,f66,f69,f72,f75,f78,f81,f84,f87",
+            "fid": "f62",
+        }
+        headers = {"User-Agent": UA, "Referer": "https://data.eastmoney.com/"}
+        try:
+            r = em_get(url, params=params, headers=headers, timeout=15)
+            d = r.json()
+        except Exception as e:
+            return {"error": f"请求失败: {e}"}
+
+        items = d.get("data", {}).get("diff", [])
+        if not items:
+            return {"error": "暂无行业资金流数据"}
+
+        rows = []
+        for item in items:
+            rows.append({
+                "name": item.get("f14", ""),
+                "change_pct": item.get("f3", 0),
+                "main_net_yi": round(float(item.get("f62", 0)) / 1e8, 2),
+                "main_net_pct": item.get("f184", 0),
+                "super_net_yi": round(float(item.get("f66", 0)) / 1e8, 2),
+                "large_net_yi": round(float(item.get("f72", 0)) / 1e8, 2),
+                "mid_net_yi": round(float(item.get("f78", 0)) / 1e8, 2),
+                "small_net_yi": round(float(item.get("f84", 0)) / 1e8, 2),
+            })
+
+        return {
+            "unit": "亿元",
+            "total": len(rows),
+            "top10": rows[:10],
+            "bottom10": rows[-10:] if len(rows) >= 10 else rows,
+        }
+
+    def get_stock_fund_flow_rank(self) -> dict:
+        """查询全市场个股主力资金净流入排名"""
+        url = "https://push2.eastmoney.com/api/qt/clist/get"
+        params = {
+            "pn": "1", "pz": "20", "po": "1", "np": "1",
+            "fltt": "2", "invt": "2",
+            "fs": "m:0+t:6+f:!2,m:0+t:13+f:!2,m:0+t:80+f:!2,m:1+t:2+f:!2,m:1+t:23+f:!2,m:0+t:7+f:!2,m:1+t:3+f:!2",
+            "fields": "f2,f3,f12,f14,f62,f184,f66,f69,f72,f75,f78,f81,f84,f87",
+            "fid": "f62",
+        }
+        headers = {"User-Agent": UA, "Referer": "https://data.eastmoney.com/"}
+        try:
+            r = em_get(url, params=params, headers=headers, timeout=15)
+            d = r.json()
+        except Exception as e:
+            return {"error": f"请求失败: {e}"}
+
+        items = d.get("data", {}).get("diff", [])
+        if not items:
+            return {"error": "暂无个股资金流数据"}
+
+        rows = []
+        for item in items:
+            rows.append({
+                "code": item.get("f12", ""),
+                "name": item.get("f14", ""),
+                "price": item.get("f2", 0),
+                "change_pct": item.get("f3", 0),
+                "main_net_yi": round(float(item.get("f62", 0)) / 1e8, 2),
+                "main_net_pct": item.get("f184", 0),
+                "super_net_yi": round(float(item.get("f66", 0)) / 1e8, 2),
+                "large_net_yi": round(float(item.get("f72", 0)) / 1e8, 2),
+            })
+
+        return {
+            "unit": "亿元",
+            "total": len(rows),
+            "top20": rows,
+        }
 
     def get_northbound_flow(self) -> dict:
         """查询北向资金实时分钟流向（同花顺）"""
@@ -341,6 +465,32 @@ class StockService:
             })
 
         return {"code": code, "records": rows, "unit": "亿元/万元"}
+
+    def get_astock_fund_flow_summary(self) -> dict:
+        """A股资金流向综合分析：聚合大盘资金流向 + 行业板块资金流向 + 个股主力资金排名"""
+        market = self.get_market_fund_flow(5)
+        # 东财接口反爬严格，连续请求需额外间隔避免被断连
+        time.sleep(2)
+        industry = self._retry_call(self.get_industry_fund_flow)
+        time.sleep(2)
+        stock_rank = self._retry_call(self.get_stock_fund_flow_rank)
+
+        return {
+            "market_fund_flow": market,
+            "industry_fund_flow": industry,
+            "stock_fund_flow_rank": stock_rank,
+        }
+
+    def _retry_call(self, func, max_retries: int = 2):
+        """带重试的调用，失败后等待后重试"""
+        for i in range(max_retries + 1):
+            result = func()
+            if not isinstance(result, dict) or "error" not in result:
+                return result
+            if i < max_retries:
+                logger.warning("调用 %s 失败，第%d次重试: %s", func.__name__, i + 1, result.get("error"))
+                time.sleep(3)
+        return result
 
     def get_stock_valuation(self, code: str) -> dict:
         """个股综合估值分析（腾讯行情 + 同花顺一致预期）"""

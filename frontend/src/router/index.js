@@ -169,6 +169,25 @@ const constantRoutes = [
         component: () => import('@/views/ocr/index.vue'),
         meta: { title: 'OCR识别', icon: 'PictureFilled' }
       },
+      // 高考数据模块路由
+      {
+        path: 'gaokao/college-scores',
+        name: 'GaokaoCollegeScores',
+        component: () => import('@/views/gaokao/CollegeScores.vue'),
+        meta: { title: '院校录取分数', icon: 'DataLine' }
+      },
+      {
+        path: 'gaokao/major-scores',
+        name: 'GaokaoMajorScores',
+        component: () => import('@/views/gaokao/MajorScores.vue'),
+        meta: { title: '专业录取分数', icon: 'Histogram' }
+      },
+      {
+        path: 'gaokao/admission-plans',
+        name: 'GaokaoAdmissionPlans',
+        component: () => import('@/views/gaokao/AdmissionPlans.vue'),
+        meta: { title: '招生计划', icon: 'Tickets' }
+      },
       // 分支管理模块路由（已独立为无需认证的顶级路由）
     ]
   }

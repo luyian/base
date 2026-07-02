@@ -221,8 +221,9 @@ public class AiServiceImpl implements AiService {
 
             StringBuilder sb = new StringBuilder();
             JSONObject query = result.getJSONObject("query");
-            appendGaokaoSummary(sb, userMessage, result);
+            appendGaokaoSummary(sb, userMessage, result, recommendations);
             appendGaokaoAnalysis(sb, result, query, recommendations);
+            sb.append("\n### 推荐清单\n");
             int[] index = {1};
             appendRecommendationBucket(sb, recommendations, "可冲", index, query);
             appendRecommendationBucket(sb, recommendations, "较稳", index, query);
@@ -230,7 +231,7 @@ public class AiServiceImpl implements AiService {
             appendRecommendationBucket(sb, recommendations, "补充参考", index, query);
             String notice = result.getString("notice");
             if (StringUtils.hasText(notice)) {
-                sb.append("\n说明：").append(notice);
+                sb.append("\n### 填报提醒\n").append(notice);
             }
             return sb.toString();
         } catch (Exception e) {
@@ -242,18 +243,17 @@ public class AiServiceImpl implements AiService {
     private void appendGaokaoAnalysis(StringBuilder sb, JSONObject result, JSONObject query,
                                       JSONArray recommendations) {
         JSONObject rank = result.getJSONObject("rankConversion");
-        sb.append("\n分析过程：\n");
-        sb.append("1. 数据口径：优先用专业录取分数线匹配学校和专业，并用招生计划补充计划人数、学制和学费。\n");
+        sb.append("\n### 分析依据\n");
+        sb.append("- 数据：专业录取分数线优先，招生计划补充计划数、学制和学费。\n");
         if (rank != null) {
-            sb.append("2. 位次处理：").append(readString(rank, "description", "未获取到位次说明")).append("\n");
+            sb.append("- 位次：").append(readString(rank, "description", "未获取到位次说明")).append("\n");
         }
         String rule = result.getString("recommendRule");
         if (StringUtils.hasText(rule)) {
-            sb.append("3. 分档逻辑：").append(rule).append("\n");
+            sb.append("- 分档：").append(rule).append("\n");
         }
-        sb.append("4. 排序因子：综合分由冲稳保档位、分数差、位次差、专业偏好、地区偏好、院校性质、学费、")
-                .append("招生计划和 985/211 加权得到。\n");
-        sb.append("5. 本次候选：最终输出 ").append(recommendations.size()).append(" 所学校");
+        sb.append("- 排序：综合分由档位、分数差、位次差、偏好、性质、学费、计划数和 985/211 加权得到。\n");
+        sb.append("- 规模：最终输出 ").append(recommendations.size()).append(" 所学校");
         String preferenceSummary = buildPreferenceSummary(query);
         if (StringUtils.hasText(preferenceSummary)) {
             sb.append("，已纳入").append(preferenceSummary);
@@ -261,33 +261,38 @@ public class AiServiceImpl implements AiService {
         sb.append("。\n");
     }
 
-    private void appendGaokaoSummary(StringBuilder sb, String userMessage, JSONObject result) {
+    private void appendGaokaoSummary(StringBuilder sb, String userMessage, JSONObject result,
+                                     JSONArray recommendations) {
         JSONObject query = result.getJSONObject("query");
         JSONObject rank = result.getJSONObject("rankConversion");
-        sb.append("根据当前高考数据，为你生成如下报考推荐。\n");
-        sb.append("原问题：").append(userMessage).append("\n");
+        sb.append("### 推荐概况\n");
+        sb.append("- 原问题：").append(userMessage).append("\n");
         if (query != null) {
-            sb.append("条件：").append(readString(query, "candidateProvinceName", "河南"))
+            sb.append("- 条件：").append(readString(query, "candidateProvinceName", "河南"))
                     .append("，").append(readString(query, "admissionYear", "2025")).append("年");
             appendIfPresent(sb, "，科类", readString(query, "subjectCategory", null));
+            appendMatchedSubjectCategory(sb, query, recommendations);
             appendIfPresent(sb, "，分数", readString(query, "score", null));
             appendIfPresent(sb, "，批次", readString(query, "batchName", null));
             sb.append("\n");
         }
         if (rank != null && rank.get("rank") != null) {
-            sb.append("位次：").append(rank.get("rank"))
+            sb.append("- 位次：").append(rank.get("rank"))
                     .append("（").append(readString(rank, "source", "未知来源"))
                     .append("，可信度：").append(readString(rank, "confidence", "未知")).append("）\n");
-        }
-        String rule = result.getString("recommendRule");
-        if (StringUtils.hasText(rule)) {
-            sb.append("规则：").append(rule).append("\n");
         }
     }
 
     private void appendRecommendationBucket(StringBuilder sb, JSONArray recommendations,
                                             String bucket, int[] index, JSONObject query) {
-        boolean hasBucket = false;
+        int bucketCount = countBucket(recommendations, bucket);
+        if (bucketCount == 0) {
+            return;
+        }
+        sb.append("\n#### ").append(bucket).append("（").append(bucketCount).append(" 所）\n");
+        sb.append("| 序号 | 学校 | 专业 | 最低分 | 位次 | 性质 | 理由 |\n");
+        sb.append("| --- | --- | --- | --- | --- | --- | --- |\n");
+        int bucketIndex = 1;
         for (Object object : recommendations) {
             if (!(object instanceof JSONObject)) {
                 continue;
@@ -296,36 +301,57 @@ public class AiServiceImpl implements AiService {
             if (!bucket.equals(item.getString("bucket"))) {
                 continue;
             }
-            if (!hasBucket) {
-                sb.append("\n").append(bucket).append("：\n");
-                hasBucket = true;
-            }
-            appendRecommendationLine(sb, item, index[0]++, query);
+            appendRecommendationLine(sb, item, index[0]++, bucketIndex++, query);
         }
     }
 
-    private void appendRecommendationLine(StringBuilder sb, JSONObject item, int index, JSONObject query) {
-        sb.append(index).append(". ")
-                .append(readString(item, "collegeName", "-"))
-                .append(" - ").append(readString(item, "majorName", "-"))
-                .append("，最低分 ").append(readString(item, "minScore", "-"))
-                .append("（差").append(formatSigned(readInteger(item, "scoreDiff"))).append("）")
-                .append("，位次 ").append(readString(item, "minRank", "-"))
-                .append("，综合分 ").append(readString(item, "recommendScore", "-"));
-        appendIfPresent(sb, "，计划", readString(item, "planCount", null));
-        appendIfPresent(sb, "，学费", readString(item, "tuitionFee", null));
-        appendIfPresent(sb, "，性质", readString(item, "collegeNature", null));
-        String reason = buildRecommendationReason(item, query);
-        if (StringUtils.hasText(reason)) {
-            sb.append("，分析：").append(reason);
-        }
-        sb.append("\n");
+    private void appendRecommendationLine(StringBuilder sb, JSONObject item, int index, int bucketIndex,
+                                          JSONObject query) {
+        sb.append("| ").append(index).append(" / ").append(bucketIndex)
+                .append(" | ").append(tableCell(readString(item, "collegeName", "-")))
+                .append(" | ").append(tableCell(readString(item, "majorName", "-")))
+                .append(" | ").append(tableCell(buildScoreText(item)))
+                .append(" | ").append(tableCell(readString(item, "minRank", "-")))
+                .append(" | ").append(tableCell(readString(item, "collegeNature", "-")))
+                .append(" | ").append(tableCell(buildRecommendationReason(item, query)))
+                .append(" |\n");
     }
 
     private void appendIfPresent(StringBuilder sb, String label, String value) {
         if (StringUtils.hasText(value)) {
             sb.append(label).append(value);
         }
+    }
+
+    private void appendMatchedSubjectCategory(StringBuilder sb, JSONObject query, JSONArray recommendations) {
+        if (recommendations == null || recommendations.isEmpty()) {
+            return;
+        }
+        JSONObject firstItem = null;
+        for (Object object : recommendations) {
+            if (object instanceof JSONObject) {
+                firstItem = (JSONObject) object;
+                break;
+            }
+        }
+        if (firstItem == null) {
+            return;
+        }
+        String querySubject = readString(query, "subjectCategory", null);
+        String matchedSubject = readString(firstItem, "subjectCategory", null);
+        if (StringUtils.hasText(matchedSubject) && !matchedSubject.equals(querySubject)) {
+            sb.append("（按").append(matchedSubject).append("数据匹配）");
+        }
+    }
+
+    private int countBucket(JSONArray recommendations, String bucket) {
+        int count = 0;
+        for (Object object : recommendations) {
+            if (object instanceof JSONObject && bucket.equals(((JSONObject) object).getString("bucket"))) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private String buildPreferenceSummary(JSONObject query) {
@@ -361,9 +387,9 @@ public class AiServiceImpl implements AiService {
 
     private String buildRecommendationReason(JSONObject item, JSONObject query) {
         List<String> reasons = new ArrayList<>();
-        appendReasonIfPresent(reasons, bucketAnalysis(item.getString("bucket")));
-        appendReasonIfPresent(reasons, scoreDiffAnalysis(readInteger(item, "scoreDiff")));
-        appendReasonIfPresent(reasons, rankDiffAnalysis(readInteger(item, "rankDiff")));
+        appendReasonIfPresent(reasons, compactBucketAnalysis(item.getString("bucket")));
+        appendReasonIfPresent(reasons, compactScoreDiff(readInteger(item, "scoreDiff")));
+        appendReasonIfPresent(reasons, compactRankDiff(readInteger(item, "rankDiff")));
         appendPreferenceMatchReason(reasons, query, item, "majorPreference", "专业偏好");
         appendPreferenceMatchReason(reasons, query, item, "cityPreference", "地区偏好");
         appendPreferenceMatchReason(reasons, query, item, "collegeNature", "院校性质");
@@ -377,10 +403,71 @@ public class AiServiceImpl implements AiService {
         return String.join("；", reasons);
     }
 
+    private String buildScoreText(JSONObject item) {
+        String minScore = readString(item, "minScore", "-");
+        Integer scoreDiff = readInteger(item, "scoreDiff");
+        if (scoreDiff == null) {
+            return minScore;
+        }
+        return minScore + "(" + formatSigned(scoreDiff) + ")";
+    }
+
+    private String tableCell(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "-";
+        }
+        return value.replace("\r", " ")
+                .replace("\n", " ")
+                .replace("|", "/")
+                .trim();
+    }
+
     private void appendReasonIfPresent(List<String> reasons, String reason) {
         if (StringUtils.hasText(reason)) {
             reasons.add(reason);
         }
+    }
+
+    private String compactBucketAnalysis(String bucket) {
+        if ("可冲".equals(bucket)) {
+            return "冲刺";
+        }
+        if ("较稳".equals(bucket)) {
+            return "较稳";
+        }
+        if ("保底".equals(bucket)) {
+            return "保底";
+        }
+        if ("补充参考".equals(bucket)) {
+            return "补充";
+        }
+        return null;
+    }
+
+    private String compactScoreDiff(Integer scoreDiff) {
+        if (scoreDiff == null) {
+            return null;
+        }
+        if (scoreDiff > 0) {
+            return "高" + scoreDiff + "分";
+        }
+        if (scoreDiff < 0) {
+            return "低" + Math.abs(scoreDiff) + "分";
+        }
+        return "同分";
+    }
+
+    private String compactRankDiff(Integer rankDiff) {
+        if (rankDiff == null) {
+            return null;
+        }
+        if (rankDiff > 0) {
+            return "位次后" + rankDiff;
+        }
+        if (rankDiff < 0) {
+            return "位次前" + Math.abs(rankDiff);
+        }
+        return "位次相同";
     }
 
     private String bucketAnalysis(String bucket) {

@@ -782,6 +782,7 @@ onUnmounted(() => {
 
 .ai-bubble-assistant {
   flex-direction: row;
+  max-width: 96%;
 }
 
 .ai-bubble-avatar {
@@ -837,6 +838,17 @@ onUnmounted(() => {
 .ai-md-content :deep(.md-viewer__body) {
   font-size: 14px;
   line-height: 1.7;
+  overflow-x: auto;
+}
+
+.ai-md-content :deep(.md-viewer__body h3) {
+  font-size: 16px;
+  margin: 10px 0 8px;
+}
+
+.ai-md-content :deep(.md-viewer__body h4) {
+  font-size: 14px;
+  margin: 12px 0 6px;
 }
 
 .ai-md-content :deep(.md-viewer__body p) {
@@ -851,13 +863,16 @@ onUnmounted(() => {
   font-size: 12px;
   margin: 8px 0;
   border-collapse: collapse;
-  width: 100%;
+  min-width: 760px;
+  width: max-content;
+  max-width: none;
 }
 
 .ai-md-content :deep(.md-viewer__body table th),
 .ai-md-content :deep(.md-viewer__body table td) {
   padding: 6px 10px;
   border: 1px solid var(--el-border-color-lighter);
+  white-space: nowrap;
 }
 
 .ai-md-content :deep(.md-viewer__body table th) {

@@ -86,7 +86,15 @@
 
           <el-col :xs="24" :sm="12" :md="8" :lg="6">
             <el-form-item label="选科">
-              <el-input v-model="queryForm.selectionRequirement" clearable placeholder="选科要求" />
+              <el-select
+                v-model="queryForm.selectionRequirement"
+                clearable
+                filterable
+                class="full-width"
+                placeholder="全部"
+              >
+                <el-option v-for="item in selectionRequirementOptions" :key="item" :label="item" :value="item" />
+              </el-select>
             </el-form-item>
           </el-col>
 
@@ -383,6 +391,36 @@ const batchOptions = [
   '地方专项计划批',
   '艺术类本科批',
   '体育类本科批'
+]
+
+const selectionRequirementOptions = [
+  '不限',
+  '物理',
+  '化学',
+  '生物',
+  '历史',
+  '地理',
+  '思想政治',
+  '物理+化学',
+  '物理+生物',
+  '物理+地理',
+  '物理+思想政治',
+  '化学+生物',
+  '化学+地理',
+  '化学+思想政治',
+  '生物+地理',
+  '生物+思想政治',
+  '地理+思想政治',
+  '物理+化学+生物',
+  '物理+化学+地理',
+  '物理+化学+思想政治',
+  '物理+生物+地理',
+  '物理+生物+思想政治',
+  '物理+地理+思想政治',
+  '化学+生物+地理',
+  '化学+生物+思想政治',
+  '化学+地理+思想政治',
+  '生物+地理+思想政治'
 ]
 
 const admissionTypeOptions = [

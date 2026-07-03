@@ -49,6 +49,24 @@ public class AiConfigProviderImpl implements AiConfigProvider {
     }
 
     @Override
+    public String getImageBaseUrl() {
+        SysAiConfig c = getActive();
+        return c != null && StringUtils.hasText(c.getImageBaseUrl()) ? c.getImageBaseUrl() : getBaseUrl();
+    }
+
+    @Override
+    public String getImageModel() {
+        SysAiConfig c = getActive();
+        return c != null ? c.getImageModel() : null;
+    }
+
+    @Override
+    public String getImageAdapter() {
+        SysAiConfig c = getActive();
+        return c != null ? c.getImageAdapter() : null;
+    }
+
+    @Override
     public Integer getTimeout() {
         SysAiConfig c = getActive();
         return c != null && c.getTimeout() != null ? c.getTimeout() : DEFAULT_TIMEOUT;

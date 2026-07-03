@@ -8,6 +8,7 @@ import com.base.ai.config.AiSkillConfig;
 import com.base.ai.dto.ChatRequest;
 import com.base.ai.dto.ChatResponse;
 import com.base.ai.service.AiConfigProvider;
+import com.base.ai.service.AiImageService;
 import com.base.ai.service.AiService;
 import com.base.ai.skill.GaokaoDataTools;
 import com.base.ai.skill.StockDataTools;
@@ -60,6 +61,7 @@ public class AiServiceImpl implements AiService {
     private final AiSkillConfig skillConfig;
     private final StockDataTools stockDataTools;
     private final GaokaoDataTools gaokaoDataTools;
+    private final AiImageService aiImageService;
 
     @Override
     public ChatResponse chat(ChatRequest request) {
@@ -69,6 +71,9 @@ public class AiServiceImpl implements AiService {
         request.setMessage(userMessage);
         if (request.getContext() != null && request.getContext().length() > maxCtx) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "上下文长度不能超过 " + maxCtx + " 字符");
+        }
+        if (isImageGenerationMessage(userMessage)) {
+            return chatWithImageGeneration(userMessage);
         }
         if (isGaokaoRecommendMessage(userMessage)) {
             return chatWithGaokaoRecommendation(userMessage);
@@ -107,6 +112,9 @@ public class AiServiceImpl implements AiService {
         int maxMsg = aiConfigProvider.getMaxMessageLength() != null ? aiConfigProvider.getMaxMessageLength() : 2000;
         String userMessage = validateUserMessage(request.getMessage(), maxMsg);
         request.setMessage(userMessage);
+        if (isImageGenerationMessage(userMessage)) {
+            return chatWithImageGeneration(userMessage);
+        }
         if (isGaokaoRecommendMessage(userMessage)) {
             return chatWithGaokaoRecommendation(userMessage);
         }
@@ -176,6 +184,23 @@ public class AiServiceImpl implements AiService {
                 + "如果工具返回 error 字段，请告知用户数据获取失败及可能原因。"
                 + "重要提示：股票数据仅供参考，不构成投资建议；高考推荐基于历史录取数据和招生计划，仅供参考，实际填报请结合当年一分一段表、招生章程和个人偏好。")
         String chat(@dev.langchain4j.service.UserMessage String message);
+    }
+
+    private ChatResponse chatWithImageGeneration(String userMessage) {
+        log.info("命中 AI 图片生成链路，用户问题: {}", userMessage);
+        long start = System.currentTimeMillis();
+        try {
+            String answer = aiImageService.generateImage(userMessage);
+            log.info("AI 图片生成成功，耗时 {} ms", System.currentTimeMillis() - start);
+            return new ChatResponse(answer);
+        } catch (BusinessException e) {
+            log.warn("AI 图片生成失败，耗时 {} ms，原因: {}", System.currentTimeMillis() - start, e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            log.error("AI 图片生成异常，耗时 {} ms", System.currentTimeMillis() - start, e);
+            throw new BusinessException(ResultCode.AI_SERVICE_UNAVAILABLE.getCode(),
+                    "图片生成失败: " + (e.getMessage() != null ? e.getMessage() : "请求失败"));
+        }
     }
 
     private ChatResponse chatWithGaokaoRecommendation(String userMessage) {
@@ -470,48 +495,6 @@ public class AiServiceImpl implements AiService {
         return "位次相同";
     }
 
-    private String bucketAnalysis(String bucket) {
-        if ("可冲".equals(bucket)) {
-            return "可冲档，历史线略高或位次要求更靠前，波动风险更高";
-        }
-        if ("较稳".equals(bucket)) {
-            return "较稳档，历史线与当前分数/位次接近";
-        }
-        if ("保底".equals(bucket)) {
-            return "保底档，历史线低于当前分数/位次";
-        }
-        if ("补充参考".equals(bucket)) {
-            return "补充参考，候选不足时从扩大区间补入";
-        }
-        return null;
-    }
-
-    private String scoreDiffAnalysis(Integer scoreDiff) {
-        if (scoreDiff == null) {
-            return null;
-        }
-        if (scoreDiff > 0) {
-            return "历史最低分高出考生 " + scoreDiff + " 分";
-        }
-        if (scoreDiff < 0) {
-            return "历史最低分低于考生 " + Math.abs(scoreDiff) + " 分";
-        }
-        return "历史最低分与考生分数持平";
-    }
-
-    private String rankDiffAnalysis(Integer rankDiff) {
-        if (rankDiff == null) {
-            return null;
-        }
-        if (rankDiff > 0) {
-            return "历史最低位次比估算位次靠后 " + rankDiff + " 名";
-        }
-        if (rankDiff < 0) {
-            return "历史最低位次比估算位次靠前 " + Math.abs(rankDiff) + " 名";
-        }
-        return "历史最低位次与估算位次相同";
-    }
-
     private void appendPreferenceMatchReason(List<String> reasons, JSONObject query, JSONObject item,
                                              String preferenceKey, String label) {
         if (!hasJsonArrayValues(query, preferenceKey)) {
@@ -641,6 +624,24 @@ public class AiServiceImpl implements AiService {
                 || message.contains("可以上") || message.contains("报考") || message.contains("填报")
                 || message.contains("选校") || message.contains("冲稳保");
         return hasGaokaoScene && hasRecommendIntent;
+    }
+
+    private boolean isImageGenerationMessage(String message) {
+        if (!StringUtils.hasText(message)) {
+            return false;
+        }
+        boolean hasImageWord = message.contains("图片") || message.contains("图像")
+                || message.contains("插画") || message.contains("海报")
+                || message.contains("头像") || message.contains("壁纸")
+                || message.contains("封面") || message.contains("配图");
+        boolean hasGenerateIntent = message.contains("生成") || message.contains("画")
+                || message.contains("绘制") || message.contains("出图")
+                || message.contains("作图") || message.contains("文生图")
+                || message.contains("做一张") || message.contains("制作");
+        return (hasImageWord && hasGenerateIntent) || message.startsWith("画一张")
+                || message.startsWith("画个") || message.startsWith("画一个")
+                || message.startsWith("生成一张") || message.startsWith("成一张")
+                || message.startsWith("出图");
     }
 
     private String extractScore(String message) {

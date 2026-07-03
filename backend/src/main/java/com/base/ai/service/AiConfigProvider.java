@@ -16,6 +16,27 @@ public interface AiConfigProvider {
 
     String getModel();
 
+    /**
+     * 获取图片生成 API 地址。
+     *
+     * @return 图片生成 API 地址
+     */
+    String getImageBaseUrl();
+
+    /**
+     * 获取图片生成模型。
+     *
+     * @return 图片生成模型
+     */
+    String getImageModel();
+
+    /**
+     * 获取图片生成适配器。
+     *
+     * @return 图片生成适配器
+     */
+    String getImageAdapter();
+
     Integer getTimeout();
 
     Integer getRetry();

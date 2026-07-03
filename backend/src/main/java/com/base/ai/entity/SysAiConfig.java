@@ -28,6 +28,12 @@ public class SysAiConfig extends BaseEntity {
     private String apiKey;
     /** 模型名称 */
     private String model;
+    /** 图片生成 API 地址，为空时复用 baseUrl */
+    private String imageBaseUrl;
+    /** 图片生成模型，为空时按供应商默认规则推断 */
+    private String imageModel;
+    /** 图片生成适配器：openai-images、chat-completions，为空时自动判断 */
+    private String imageAdapter;
     /** 超时(ms) */
     private Integer timeout;
     /** 重试次数 */

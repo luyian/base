@@ -29,7 +29,8 @@
         <el-table-column prop="configName" label="配置名称" min-width="120" />
         <el-table-column prop="baseUrl" label="API 地址" min-width="200" show-overflow-tooltip />
         <el-table-column prop="apiKey" label="API Key" width="120" show-overflow-tooltip />
-        <el-table-column prop="model" label="模型" width="110" />
+        <el-table-column prop="model" label="模型" width="120" />
+        <el-table-column prop="imageModel" label="图片模型" width="140" show-overflow-tooltip />
         <el-table-column prop="timeout" label="超时(ms)" width="90" />
         <el-table-column prop="retry" label="重试" width="70" />
         <el-table-column prop="isActive" label="生效" width="80" align="center">
@@ -45,7 +46,9 @@
         </el-table-column>
         <el-table-column label="操作" width="220" fixed="right">
           <template #default="{ row }">
-            <el-button v-permission="'system:ai-config:edit'" type="primary" link @click="handleEdit(row)">编辑</el-button>
+            <el-button v-permission="'system:ai-config:edit'" type="primary" link @click="handleEdit(row)">
+              编辑
+            </el-button>
             <el-button
               v-permission="'system:ai-config:edit'"
               v-if="row.isActive !== 1 && row.status === 1"
@@ -55,7 +58,9 @@
             >
               设为生效
             </el-button>
-            <el-button v-permission="'system:ai-config:delete'" type="danger" link @click="handleDelete(row)">删除</el-button>
+            <el-button v-permission="'system:ai-config:delete'" type="danger" link @click="handleDelete(row)">
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -75,7 +80,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="form.id ? '编辑配置' : '新增配置'"
-      width="560px"
+      width="680px"
       @close="resetForm"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="140px">
@@ -91,6 +96,24 @@
         <el-form-item label="模型名称" prop="model">
           <el-input v-model="form.model" placeholder="如 qwen-plus" />
         </el-form-item>
+        <el-divider content-position="left">图片生成</el-divider>
+        <el-form-item label="图片 API 地址" prop="imageBaseUrl">
+          <el-input
+            v-model="form.imageBaseUrl"
+            placeholder="商汤填 https://token.sensenova.cn/v1 或 .../v1/images/generations；为空复用 API 基础地址"
+          />
+        </el-form-item>
+        <el-form-item label="图片模型" prop="imageModel">
+          <el-input v-model="form.imageModel" placeholder="如 sensenova-u1-fast；为空时按供应商默认推断" />
+        </el-form-item>
+        <el-form-item label="图片适配器" prop="imageAdapter">
+          <el-select v-model="form.imageAdapter" placeholder="商汤选 SenseNova 或留空自动识别" clearable style="width: 100%">
+            <el-option label="商汤日日新 (SenseNova)" value="sensenova" />
+            <el-option label="OpenAI 图片接口" value="openai-images" />
+            <el-option label="Chat Completions" value="chat-completions" />
+          </el-select>
+        </el-form-item>
+        <el-divider content-position="left">调用限制</el-divider>
         <el-form-item label="超时时间(ms)" prop="timeout">
           <el-input-number v-model="form.timeout" :min="5000" :max="120000" :step="5000" />
         </el-form-item>
@@ -153,6 +176,9 @@ const form = reactive({
   baseUrl: '',
   apiKey: '',
   model: 'qwen-plus',
+  imageBaseUrl: '',
+  imageModel: '',
+  imageAdapter: '',
   timeout: 30000,
   retry: 2,
   maxMessageLength: 2000,
@@ -164,7 +190,20 @@ const form = reactive({
 const rules = {
   configName: [{ required: true, message: '请输入配置名称', trigger: 'blur' }],
   baseUrl: [{ required: true, message: '请输入 API 基础地址', trigger: 'blur' }],
-  apiKey: [{ required: true, message: '请输入 API Key', trigger: 'blur' }]
+  apiKey: [{
+    validator: (_rule, value, callback) => {
+      if (!form.id && (!value || !value.trim())) {
+        callback(new Error('请输入 API Key'))
+        return
+      }
+      if (value && value.includes('****')) {
+        callback(new Error('API Key 已损坏或被脱敏，请重新填写完整 Key'))
+        return
+      }
+      callback()
+    },
+    trigger: 'blur'
+  }]
 }
 
 async function loadPage() {
@@ -199,6 +238,9 @@ function resetForm() {
   form.baseUrl = ''
   form.apiKey = ''
   form.model = 'qwen-plus'
+  form.imageBaseUrl = ''
+  form.imageModel = ''
+  form.imageAdapter = ''
   form.timeout = 30000
   form.retry = 2
   form.maxMessageLength = 2000
@@ -214,6 +256,7 @@ function handleAdd() {
 
 async function handleEdit(row) {
   try {
+    resetForm()
     const res = await getAiConfigById(row.id)
     Object.assign(form, res.data)
     dialogVisible.value = true
@@ -230,11 +273,15 @@ async function handleSubmit() {
   }
   saving.value = true
   try {
+    const payload = { ...form }
+    if (form.id && payload.apiKey && payload.apiKey.includes('****')) {
+      delete payload.apiKey
+    }
     if (form.id) {
-      await updateAiConfig(form)
+      await updateAiConfig(payload)
       ElMessage.success('保存成功')
     } else {
-      await addAiConfig(form)
+      await addAiConfig(payload)
       ElMessage.success('新增成功')
     }
     dialogVisible.value = false

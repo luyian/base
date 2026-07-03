@@ -22,6 +22,9 @@ public class SysAiConfigResponse implements Serializable {
     private String baseUrl;
     private String apiKey;       // 列表可脱敏为 ***，编辑时需原文
     private String model;
+    private String imageBaseUrl;
+    private String imageModel;
+    private String imageAdapter;
     private Integer timeout;
     private Integer retry;
     private Integer maxMessageLength;

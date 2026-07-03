@@ -105,9 +105,9 @@
                 type="textarea"
                 :rows="2"
                 :autosize="{ minRows: 2, maxRows: 5 }"
-                placeholder="输入问题，Enter 发送，Shift+Enter 换行"
+                placeholder="输入问题，Enter 发送，Shift+Enter 换行，↑↓ 选择历史输入"
                 :disabled="aiLoading"
-                @keydown.enter.exact.prevent="handleAiSend"
+                @keydown="handleInputKeydown"
               />
               <el-button
                 class="ai-send-btn"
@@ -307,6 +307,97 @@ const aiLoading = ref(false)
 const aiError = ref('')
 const aiMessagesRef = ref(null)
 
+const INPUT_HISTORY_KEY = 'ai-input-history'
+const INPUT_HISTORY_MAX = 50
+const inputHistory = ref([])
+const historyIndex = ref(-1)
+const draftBeforeHistory = ref('')
+
+function loadInputHistory() {
+  try {
+    const raw = localStorage.getItem(INPUT_HISTORY_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    inputHistory.value = Array.isArray(parsed) ? parsed.filter(Boolean) : []
+  } catch {
+    inputHistory.value = []
+  }
+}
+
+function saveInputHistory() {
+  localStorage.setItem(INPUT_HISTORY_KEY, JSON.stringify(inputHistory.value))
+}
+
+function addToInputHistory(message) {
+  const history = inputHistory.value.filter(item => item !== message)
+  history.push(message)
+  if (history.length > INPUT_HISTORY_MAX) {
+    history.splice(0, history.length - INPUT_HISTORY_MAX)
+  }
+  inputHistory.value = history
+  saveInputHistory()
+}
+
+function resetHistoryNavigation() {
+  historyIndex.value = -1
+  draftBeforeHistory.value = ''
+}
+
+function navigateHistory(direction) {
+  if (inputHistory.value.length === 0) {
+    return
+  }
+
+  if (historyIndex.value === -1 && direction < 0) {
+    draftBeforeHistory.value = aiQuestion.value
+    historyIndex.value = inputHistory.value.length - 1
+    aiQuestion.value = inputHistory.value[historyIndex.value]
+    return
+  }
+
+  const nextIndex = historyIndex.value + direction
+  if (nextIndex < 0) {
+    return
+  }
+  if (nextIndex >= inputHistory.value.length) {
+    historyIndex.value = -1
+    aiQuestion.value = draftBeforeHistory.value
+    return
+  }
+
+  historyIndex.value = nextIndex
+  aiQuestion.value = inputHistory.value[historyIndex.value]
+}
+
+function isCursorOnFirstLine(textarea) {
+  const pos = textarea.selectionStart
+  return (textarea.value || '').slice(0, pos).indexOf('\n') === -1
+}
+
+function isCursorOnLastLine(textarea) {
+  const pos = textarea.selectionStart
+  const value = textarea.value || ''
+  return value.slice(pos).indexOf('\n') === -1
+}
+
+function handleInputKeydown(event) {
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault()
+    handleAiSend()
+    return
+  }
+
+  if (event.key === 'ArrowUp' && isCursorOnFirstLine(event.target)) {
+    event.preventDefault()
+    navigateHistory(-1)
+    return
+  }
+
+  if (event.key === 'ArrowDown' && isCursorOnLastLine(event.target)) {
+    event.preventDefault()
+    navigateHistory(1)
+  }
+}
+
 function formatContent(content) {
   if (!content) return ''
   return content.replace(/\n/g, '<br>')
@@ -328,6 +419,8 @@ function handleAiSend() {
   const msg = aiQuestion.value?.trim()
   if (!msg || aiLoading.value) return
   aiError.value = ''
+  addToInputHistory(msg)
+  resetHistoryNavigation()
   aiMessages.value.push({ role: 'user', content: msg })
   aiQuestion.value = ''
   aiLoading.value = true
@@ -579,6 +672,7 @@ function initOperationChart() {
 let refreshTimer = null
 
 onMounted(() => {
+  loadInputHistory()
   loadServerStats()
   loadLoginLogs()
   loadNotices()

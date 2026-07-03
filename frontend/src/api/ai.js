@@ -10,7 +10,7 @@ export function chat(data) {
     url: '/ai/chat',
     method: 'post',
     data,
-    timeout: 60000
+    timeout: 180000
   })
 }
 

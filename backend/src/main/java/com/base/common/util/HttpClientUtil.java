@@ -145,7 +145,8 @@ public class HttpClientUtil {
                 return response.body();
             } else {
                 log.error("HTTP POST 请求失败，URL: {}，状态码: {}，响应: {}", url, response.getStatus(), response.body());
-                throw new RuntimeException("HTTP POST 请求失败，状态码: " + response.getStatus());
+                throw new RuntimeException("HTTP POST 请求失败，状态码: " + response.getStatus()
+                        + "，响应: " + response.body());
             }
         } catch (Exception e) {
             log.error("HTTP POST 请求异常，URL: {}", url, e);

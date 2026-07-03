@@ -1,6 +1,7 @@
 package com.base.ai.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.ai.config.AiChatModelHolder;
@@ -46,7 +47,7 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
     @Override
     public Page<SysAiConfigResponse> page(int current, int size, String configName, Integer status) {
         Page<SysAiConfig> page = new Page<>(current, size);
-        com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<SysAiConfig> q = new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<>();
+        LambdaQueryWrapper<SysAiConfig> q = new LambdaQueryWrapper<>();
         q.like(configName != null && !configName.trim().isEmpty(), SysAiConfig::getConfigName, configName)
                 .eq(status != null, SysAiConfig::getStatus, status)
                 .orderByAsc(SysAiConfig::getSortOrder)
@@ -81,7 +82,7 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
         if (e == null) {
             throw new BusinessException(ResultCode.DATA_NOT_FOUND);
         }
-        return toResponse(e);
+        return BeanUtil.copyProperties(e, SysAiConfigResponse.class);
     }
 
     @Override
@@ -93,12 +94,17 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
         SysAiConfig e = new SysAiConfig();
         e.setConfigName(request.getConfigName());
         e.setBaseUrl(request.getBaseUrl());
-        e.setApiKey(request.getApiKey());
+        e.setApiKey(normalizeApiKey(request.getApiKey()));
         e.setModel(request.getModel() != null ? request.getModel() : "qwen-plus");
+        e.setImageBaseUrl(request.getImageBaseUrl());
+        e.setImageModel(request.getImageModel());
+        e.setImageAdapter(request.getImageAdapter());
         e.setTimeout(request.getTimeout() != null ? request.getTimeout() : DEFAULT_TIMEOUT);
         e.setRetry(request.getRetry() != null ? request.getRetry() : DEFAULT_RETRY);
-        e.setMaxMessageLength(request.getMaxMessageLength() != null ? request.getMaxMessageLength() : DEFAULT_MAX_MESSAGE_LENGTH);
-        e.setMaxContextLength(request.getMaxContextLength() != null ? request.getMaxContextLength() : DEFAULT_MAX_CONTEXT_LENGTH);
+        e.setMaxMessageLength(request.getMaxMessageLength() != null
+                ? request.getMaxMessageLength() : DEFAULT_MAX_MESSAGE_LENGTH);
+        e.setMaxContextLength(request.getMaxContextLength() != null
+                ? request.getMaxContextLength() : DEFAULT_MAX_CONTEXT_LENGTH);
         e.setIsActive(0);
         e.setStatus(request.getStatus() != null ? request.getStatus() : 1);
         e.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
@@ -126,14 +132,19 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
         }
         e.setConfigName(request.getConfigName());
         e.setBaseUrl(request.getBaseUrl());
-        if (request.getApiKey() != null && !request.getApiKey().isEmpty()) {
-            e.setApiKey(request.getApiKey());
+        if (shouldUpdateApiKey(request.getApiKey())) {
+            e.setApiKey(normalizeApiKey(request.getApiKey()));
         }
         e.setModel(request.getModel());
+        e.setImageBaseUrl(request.getImageBaseUrl());
+        e.setImageModel(request.getImageModel());
+        e.setImageAdapter(request.getImageAdapter());
         e.setTimeout(request.getTimeout() != null ? request.getTimeout() : DEFAULT_TIMEOUT);
         e.setRetry(request.getRetry() != null ? request.getRetry() : DEFAULT_RETRY);
-        e.setMaxMessageLength(request.getMaxMessageLength() != null ? request.getMaxMessageLength() : DEFAULT_MAX_MESSAGE_LENGTH);
-        e.setMaxContextLength(request.getMaxContextLength() != null ? request.getMaxContextLength() : DEFAULT_MAX_CONTEXT_LENGTH);
+        e.setMaxMessageLength(request.getMaxMessageLength() != null
+                ? request.getMaxMessageLength() : DEFAULT_MAX_MESSAGE_LENGTH);
+        e.setMaxContextLength(request.getMaxContextLength() != null
+                ? request.getMaxContextLength() : DEFAULT_MAX_CONTEXT_LENGTH);
         e.setStatus(request.getStatus() != null ? request.getStatus() : 1);
         e.setSortOrder(request.getSortOrder() != null ? request.getSortOrder() : 0);
         e.setRemark(request.getRemark());
@@ -187,11 +198,30 @@ public class SysAiConfigServiceImpl implements SysAiConfigService {
                         .last("LIMIT 1"));
     }
 
-    /** 列表脱敏；getById 用于编辑时需返回原文，在 Controller 层单独查 entity 填 apiKey */
+    /** 列表脱敏；编辑详情接口返回原文 */
     private String maskApiKey(String apiKey) {
         if (apiKey == null || apiKey.length() <= 8) {
             return "***";
         }
         return apiKey.substring(0, 4) + "****" + apiKey.substring(apiKey.length() - 4);
+    }
+
+    private boolean shouldUpdateApiKey(String apiKey) {
+        if (apiKey == null || apiKey.isEmpty()) {
+            return false;
+        }
+        return !apiKey.contains("****");
+    }
+
+    private String normalizeApiKey(String apiKey) {
+        if (apiKey == null) {
+            return null;
+        }
+        String normalized = apiKey.trim();
+        if ((normalized.startsWith("\"") && normalized.endsWith("\""))
+                || (normalized.startsWith("'") && normalized.endsWith("'"))) {
+            normalized = normalized.substring(1, normalized.length() - 1).trim();
+        }
+        return normalized;
     }
 }

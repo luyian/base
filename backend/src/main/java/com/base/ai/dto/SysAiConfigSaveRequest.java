@@ -29,6 +29,12 @@ public class SysAiConfigSaveRequest implements Serializable {
 
     private String model;
 
+    private String imageBaseUrl;
+
+    private String imageModel;
+
+    private String imageAdapter;
+
     @NotNull(message = "超时时间不能为空")
     private Integer timeout = 30000;
 

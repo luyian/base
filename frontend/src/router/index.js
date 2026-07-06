@@ -34,6 +34,12 @@ const constantRoutes = [
     meta: { title: '分支管理' }
   },
   {
+    path: '/ai/chat',
+    name: 'AiChat',
+    component: () => import('@/views/ai/Chat.vue'),
+    meta: { title: 'AI 智能助手' }
+  },
+  {
     path: '/',
     name: 'Layout',
     component: () => import('@/layout/Index.vue'),

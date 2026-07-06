@@ -3,8 +3,16 @@
   <nav-bar title="简基" />
   <!-- Header -->
   <view class="header">
-    <text class="header-title">基金估值</text>
-    <text class="header-subtitle">实时更新</text>
+    <view class="header-left">
+      <text class="header-title">基金估值</text>
+      <text class="header-subtitle">实时更新</text>
+    </view>
+    <view class="header-right">
+      <view class="ai-entry" bindtap="goToAi">
+        <image class="ai-entry-img" src="/assets/robot.png" mode="aspectFit" />
+        <text class="ai-entry-text">AI 助手</text>
+      </view>
+    </view>
   </view>
 
   <!-- Loading -->
@@ -86,10 +94,5 @@
   <view class="refresh-btn" bindtap="refreshData">
     <text class="refresh-icon {{refreshing ? 'spinning' : ''}}">↻</text>
     <text>刷新估值</text>
-  </view>
-
-  <!-- AI 助手浮动入口 -->
-  <view class="ai-fab" bindtap="goToAi">
-    <image class="ai-fab-img" src="/assets/robot.png" mode="aspectFit" />
   </view>
 </view>

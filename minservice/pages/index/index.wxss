@@ -35,6 +35,46 @@ page {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
   position: relative;
   overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  position: relative;
+}
+
+.header-right {
+  position: relative;
+}
+
+.ai-entry {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 16rpx 24rpx;
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  border-radius: 40rpx;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
+}
+
+.ai-entry:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+}
+
+.ai-entry-img {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+}
+
+.ai-entry-text {
+  font-size: 24rpx;
+  color: #FFFFFF;
+  font-weight: 600;
+  letter-spacing: 1rpx;
 }
 
 .header::before {
@@ -345,39 +385,6 @@ page {
 .fund-card:nth-child(4) { animation-delay: 0.2s; }
 .fund-card:nth-child(5) { animation-delay: 0.25s; }
 
-/* AI 浮动按钮 */
-.ai-fab {
-  position: fixed;
-  right: 32rpx;
-  bottom: 200rpx;
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3B82F6, #2563EB);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
-  z-index: 100;
-  animation: fabBounce 2s ease-in-out infinite;
-}
-
-.ai-fab:active {
-  transform: scale(0.9);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.ai-fab-img {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 50%;
-}
-
-@keyframes fabBounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6rpx); }
-}
-
 /* ==================== 深色主题 ==================== */
 .dark-theme,
 .dark-theme page {
@@ -407,6 +414,11 @@ page {
 
 .dark-theme .header::before {
   background: radial-gradient(circle, rgba(96, 165, 250, 0.12) 0%, transparent 70%);
+}
+
+.dark-theme .ai-entry {
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+  box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);
 }
 
 .dark-theme .watchlist-card::before {

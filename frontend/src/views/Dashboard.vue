@@ -1,123 +1,28 @@
 <template>
   <div class="dashboard-container">
-    <!-- 第一行：AI 助手 -->
+    <!-- 第一行：AI 助手入口 -->
     <el-row :gutter="20" class="dashboard-row">
       <el-col :span="24">
-        <el-card class="ai-card" shadow="hover">
-          <template #header>
-            <div class="ai-card-header">
-              <span class="ai-card-title">
-                <el-icon class="ai-card-icon"><ChatDotRound /></el-icon>
-                AI 智能助手
-              </span>
-              <div class="ai-header-right">
-                <div class="ai-mode-switch">
-                  <button
-                    class="ai-mode-btn"
-                    :class="{ active: aiMode === 'stock' }"
-                    @click="aiMode = 'stock'"
-                  >
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                      <path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/>
-                    </svg>
-                    A股数据
-                  </button>
-                  <button
-                    class="ai-mode-btn"
-                    :class="{ active: aiMode === 'system' }"
-                    @click="aiMode = 'system'"
-                  >
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
-                      <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.61 3.61 0 0 1 8.4 12 3.61 3.61 0 0 1 12 8.4a3.61 3.61 0 0 1 3.6 3.6 3.61 3.61 0 0 1-3.6 3.6z"/>
-                    </svg>
-                    系统
-                  </button>
-                </div>
-                <span class="ai-status-dot"></span>
+        <el-card class="ai-entry-card" shadow="hover" @click="openAiChat">
+          <div class="ai-entry-content">
+            <div class="ai-entry-left">
+              <div class="ai-entry-icon">
+                <el-icon :size="32"><Service /></el-icon>
+              </div>
+              <div class="ai-entry-info">
+                <h3 class="ai-entry-title">AI 智能助手</h3>
+                <p class="ai-entry-desc">智能问答、数据分析、股票查询，随时为您服务</p>
               </div>
             </div>
-          </template>
-          <div class="ai-body">
-            <div class="ai-messages" ref="aiMessagesRef">
-              <template v-if="aiMessages.length === 0 && !aiLoading && !aiError">
-                <div class="ai-empty">
-                  <div class="ai-empty-illustration">
-                    <el-icon class="ai-robot"><Service /></el-icon>
-                  </div>
-                  <p>你好！我是 AI 助手，有什么可以帮你的吗？</p>
-                  <div class="ai-quick-questions">
-                    <el-tag 
-                      v-for="q in quickQuestions" 
-                      :key="q"
-                      class="quick-tag"
-                      effect="plain"
-                      @click="handleQuickQuestion(q)"
-                    >
-                      {{ q }}
-                    </el-tag>
-                  </div>
-                </div>
-              </template>
-              <template v-else>
-                <TransitionGroup name="message" tag="div">
-                  <div
-                    v-for="(item, index) in aiMessages"
-                    :key="index"
-                    :class="['ai-bubble', item.role === 'user' ? 'ai-bubble-user' : 'ai-bubble-assistant']"
-                  >
-                    <div class="ai-bubble-avatar" v-if="item.role === 'assistant'">
-                      <el-icon><Service /></el-icon>
-                    </div>
-                    <div class="ai-bubble-inner">
-                      <div class="ai-bubble-content" v-if="item.role === 'user'" v-html="formatContent(item.content)"></div>
-                      <MdViewer v-else :content="item.content" class="ai-bubble-content ai-md-content" />
-                      <div v-if="item.role === 'assistant'" class="ai-bubble-actions">
-                        <el-button type="primary" link size="small" @click="copyContent(item.content)">
-                          <el-icon><DocumentCopy /></el-icon>
-                          复制
-                        </el-button>
-                      </div>
-                    </div>
-                    <div class="ai-bubble-avatar user" v-if="item.role === 'user'">
-                      <el-icon><User /></el-icon>
-                    </div>
-                  </div>
-                </TransitionGroup>
-                <div v-if="aiLoading" class="ai-bubble ai-bubble-assistant ai-bubble-loading">
-                  <div class="ai-bubble-avatar">
-                    <el-icon><Service /></el-icon>
-                  </div>
-                  <div class="ai-bubble-inner">
-                    <div class="ai-typing">
-                      <span></span><span></span><span></span>
-                    </div>
-                  </div>
-                </div>
-              </template>
-            </div>
-            <div v-if="aiError" class="ai-error-bar">
-              <el-icon><WarningFilled /></el-icon>
-              {{ aiError }}
-            </div>
-            <div class="ai-input-row">
-              <el-input
-                v-model="aiQuestion"
-                type="textarea"
-                :rows="2"
-                :autosize="{ minRows: 2, maxRows: 5 }"
-                placeholder="输入问题，Enter 发送，Shift+Enter 换行，↑↓ 选择历史输入"
-                :disabled="aiLoading"
-                @keydown="handleInputKeydown"
-              />
-              <el-button
-                class="ai-send-btn"
-                type="primary"
-                :loading="aiLoading"
-                :disabled="!aiQuestion.trim()"
-                @click="handleAiSend"
-              >
-                <el-icon><Promotion /></el-icon>
-                发送
+            <div class="ai-entry-right">
+              <div class="ai-entry-features">
+                <el-tag effect="plain" size="small">A股数据</el-tag>
+                <el-tag effect="plain" size="small">智能问答</el-tag>
+                <el-tag effect="plain" size="small">数据分析</el-tag>
+              </div>
+              <el-button type="primary" class="ai-entry-btn">
+                开始对话
+                <el-icon class="el-icon--right"><ArrowRight /></el-icon>
               </el-button>
             </div>
           </div>
@@ -269,191 +174,25 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick, markRaw, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { 
-  User, UserFilled, Lock, OfficeBuilding, ChatDotRound, DocumentCopy, 
-  WarningFilled, Promotion, Service, TrendCharts, PieChart, Clock, 
+import {
+  User, UserFilled, Lock, OfficeBuilding, ChatDotRound, DocumentCopy,
+  WarningFilled, Promotion, Service, TrendCharts, PieChart, Clock,
   Refresh, Bell, InfoFilled, SuccessFilled, Cpu, Odometer, Monitor, FolderOpened,
-  DataBoard, Folder
+  DataBoard, Folder, ArrowRight
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { chat } from '@/api/ai'
 import { getServerInfo } from '@/api/monitor'
 import { pageLoginLogs } from '@/api/loginLog'
 import { getLatestNotices, getUnreadCount } from '@/api/notice'
-import MdViewer from '@/components/MdViewer.vue'
 
-// AI 助手
-const aiMode = ref('stock')
+const router = useRouter()
 
-const stockQuestions = [
-  '查询贵州茅台行情',
-  '今日北向资金流向',
-  '行业板块涨跌排名',
-  '今日强势股有哪些'
-]
-const systemQuestions = [
-  '查看服务器状态',
-  '今日登录统计',
-  '系统有什么新功能',
-  '帮我分析数据'
-]
-const quickQuestions = computed(() => aiMode.value === 'stock' ? stockQuestions : systemQuestions)
-
-const aiQuestion = ref('')
-const aiMessages = ref([])
-const aiLoading = ref(false)
-const aiError = ref('')
-const aiMessagesRef = ref(null)
-
-const INPUT_HISTORY_KEY = 'ai-input-history'
-const INPUT_HISTORY_MAX = 50
-const inputHistory = ref([])
-const historyIndex = ref(-1)
-const draftBeforeHistory = ref('')
-
-function loadInputHistory() {
-  try {
-    const raw = localStorage.getItem(INPUT_HISTORY_KEY)
-    const parsed = raw ? JSON.parse(raw) : []
-    inputHistory.value = Array.isArray(parsed) ? parsed.filter(Boolean) : []
-  } catch {
-    inputHistory.value = []
-  }
-}
-
-function saveInputHistory() {
-  localStorage.setItem(INPUT_HISTORY_KEY, JSON.stringify(inputHistory.value))
-}
-
-function addToInputHistory(message) {
-  const history = inputHistory.value.filter(item => item !== message)
-  history.push(message)
-  if (history.length > INPUT_HISTORY_MAX) {
-    history.splice(0, history.length - INPUT_HISTORY_MAX)
-  }
-  inputHistory.value = history
-  saveInputHistory()
-}
-
-function resetHistoryNavigation() {
-  historyIndex.value = -1
-  draftBeforeHistory.value = ''
-}
-
-function navigateHistory(direction) {
-  if (inputHistory.value.length === 0) {
-    return
-  }
-
-  if (historyIndex.value === -1 && direction < 0) {
-    draftBeforeHistory.value = aiQuestion.value
-    historyIndex.value = inputHistory.value.length - 1
-    aiQuestion.value = inputHistory.value[historyIndex.value]
-    return
-  }
-
-  const nextIndex = historyIndex.value + direction
-  if (nextIndex < 0) {
-    return
-  }
-  if (nextIndex >= inputHistory.value.length) {
-    historyIndex.value = -1
-    aiQuestion.value = draftBeforeHistory.value
-    return
-  }
-
-  historyIndex.value = nextIndex
-  aiQuestion.value = inputHistory.value[historyIndex.value]
-}
-
-function isCursorOnFirstLine(textarea) {
-  const pos = textarea.selectionStart
-  return (textarea.value || '').slice(0, pos).indexOf('\n') === -1
-}
-
-function isCursorOnLastLine(textarea) {
-  const pos = textarea.selectionStart
-  const value = textarea.value || ''
-  return value.slice(pos).indexOf('\n') === -1
-}
-
-function handleInputKeydown(event) {
-  if (event.key === 'Enter' && !event.shiftKey) {
-    event.preventDefault()
-    handleAiSend()
-    return
-  }
-
-  if (event.key === 'ArrowUp' && isCursorOnFirstLine(event.target)) {
-    event.preventDefault()
-    navigateHistory(-1)
-    return
-  }
-
-  if (event.key === 'ArrowDown' && isCursorOnLastLine(event.target)) {
-    event.preventDefault()
-    navigateHistory(1)
-  }
-}
-
-function formatContent(content) {
-  if (!content) return ''
-  return content.replace(/\n/g, '<br>')
-}
-
-function scrollToBottom() {
-  nextTick(() => {
-    const el = aiMessagesRef.value
-    if (el) el.scrollTop = el.scrollHeight
-  })
-}
-
-function handleQuickQuestion(q) {
-  aiQuestion.value = q
-  handleAiSend()
-}
-
-function handleAiSend() {
-  const msg = aiQuestion.value?.trim()
-  if (!msg || aiLoading.value) return
-  aiError.value = ''
-  addToInputHistory(msg)
-  resetHistoryNavigation()
-  aiMessages.value.push({ role: 'user', content: msg })
-  aiQuestion.value = ''
-  aiLoading.value = true
-  scrollToBottom()
-  
-  const contextInfo = `
-    服务器状态: CPU使用率${serverStats.value[0]?.value || 'N/A'}, 
-    内存使用率${serverStats.value[1]?.value || 'N/A'}, 
-    磁盘使用率${serverStats.value[2]?.value || 'N/A'}
-  `
-  
-  chat({ message: msg, context: contextInfo, enableSkills: aiMode.value === 'stock' })
-    .then(res => {
-      const answer = (res.data && res.data.answer) ? res.data.answer : '暂无回复'
-      aiMessages.value.push({ role: 'assistant', content: answer })
-      scrollToBottom()
-    })
-    .catch(err => {
-      const errMsg = err.response?.data?.message || err.message || 'AI 服务暂时不可用'
-      aiError.value = errMsg
-    })
-    .finally(() => {
-      aiLoading.value = false
-    })
-}
-
-function copyContent(text) {
-  if (!text) return
-  navigator.clipboard.writeText(text).then(() => {
-    ElMessage.success('已复制到剪贴板')
-  }).catch(() => {
-    ElMessage.error('复制失败')
-  })
+// 打开 AI 对话页面
+function openAiChat() {
+  router.push('/ai/chat')
 }
 
 // 服务器状态
@@ -672,7 +411,6 @@ function initOperationChart() {
 let refreshTimer = null
 
 onMounted(() => {
-  loadInputHistory()
   loadServerStats()
   loadLoginLogs()
   loadNotices()
@@ -716,374 +454,93 @@ onUnmounted(() => {
   margin-bottom: 0;
 }
 
-/* AI 助手样式 */
-.ai-card-header {
+/* AI 助手入口卡片样式 */
+.ai-entry-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.ai-entry-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(102, 126, 234, 0.4);
+}
+
+.ai-entry-card :deep(.el-card__body) {
+  padding: 24px;
+}
+
+.ai-entry-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 20px;
 }
 
-.ai-header-right {
+.ai-entry-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
 
-.ai-mode-switch {
-  display: inline-flex;
-  background: var(--el-fill-color-light);
-  border-radius: 8px;
-  padding: 3px;
-  gap: 2px;
-}
-
-.ai-mode-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 12px;
-  border: none;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--el-text-color-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  white-space: nowrap;
-}
-
-.ai-mode-btn:hover {
-  color: var(--el-text-color-primary);
-}
-
-.ai-mode-btn.active {
-  background: #fff;
-  color: var(--el-color-primary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  font-weight: 500;
-}
-
-.ai-status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--el-color-success);
-  box-shadow: 0 0 6px var(--el-color-success);
-  animation: pulse-dot 2s infinite;
-}
-
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.ai-card-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  font-size: 16px;
-}
-
-.ai-card-icon {
-  font-size: 20px;
-  color: var(--el-color-primary);
-}
-
-.ai-body {
-  display: flex;
-  flex-direction: column;
-  min-height: 300px;
-}
-
-.ai-messages {
-  flex: 1;
-  min-height: 200px;
-  max-height: 350px;
-  overflow-y: auto;
-  padding: 16px;
-  background: linear-gradient(180deg, #f5f7fa 0%, #fff 100%);
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.ai-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  padding: 20px;
-}
-
-.ai-empty-illustration {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 16px;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.ai-robot {
-  font-size: 40px;
-  color: white;
-}
-
-.ai-empty p {
-  margin: 0 0 16px 0;
-  color: var(--el-text-color-secondary);
-  font-size: 15px;
-}
-
-.ai-quick-questions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-}
-
-.quick-tag {
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.quick-tag:hover {
-  transform: scale(1.05);
-  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.3);
-}
-
-.ai-bubble {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 16px;
-  max-width: 90%;
-}
-
-.ai-bubble-user {
-  flex-direction: row-reverse;
-  margin-left: auto;
-}
-
-.ai-bubble-assistant {
-  flex-direction: row;
-  max-width: 96%;
-}
-
-.ai-bubble-avatar {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-}
-
-.ai-bubble-avatar.user {
-  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
-}
-
-.ai-bubble-inner {
-  flex: 1;
-  min-width: 0;
-}
-
-.ai-bubble-content {
-  padding: 12px 16px;
+.ai-entry-icon {
+  width: 64px;
+  height: 64px;
   border-radius: 16px;
-  font-size: 14px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.ai-bubble-user .ai-bubble-content {
-  background: linear-gradient(135deg, #409eff 0%, #67c23a 100%);
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: white;
-  border-bottom-right-radius: 4px;
+  backdrop-filter: blur(10px);
 }
 
-.ai-bubble-assistant .ai-bubble-content {
-  background: var(--el-bg-color);
-  color: var(--el-text-color-primary);
-  border: 1px solid var(--el-border-color-lighter);
-  border-bottom-left-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.ai-entry-info {
+  color: white;
 }
 
-/* AI Markdown 内容样式覆盖 */
-.ai-md-content {
-  white-space: normal;
-}
-
-.ai-md-content :deep(.md-viewer__body) {
-  font-size: 14px;
-  line-height: 1.7;
-  overflow-x: auto;
-}
-
-.ai-md-content :deep(.md-viewer__body h3) {
-  font-size: 16px;
-  margin: 10px 0 8px;
-}
-
-.ai-md-content :deep(.md-viewer__body h4) {
-  font-size: 14px;
-  margin: 12px 0 6px;
-}
-
-.ai-md-content :deep(.md-viewer__body p) {
-  margin: 0 0 8px;
-}
-
-.ai-md-content :deep(.md-viewer__body p:last-child) {
-  margin-bottom: 0;
-}
-
-.ai-md-content :deep(.md-viewer__body table) {
-  font-size: 12px;
-  margin: 8px 0;
-  border-collapse: collapse;
-  min-width: 760px;
-  width: max-content;
-  max-width: none;
-}
-
-.ai-md-content :deep(.md-viewer__body table th),
-.ai-md-content :deep(.md-viewer__body table td) {
-  padding: 6px 10px;
-  border: 1px solid var(--el-border-color-lighter);
-  white-space: nowrap;
-}
-
-.ai-md-content :deep(.md-viewer__body table th) {
-  background: var(--el-fill-color-light);
+.ai-entry-title {
+  font-size: 20px;
   font-weight: 600;
+  margin: 0 0 4px;
+  color: white;
 }
 
-.ai-md-content :deep(.md-viewer__body ul),
-.ai-md-content :deep(.md-viewer__body ol) {
-  padding-left: 20px;
-  margin: 6px 0;
-}
-
-.ai-md-content :deep(.md-viewer__body li) {
-  margin-bottom: 4px;
-}
-
-.ai-md-content :deep(.md-viewer__body h1),
-.ai-md-content :deep(.md-viewer__body h2),
-.ai-md-content :deep(.md-viewer__body h3) {
-  margin: 12px 0 6px;
-  font-size: 15px;
-}
-
-.ai-md-content :deep(.md-viewer__body code) {
-  font-size: 12px;
-  padding: 2px 5px;
-  background: var(--el-fill-color-light);
-  border-radius: 3px;
-}
-
-.ai-md-content :deep(.md-code-block) {
-  margin: 8px 0;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.ai-md-content :deep(.md-viewer__body blockquote) {
-  margin: 8px 0;
-  padding: 8px 12px;
-  border-left: 3px solid var(--el-color-primary);
-  background: var(--el-fill-color-lighter);
-  border-radius: 0 6px 6px 0;
-}
-
-.ai-md-content :deep(.md-viewer__body strong) {
-  font-weight: 600;
-}
-
-.ai-bubble-actions {
-  margin-top: 8px;
-  padding-left: 4px;
-}
-
-.ai-typing {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  padding: 8px 0;
-}
-
-.ai-typing span {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--el-color-primary);
-  animation: ai-typing 1.4s ease-in-out infinite both;
-}
-
-.ai-typing span:nth-child(2) { animation-delay: 0.2s; }
-.ai-typing span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes ai-typing {
-  0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
-  40% { transform: scale(1); opacity: 1; }
-}
-
-.ai-error-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  background: var(--el-color-danger-light-9);
-  color: var(--el-color-danger);
-  border-radius: 8px;
-  font-size: 13px;
-}
-
-.ai-input-row {
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.ai-send-btn {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-}
-
-.ai-send-btn:hover {
+.ai-entry-desc {
+  font-size: 14px;
+  margin: 0;
   opacity: 0.9;
 }
 
-/* 消息动画 */
-.message-enter-active {
-  transition: all 0.3s ease-out;
+.ai-entry-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
 }
 
-.message-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
+.ai-entry-features {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-entry-features .el-tag {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.ai-entry-btn {
+  background: white;
+  border: none;
+  color: #667eea;
+  font-weight: 600;
+}
+
+.ai-entry-btn:hover {
+  background: rgba(255, 255, 255, 0.9);
+  color: #764ba2;
 }
 
 /* 统计卡片 */
@@ -1310,21 +767,18 @@ onUnmounted(() => {
     font-size: 20px;
   }
 
-  .ai-body {
-    min-height: 260px;
+  .ai-entry-content {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .ai-messages {
-    max-height: 280px;
+  .ai-entry-right {
+    align-items: flex-start;
+    width: 100%;
   }
 
-  .ai-empty-illustration {
-    width: 60px;
-    height: 60px;
-  }
-
-  .ai-robot {
-    font-size: 30px;
+  .ai-entry-features {
+    flex-wrap: wrap;
   }
 
   .chart-container {

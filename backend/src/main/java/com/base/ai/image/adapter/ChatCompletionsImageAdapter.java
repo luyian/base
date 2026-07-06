@@ -73,14 +73,38 @@ public class ChatCompletionsImageAdapter extends AbstractAiImageAdapter {
 
         JSONObject userMessage = new JSONObject();
         userMessage.put("role", "user");
-        userMessage.put("content", buildImagePrompt(context));
+        userMessage.put("content", buildUserContent(context));
         messages.add(userMessage);
         return messages;
     }
 
+    private Object buildUserContent(AiImageContext context) {
+        if (!StringUtils.hasText(context.getReferenceImageUrl())) {
+            return buildImagePrompt(context);
+        }
+
+        JSONArray content = new JSONArray();
+        JSONObject textPart = new JSONObject();
+        textPart.put("type", "text");
+        textPart.put("text", buildImagePrompt(context));
+        content.add(textPart);
+
+        JSONObject imageUrl = new JSONObject();
+        imageUrl.put("url", context.getReferenceImageUrl());
+        JSONObject imagePart = new JSONObject();
+        imagePart.put("type", "image_url");
+        imagePart.put("image_url", imageUrl);
+        content.add(imagePart);
+        return content;
+    }
+
     private String buildImagePrompt(AiImageContext context) {
         StringBuilder sb = new StringBuilder();
-        sb.append("请生成一张图片。\n");
+        if (StringUtils.hasText(context.getReferenceImageUrl())) {
+            sb.append("请基于随请求提供的参考图片生成调整后的图片。\n");
+        } else {
+            sb.append("请生成一张图片。\n");
+        }
         sb.append("图片提示词：").append(context.getPrompt()).append("\n");
         sb.append("图片尺寸：").append(context.getSize()).append("\n");
         sb.append("请返回图片本身或可访问的图片 URL/Markdown 图片。");

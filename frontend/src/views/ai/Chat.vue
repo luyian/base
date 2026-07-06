@@ -67,7 +67,62 @@
                 <div v-html="formatUserMessage(msg.content)"></div>
               </div>
               <div v-else class="message-bubble ai-bubble">
-                <MdViewer :content="msg.content" class="ai-md-content" />
+                <MdViewer :content="getDisplayContent(msg)" class="ai-md-content" />
+                <div v-if="getImageContext(msg)" class="ai-image-card">
+                  <div class="ai-image-card__header">
+                    <span class="ai-image-card__title">
+                      <el-icon><Picture /></el-icon>
+                      AI 生成图片
+                    </span>
+                    <el-button
+                      type="primary"
+                      link
+                      size="small"
+                      @click="reloadImage(msg)"
+                    >
+                      重新加载
+                    </el-button>
+                  </div>
+                  <div class="ai-image-preview">
+                    <div v-if="msg.imageContext.imageLoading" class="ai-image-state">
+                      图片加载中...
+                    </div>
+                    <img
+                      v-else-if="msg.imageContext.proxyImageUrl"
+                      :src="msg.imageContext.proxyImageUrl"
+                      alt="AI 生成图片"
+                      @error="handlePreviewImageError(msg)"
+                      @click="previewImage(msg.imageContext.proxyImageUrl)"
+                    >
+                    <div v-else-if="msg.imageContext.imageError" class="ai-image-state error">
+                      {{ msg.imageContext.imageError }}
+                    </div>
+                    <div v-else class="ai-image-state">
+                      图片待加载
+                    </div>
+                  </div>
+                  <div class="ai-image-actions">
+                    <el-button
+                      type="primary"
+                      link
+                      size="small"
+                      :disabled="!msg.imageContext.proxyImageUrl && !msg.imageContext.referenceImageUrl"
+                      @click="previewImage(msg.imageContext.proxyImageUrl || msg.imageContext.referenceImageUrl)"
+                    >
+                      <el-icon><View /></el-icon>
+                      预览
+                    </el-button>
+                    <el-button
+                      type="primary"
+                      link
+                      size="small"
+                      @click="openOriginalImage(msg.imageContext.referenceImageUrl)"
+                    >
+                      <el-icon><Link /></el-icon>
+                      打开原图
+                    </el-button>
+                  </div>
+                </div>
               </div>
               <div v-if="msg.role === 'assistant'" class="message-actions">
                 <el-button type="primary" link size="small" @click="copyContent(msg.content)">
@@ -77,6 +132,16 @@
                 <el-button type="primary" link size="small" @click="regenerate(index)">
                   <el-icon><RefreshRight /></el-icon>
                   重新生成
+                </el-button>
+                <el-button
+                  v-if="getImageContext(msg)"
+                  type="primary"
+                  link
+                  size="small"
+                  @click="adjustImage(msg)"
+                >
+                  <el-icon><EditPen /></el-icon>
+                  调整图片
                 </el-button>
               </div>
             </div>
@@ -108,6 +173,20 @@
 
     <!-- 底部输入区域 -->
     <footer class="chat-footer">
+      <div class="footer-tools">
+        <div class="image-size-control">
+          <el-icon><Picture /></el-icon>
+          <span>图片尺寸</span>
+          <el-select v-model="imageSize" size="small" class="image-size-select">
+            <el-option
+              v-for="item in imageSizeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </div>
+      </div>
       <div class="input-container">
         <el-input
           v-model="inputMessage"
@@ -138,17 +217,22 @@
         <span>AI 可能会犯错，请核实重要信息</span>
       </div>
     </footer>
+    <el-image-viewer
+      v-if="imagePreviewVisible"
+      :url-list="[imagePreviewUrl]"
+      @close="imagePreviewVisible = false"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   ChatDotRound, Service, User, DocumentCopy, RefreshRight,
   Promotion, Plus, Delete, HomeFilled, TrendCharts,
-  DataAnalysis, PieChart, Histogram
+  DataAnalysis, PieChart, Histogram, EditPen, Picture, View, Link
 } from '@element-plus/icons-vue'
 import { chat } from '@/api/ai'
 import MdViewer from '@/components/MdViewer.vue'
@@ -161,6 +245,15 @@ const inputMessage = ref('')
 const loading = ref(false)
 const messagesRef = ref(null)
 const inputRef = ref(null)
+const imageSize = ref('2048x2048')
+const imagePreviewVisible = ref(false)
+const imagePreviewUrl = ref('')
+
+const imageSizeOptions = [
+  { label: '方图 2048x2048', value: '2048x2048' },
+  { label: '横图 2752x1536', value: '2752x1536' },
+  { label: '竖图 1536x2752', value: '1536x2752' }
+]
 
 // 快捷操作
 const quickActions = [
@@ -184,6 +277,118 @@ function scrollToBottom() {
   })
 }
 
+function isImageAdjustMessage(message) {
+  if (!message) return false
+  const adjustWords = [
+    '调整', '修改', '改成', '换成', '优化', '重画', '重新生成',
+    '基于上一张', '基于上图', '上一张', '上图', '这张图'
+  ]
+  return adjustWords.some((word) => message.includes(word))
+}
+
+function isImageGenerateMessage(message) {
+  if (!message) return false
+  const generateWords = [
+    '生成图片', '生成一张', '画一张', '画个', '画一个', '绘制',
+    '出图', '文生图', 'AI作图', 'AI绘图', '图片'
+  ]
+  return generateWords.some((word) => message.includes(word))
+}
+
+function extractLineValue(content, label) {
+  const regexp = new RegExp(`^-\\s*${label}[:：]\\s*(.+)$`, 'm')
+  const match = content.match(regexp)
+  return match ? match[1].trim() : ''
+}
+
+function extractImageContext(content) {
+  if (!content) return null
+  const markdownImageMatch = content.match(/!\[[^\]]*]\(([^)]+)\)/)
+  const openImageMatch = content.match(/\[打开原图]\(([^)]+)\)/)
+  const imageUrl = markdownImageMatch?.[1] || openImageMatch?.[1] || ''
+  if (!imageUrl) return null
+  return normalizeImageContext({
+    referenceImageUrl: imageUrl.trim(),
+    referenceImagePrompt: extractLineValue(content, '提示词'),
+    referenceImageRevisedPrompt: extractLineValue(content, '优化提示词'),
+    proxyImageUrl: imageUrl.trim(),
+    imageLoading: false,
+    imageError: ''
+  })
+}
+
+function normalizeImageContext(context) {
+  if (!context) return null
+  if (!context.referenceImageUrl && context.proxyImageUrl) {
+    context.referenceImageUrl = context.proxyImageUrl
+  }
+  if (!context.proxyImageUrl && context.referenceImageUrl) {
+    context.proxyImageUrl = context.referenceImageUrl
+  }
+  context.imageLoading = false
+  return context
+}
+
+function getImageContext(message) {
+  if (!message || message.role !== 'assistant') return null
+  if (!message.imageContext) {
+    message.imageContext = extractImageContext(message.content)
+  }
+  return normalizeImageContext(message.imageContext)
+}
+
+function buildDisplayContent(content) {
+  if (!content) return ''
+  return content
+    .replace(/!\[[^\]]*]\([^)]+\)/g, '')
+    .replace(/\n*\[打开原图]\([^)]+\)/g, '')
+    .trim()
+}
+
+function getDisplayContent(message) {
+  return message?.displayContent || buildDisplayContent(message?.content)
+}
+
+function createAssistantMessage(answer) {
+  const assistantMessage = {
+    role: 'assistant',
+    content: answer,
+    displayContent: buildDisplayContent(answer),
+    imageContext: extractImageContext(answer)
+  }
+  messages.value.push(assistantMessage)
+}
+
+function findLastImageContext(beforeIndex = messages.value.length) {
+  for (let i = beforeIndex - 1; i >= 0; i--) {
+    const context = getImageContext(messages.value[i])
+    if (context) {
+      return context
+    }
+  }
+  return null
+}
+
+function buildChatPayload(message, beforeIndex = messages.value.length) {
+  const payload = { message, enableSkills: true }
+  if (isImageGenerateMessage(message) || isImageAdjustMessage(message)) {
+    payload.imageSize = imageSize.value
+  }
+  if (!isImageAdjustMessage(message)) {
+    return payload
+  }
+  const imageContext = findLastImageContext(beforeIndex)
+  if (!imageContext) {
+    return payload
+  }
+  return {
+    ...payload,
+    referenceImageUrl: imageContext.referenceImageUrl,
+    referenceImagePrompt: imageContext.referenceImagePrompt,
+    referenceImageRevisedPrompt: imageContext.referenceImageRevisedPrompt
+  }
+}
+
 // 发送消息
 async function sendMessage(text) {
   const message = text || inputMessage.value.trim()
@@ -196,9 +401,9 @@ async function sendMessage(text) {
   scrollToBottom()
 
   try {
-    const res = await chat({ message, enableSkills: true })
+    const res = await chat(buildChatPayload(message))
     const answer = res.data?.answer || '抱歉，我暂时无法回答这个问题。'
-    messages.value.push({ role: 'assistant', content: answer })
+    createAssistantMessage(answer)
     scrollToBottom()
   } catch (err) {
     const errMsg = err.response?.data?.message || err.message || 'AI 服务暂时不可用'
@@ -256,9 +461,9 @@ async function regenerate(index) {
   scrollToBottom()
 
   try {
-    const res = await chat({ message: userMessage, enableSkills: true })
+    const res = await chat(buildChatPayload(userMessage, userMessageIndex))
     const answer = res.data?.answer || '抱歉，我暂时无法回答这个问题。'
-    messages.value.push({ role: 'assistant', content: answer })
+    createAssistantMessage(answer)
     scrollToBottom()
   } catch (err) {
     const errMsg = err.response?.data?.message || err.message || 'AI 服务暂时不可用'
@@ -269,6 +474,45 @@ async function regenerate(index) {
     scrollToBottom()
   } finally {
     loading.value = false
+  }
+}
+
+function adjustImage() {
+  inputMessage.value = '请基于上一张图片调整：'
+  nextTick(() => {
+    inputRef.value?.focus()
+  })
+}
+
+function reloadImage(message) {
+  const context = getImageContext(message)
+  if (!context) return
+  context.imageError = ''
+  context.imageLoading = false
+  context.proxyImageUrl = ''
+  nextTick(() => {
+    context.proxyImageUrl = context.referenceImageUrl
+  })
+}
+
+function previewImage(url) {
+  if (!url) return
+  imagePreviewUrl.value = url
+  imagePreviewVisible.value = true
+}
+
+function handlePreviewImageError(message) {
+  const context = getImageContext(message)
+  if (!context) return
+  context.imageLoading = false
+  context.imageError = '图片加载失败，请打开原图查看'
+}
+
+function openOriginalImage(url) {
+  if (!url) return
+  const openedWindow = window.open(url, '_blank')
+  if (openedWindow) {
+    openedWindow.opener = null
   }
 }
 
@@ -301,8 +545,13 @@ function clearChat() {
 }
 
 // 返回首页
-function goHome() {
-  router.push('/dashboard')
+async function goHome() {
+  try {
+    await router.push('/dashboard')
+  } catch (error) {
+    console.warn('返回首页路由跳转失败，改用整页跳转', error)
+    window.location.assign('/dashboard')
+  }
 }
 
 // 自动聚焦输入框
@@ -311,6 +560,7 @@ onMounted(() => {
     inputRef.value?.focus()
   })
 })
+
 </script>
 
 <style scoped>
@@ -602,6 +852,69 @@ onMounted(() => {
   border-radius: 0 6px 6px 0;
 }
 
+.ai-image-card {
+  margin-top: 12px;
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--el-bg-color);
+}
+
+.ai-image-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.ai-image-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--el-text-color-primary);
+}
+
+.ai-image-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  max-height: 520px;
+  background: var(--el-fill-color-blank);
+}
+
+.ai-image-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+  cursor: zoom-in;
+}
+
+.ai-image-state {
+  padding: 48px 24px;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+  text-align: center;
+}
+
+.ai-image-state.error {
+  color: var(--el-color-danger);
+}
+
+.ai-image-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--el-border-color-lighter);
+}
+
 .message-actions {
   margin-top: 8px;
   padding-left: 4px;
@@ -637,6 +950,26 @@ onMounted(() => {
   padding: 16px 24px 24px;
   background: var(--el-bg-color);
   border-top: 1px solid var(--el-border-color-lighter);
+}
+
+.footer-tools {
+  max-width: 800px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.image-size-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--el-text-color-secondary);
+  font-size: 13px;
+}
+
+.image-size-select {
+  width: 160px;
 }
 
 .input-container {
@@ -704,6 +1037,14 @@ onMounted(() => {
 
   .chat-messages {
     padding: 16px;
+  }
+
+  .footer-tools {
+    justify-content: flex-start;
+  }
+
+  .image-size-select {
+    width: 150px;
   }
 
   .quick-actions {

@@ -72,8 +72,8 @@ public class AiServiceImpl implements AiService {
         if (request.getContext() != null && request.getContext().length() > maxCtx) {
             throw new BusinessException(ResultCode.PARAM_ERROR.getCode(), "上下文长度不能超过 " + maxCtx + " 字符");
         }
-        if (isImageGenerationMessage(userMessage)) {
-            return chatWithImageGeneration(userMessage);
+        if (isImageGenerationMessage(request)) {
+            return chatWithImageGeneration(request);
         }
         if (isGaokaoRecommendMessage(userMessage)) {
             return chatWithGaokaoRecommendation(userMessage);
@@ -112,8 +112,8 @@ public class AiServiceImpl implements AiService {
         int maxMsg = aiConfigProvider.getMaxMessageLength() != null ? aiConfigProvider.getMaxMessageLength() : 2000;
         String userMessage = validateUserMessage(request.getMessage(), maxMsg);
         request.setMessage(userMessage);
-        if (isImageGenerationMessage(userMessage)) {
-            return chatWithImageGeneration(userMessage);
+        if (isImageGenerationMessage(request)) {
+            return chatWithImageGeneration(request);
         }
         if (isGaokaoRecommendMessage(userMessage)) {
             return chatWithGaokaoRecommendation(userMessage);
@@ -186,11 +186,11 @@ public class AiServiceImpl implements AiService {
         String chat(@dev.langchain4j.service.UserMessage String message);
     }
 
-    private ChatResponse chatWithImageGeneration(String userMessage) {
-        log.info("命中 AI 图片生成链路，用户问题: {}", userMessage);
+    private ChatResponse chatWithImageGeneration(ChatRequest request) {
+        log.info("命中 AI 图片生成链路，用户问题: {}", request.getMessage());
         long start = System.currentTimeMillis();
         try {
-            String answer = aiImageService.generateImage(userMessage);
+            String answer = aiImageService.generateImage(request);
             log.info("AI 图片生成成功，耗时 {} ms", System.currentTimeMillis() - start);
             return new ChatResponse(answer);
         } catch (BusinessException e) {
@@ -642,6 +642,23 @@ public class AiServiceImpl implements AiService {
                 || message.startsWith("画个") || message.startsWith("画一个")
                 || message.startsWith("生成一张") || message.startsWith("成一张")
                 || message.startsWith("出图");
+    }
+
+    private boolean isImageGenerationMessage(ChatRequest request) {
+        if (request == null) {
+            return false;
+        }
+        String message = request.getMessage();
+        if (isImageGenerationMessage(message)) {
+            return true;
+        }
+        if (!StringUtils.hasText(request.getReferenceImageUrl()) || !StringUtils.hasText(message)) {
+            return false;
+        }
+        return message.contains("调整") || message.contains("修改") || message.contains("改成")
+                || message.contains("换成") || message.contains("优化") || message.contains("重画")
+                || message.contains("重新生成") || message.contains("基于上一张") || message.contains("基于上图")
+                || message.contains("上一张") || message.contains("上图");
     }
 
     private String extractScore(String message) {

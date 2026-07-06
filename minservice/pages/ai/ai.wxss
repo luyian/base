@@ -24,10 +24,12 @@ page {
 /* 模式切换栏 */
 .mode-bar {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
+  align-items: center;
   padding: 16rpx 32rpx;
   background: var(--card);
   border-bottom: 1rpx solid var(--border);
+  gap: 16rpx;
 }
 
 .mode-switch {
@@ -58,6 +60,28 @@ page {
 
 .mode-icon {
   font-size: 28rpx;
+}
+
+.image-size-picker {
+  flex-shrink: 0;
+}
+
+.image-size-btn {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  height: 56rpx;
+  padding: 0 18rpx;
+  border-radius: 14rpx;
+  background: var(--bg);
+  border: 1rpx solid var(--border);
+  font-size: 22rpx;
+  color: var(--text-secondary);
+}
+
+.image-size-value {
+  color: var(--primary);
+  font-weight: 600;
 }
 
 /* 聊天区域 */
@@ -208,6 +232,37 @@ page {
 
 .msg-text {
   white-space: pre-wrap;
+}
+
+.ai-image-card {
+  margin-top: 18rpx;
+  overflow: hidden;
+  border-radius: 16rpx;
+  border: 1rpx solid var(--border);
+  background: var(--bg);
+}
+
+.ai-image-preview {
+  width: 100%;
+  display: block;
+}
+
+.ai-image-loading {
+  height: 280rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24rpx;
+  color: var(--text-secondary);
+}
+
+.ai-image-actions {
+  padding: 14rpx 18rpx;
+  border-top: 1rpx solid var(--border);
+  font-size: 24rpx;
+  color: var(--primary);
+  text-align: center;
+  background: var(--card);
 }
 
 /* 打字动画 */

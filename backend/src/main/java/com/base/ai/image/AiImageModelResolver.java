@@ -1,5 +1,6 @@
 package com.base.ai.image;
 
+import com.base.ai.dto.ChatRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -53,14 +54,69 @@ public class AiImageModelResolver {
         return context;
     }
 
+    /**
+     * 构建图片生成或调整上下文。
+     *
+     * @param request 用户请求
+     * @param configuredModel 当前图片模型配置
+     * @param baseUrl API 基础地址
+     * @param adapter 图片生成适配器
+     * @param apiKey API Key
+     * @param timeout 超时时间
+     * @return 图片生成上下文
+     */
+    public AiImageContext resolve(ChatRequest request, String configuredModel, String baseUrl, String adapter,
+                                  String apiKey, Integer timeout) {
+        String userMessage = request == null ? null : request.getMessage();
+        AiImageContext context = resolve(userMessage, configuredModel, baseUrl, adapter, apiKey, timeout);
+        if (request != null && StringUtils.hasText(request.getImageSize())) {
+            context.setSize(request.getImageSize().trim().toLowerCase());
+        }
+        if (request == null || !StringUtils.hasText(request.getReferenceImageUrl())) {
+            return context;
+        }
+
+        String editInstruction = buildPrompt(userMessage);
+        context.setEditInstruction(editInstruction);
+        context.setReferenceImageUrl(request.getReferenceImageUrl().trim());
+        context.setReferenceImagePrompt(trimToNull(request.getReferenceImagePrompt()));
+        context.setReferenceImageRevisedPrompt(trimToNull(request.getReferenceImageRevisedPrompt()));
+        context.setPrompt(buildEditPrompt(context));
+        return context;
+    }
+
     private String buildPrompt(String userMessage) {
         String prompt = userMessage == null ? "" : userMessage.trim();
         prompt = prompt.replaceFirst("^(请)?(帮我)?(生成|成|画|绘制|做|制作)(一张|一个|个)?"
                 + "(图片|图|插画|海报|头像)?[:：，,\\s]*", "");
+        prompt = prompt.replaceFirst("^(请)?(帮我)?(调整|修改|改|优化|重新生成|重画|基于上一张|基于上图)"
+                + "(一下|下)?(这张|这个|上一张|上图|图片|图)?[:：，,\\s]*", "");
         prompt = prompt.replaceFirst("^(文生图|出图|AI作图|AI绘图)[:：，,\\s]*", "");
         prompt = MODEL_PATTERN.matcher(prompt).replaceAll("");
         prompt = SIZE_PATTERN.matcher(prompt).replaceAll("");
         return prompt.trim();
+    }
+
+    private String buildEditPrompt(AiImageContext context) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("基于参考图片继续生成一张调整后的图片。");
+        sb.append("保持参考图片的主体、构图、视觉风格、人物一致性和关键元素不变，只应用新的调整要求。");
+        if (StringUtils.hasText(context.getReferenceImageRevisedPrompt())) {
+            sb.append("\n参考图片优化提示词：").append(context.getReferenceImageRevisedPrompt());
+        } else if (StringUtils.hasText(context.getReferenceImagePrompt())) {
+            sb.append("\n参考图片原始提示词：").append(context.getReferenceImagePrompt());
+        }
+        if (StringUtils.hasText(context.getReferenceImageUrl())) {
+            sb.append("\n参考图片地址：").append(context.getReferenceImageUrl());
+        }
+        if (StringUtils.hasText(context.getEditInstruction())) {
+            sb.append("\n新的调整要求：").append(context.getEditInstruction());
+        }
+        return sb.toString();
+    }
+
+    private String trimToNull(String text) {
+        return StringUtils.hasText(text) ? text.trim() : null;
     }
 
     private String resolveImageModel(String userMessage, String configuredModel, String baseUrl) {

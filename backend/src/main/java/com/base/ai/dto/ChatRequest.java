@@ -3,6 +3,7 @@ package com.base.ai.dto;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
 
@@ -34,4 +35,28 @@ public class ChatRequest implements Serializable {
      * 是否启用技能（Function Calling），默认 true
      */
     private Boolean enableSkills = true;
+
+    /**
+     * 图片尺寸，如 1024x1024、1536x1024、1024x1536。
+     */
+    @Pattern(regexp = "^\\d{3,4}x\\d{3,4}$", message = "图片尺寸格式必须为 宽x高，例如 1024x1024")
+    private String imageSize;
+
+    /**
+     * 参考图片地址，用于基于上一张 AI 图片继续调整。
+     */
+    @Size(max = 2048, message = "参考图片地址长度不能超过 2048 字符")
+    private String referenceImageUrl;
+
+    /**
+     * 参考图片原始提示词。
+     */
+    @Size(max = 3000, message = "参考图片提示词长度不能超过 3000 字符")
+    private String referenceImagePrompt;
+
+    /**
+     * 参考图片优化提示词。
+     */
+    @Size(max = 3000, message = "参考图片优化提示词长度不能超过 3000 字符")
+    private String referenceImageRevisedPrompt;
 }

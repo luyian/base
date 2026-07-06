@@ -10,6 +10,12 @@ Page({
     loading: false,
     scrollToId: '',
     quickQuestions: [],
+    imageSize: '1024x1024',
+    imageSizeOptions: [
+      { label: '方图', value: '1024x1024' },
+      { label: '横图', value: '1536x1024' },
+      { label: '竖图', value: '1024x1536' }
+    ],
     msgIdCounter: 0,
     userInfo: null
   },
@@ -59,6 +65,178 @@ Page({
     this.onSend();
   },
 
+  onImageSizeChange(e) {
+    const index = Number(e.detail.value);
+    const option = this.data.imageSizeOptions[index];
+    if (!option) return;
+    this.setData({ imageSize: option.value });
+  },
+
+  isImageAdjustMessage(message) {
+    if (!message) return false;
+    const adjustWords = [
+      '调整', '修改', '改成', '换成', '优化', '重画', '重新生成',
+      '基于上一张', '基于上图', '上一张', '上图', '这张图'
+    ];
+    return adjustWords.some(word => message.indexOf(word) > -1);
+  },
+
+  isImageGenerateMessage(message) {
+    if (!message) return false;
+    const hasImageWord = ['图片', '图像', '插画', '海报', '头像', '壁纸', '封面', '配图']
+      .some(word => message.indexOf(word) > -1);
+    const hasGenerateIntent = ['生成', '画', '绘制', '出图', '作图', '文生图', '做一张', '制作']
+      .some(word => message.indexOf(word) > -1);
+    return (hasImageWord && hasGenerateIntent)
+      || message.indexOf('画一张') === 0
+      || message.indexOf('生成一张') === 0
+      || message.indexOf('出图') === 0;
+  },
+
+  extractLineValue(content, label) {
+    const regexp = new RegExp(`^-\\s*${label}[:：]\\s*(.+)$`, 'm');
+    const match = content.match(regexp);
+    return match ? match[1].trim() : '';
+  },
+
+  extractImageContext(content) {
+    if (!content) return null;
+    const markdownImageMatch = content.match(/!\[[^\]]*]\(([^)]+)\)/);
+    const openImageMatch = content.match(/\[打开原图]\(([^)]+)\)/);
+    const imageUrl = (markdownImageMatch && markdownImageMatch[1])
+      || (openImageMatch && openImageMatch[1])
+      || '';
+    if (!imageUrl) return null;
+    return {
+      referenceImageUrl: imageUrl.trim(),
+      referenceImagePrompt: this.extractLineValue(content, '提示词'),
+      referenceImageRevisedPrompt: this.extractLineValue(content, '优化提示词'),
+      localImageUrl: ''
+    };
+  },
+
+  buildDisplayContent(content) {
+    if (!content) return '';
+    return content
+      .replace(/!\[[^\]]*]\([^)]+\)/g, '')
+      .replace(/\n*\[打开原图]\([^)]+\)/g, '')
+      .trim();
+  },
+
+  findLastImageContext() {
+    for (let i = this.data.messages.length - 1; i >= 0; i--) {
+      const msg = this.data.messages[i];
+      if (msg.role !== 'assistant') continue;
+      const imageContext = msg.imageContext || this.extractImageContext(msg.content);
+      if (imageContext) {
+        return imageContext;
+      }
+    }
+    return null;
+  },
+
+  buildChatPayload(message) {
+    const payload = {
+      message: message,
+      enableSkills: this.data.mode === 'stock'
+    };
+    if (this.isImageGenerateMessage(message) || this.isImageAdjustMessage(message)) {
+      payload.imageSize = this.data.imageSize;
+    }
+    if (!this.isImageAdjustMessage(message)) {
+      return payload;
+    }
+    const imageContext = this.findLastImageContext();
+    if (!imageContext) {
+      return payload;
+    }
+    return {
+      ...payload,
+      referenceImageUrl: imageContext.referenceImageUrl,
+      referenceImagePrompt: imageContext.referenceImagePrompt,
+      referenceImageRevisedPrompt: imageContext.referenceImageRevisedPrompt
+    };
+  },
+
+  downloadAiImage(messageId, imageUrl) {
+    if (!imageUrl) return;
+    if (imageUrl.indexOf('data:image/') === 0) {
+      this.saveBase64Image(messageId, imageUrl);
+      return;
+    }
+    const token = wx.getStorageSync('token');
+    wx.downloadFile({
+      url: `${app.globalData.baseUrl}/ai/image-proxy?url=${encodeURIComponent(imageUrl)}`,
+      header: {
+        Authorization: token ? `Bearer ${token}` : ''
+      },
+      success: (res) => {
+        if (res.statusCode !== 200 || !res.tempFilePath) {
+          wx.showToast({ title: '图片加载失败', icon: 'none' });
+          return;
+        }
+        const messages = this.data.messages.map(item => {
+          if (item.id !== messageId || !item.imageContext) {
+            return item;
+          }
+          return {
+            ...item,
+            imageContext: {
+              ...item.imageContext,
+              localImageUrl: res.tempFilePath
+            }
+          };
+        });
+        this.setData({ messages });
+      },
+      fail: () => {
+        wx.showToast({ title: '图片下载失败', icon: 'none' });
+      }
+    });
+  },
+
+  saveBase64Image(messageId, dataUrl) {
+    const commaIndex = dataUrl.indexOf(',');
+    if (commaIndex < 0) return;
+    const header = dataUrl.slice(0, commaIndex);
+    const imageExt = header.indexOf('jpeg') > -1 || header.indexOf('jpg') > -1 ? 'jpg' : 'png';
+    const filePath = `${wx.env.USER_DATA_PATH}/ai-image-${messageId}.${imageExt}`;
+    wx.getFileSystemManager().writeFile({
+      filePath,
+      data: dataUrl.slice(commaIndex + 1),
+      encoding: 'base64',
+      success: () => {
+        const messages = this.data.messages.map(item => {
+          if (item.id !== messageId || !item.imageContext) {
+            return item;
+          }
+          return {
+            ...item,
+            imageContext: {
+              ...item.imageContext,
+              localImageUrl: filePath
+            }
+          };
+        });
+        this.setData({ messages });
+      },
+      fail: () => {
+        wx.showToast({ title: '图片保存失败', icon: 'none' });
+      }
+    });
+  },
+
+  previewAiImage(e) {
+    const localUrl = e.currentTarget.dataset.localUrl;
+    const originalUrl = e.currentTarget.dataset.originalUrl;
+    const current = localUrl || originalUrl;
+    if (!current) return;
+    wx.previewImage({
+      current,
+      urls: [current]
+    });
+  },
+
   onSend() {
     const msg = this.data.inputValue.trim();
     if (!msg || this.data.loading) return;
@@ -74,19 +252,25 @@ Page({
       scrollToId: 'msg-loading'
     });
 
-    aiApi.chat({
-      message: msg,
-      enableSkills: this.data.mode === 'stock'
-    }).then(res => {
+    aiApi.chat(this.buildChatPayload(msg)).then(res => {
       const answer = (res.data && res.data.answer) ? res.data.answer : '暂无回复';
       const aiMsgId = this.data.msgIdCounter + 1;
-      const aiMsg = { id: aiMsgId, role: 'assistant', content: answer };
+      const aiMsg = {
+        id: aiMsgId,
+        role: 'assistant',
+        content: answer,
+        displayContent: this.buildDisplayContent(answer),
+        imageContext: this.extractImageContext(answer)
+      };
 
       this.setData({
         messages: [...this.data.messages, aiMsg],
         msgIdCounter: aiMsgId,
         scrollToId: `msg-${aiMsgId}`
       });
+      if (aiMsg.imageContext && aiMsg.imageContext.referenceImageUrl) {
+        this.downloadAiImage(aiMsgId, aiMsg.imageContext.referenceImageUrl);
+      }
     }).catch(err => {
       const errMsg = err.message || 'AI 服务暂时不可用';
       const aiMsgId = this.data.msgIdCounter + 1;

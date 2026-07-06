@@ -1,5 +1,7 @@
 package com.base.ai.service;
 
+import com.base.ai.dto.ChatRequest;
+
 /**
  * AI 图片生成服务。
  *
@@ -14,4 +16,12 @@ public interface AiImageService {
      * @return Markdown 图片内容
      */
     String generateImage(String userMessage);
+
+    /**
+     * 根据用户输入和参考图片上下文生成或调整图片，并返回可直接在 Markdown 中展示的内容。
+     *
+     * @param request AI 对话请求
+     * @return Markdown 图片内容
+     */
+    String generateImage(ChatRequest request);
 }

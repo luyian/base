@@ -152,7 +152,8 @@ public class FileController {
     @PreAuthorize("hasAuthority('file:list')")
     public Result<List<String>> getFileGroups() {
         // 返回常用的文件分组
-        List<String> groups = java.util.Arrays.asList("default", "images", "documents", "videos", "audio", "others", "open");
+        List<String> groups = java.util.Arrays.asList("default", "images", "documents", "videos", "audio", "others",
+                "open", "ai");
         return Result.success(groups);
     }
 }

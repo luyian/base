@@ -135,7 +135,8 @@ const groupLabelMap = {
   videos: '视频',
   audio: '音频',
   others: '其他',
-  open: '开放接口'
+  open: '开放接口',
+  ai: 'AI生成'
 }
 
 // 上传相关
@@ -160,7 +161,7 @@ async function loadFileGroups() {
       fileGroups.value = res.data
     }
   } catch (e) {
-    fileGroups.value = ['default', 'images', 'documents', 'videos', 'audio', 'others']
+    fileGroups.value = ['default', 'images', 'documents', 'videos', 'audio', 'others', 'ai']
   }
 }
 

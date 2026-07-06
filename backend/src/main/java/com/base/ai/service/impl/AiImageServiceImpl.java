@@ -14,11 +14,16 @@ import com.base.ai.service.AiConfigProvider;
 import com.base.ai.service.AiImageService;
 import com.base.common.exception.BusinessException;
 import com.base.common.result.ResultCode;
+import com.base.system.entity.SysFile;
+import com.base.system.mapper.SysFileMapper;
+import com.base.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 /**
@@ -37,6 +42,8 @@ public class AiImageServiceImpl implements AiImageService {
 
     private static final String AI_IMAGE_GROUP = "ai";
 
+    private static final int MAX_FILE_DESC_LENGTH = 500;
+
     private final AiConfigProvider aiConfigProvider;
 
     private final AiImageModelResolver imageModelResolver;
@@ -44,6 +51,8 @@ public class AiImageServiceImpl implements AiImageService {
     private final AiImageAdapterSelector imageAdapterSelector;
 
     private final CosService cosService;
+
+    private final SysFileMapper sysFileMapper;
 
     @Override
     public String generateImage(String userMessage) {
@@ -122,9 +131,62 @@ public class AiImageServiceImpl implements AiImageService {
         String fileExt = resolveImageExt(result.getImageUrl());
         String cosKey = cosService.uploadFile(imageBytes, AI_IMAGE_GROUP, fileExt);
         String imageUrl = cosService.getFileUrl(cosKey);
+        saveAiImageFileRecord(result, cosKey, fileExt, imageBytes.length);
         result.setImageUrl(imageUrl);
         result.setImageBase64(null);
         log.info("AI 生成图片已保存到 COS，key: {}", cosKey);
+    }
+
+    private void saveAiImageFileRecord(AiImageResult result, String cosKey, String fileExt, int fileSize) {
+        SysFile sysFile = new SysFile();
+        sysFile.setFileName(cosKey);
+        sysFile.setOriginalName(buildAiImageOriginalName(fileExt));
+        sysFile.setFileExt(fileExt);
+        sysFile.setFileSize((long) fileSize);
+        sysFile.setFileType(resolveImageContentType(fileExt));
+        sysFile.setFilePath(cosKey);
+        sysFile.setFileUrl(cosKey);
+        sysFile.setFileGroup(AI_IMAGE_GROUP);
+        sysFile.setFileDesc(buildAiImageFileDesc(result));
+        sysFile.setStatus(1);
+        sysFile.setCreateTime(LocalDateTime.now());
+        sysFile.setUpdateTime(LocalDateTime.now());
+
+        try {
+            sysFile.setUploadUserId(SecurityUtils.getCurrentUserId());
+            sysFile.setUploadUserName(SecurityUtils.getCurrentUsername());
+        } catch (Exception e) {
+            log.debug("记录 AI 生成图片上传用户失败: {}", e.getMessage());
+        }
+        sysFileMapper.insert(sysFile);
+    }
+
+    private String buildAiImageOriginalName(String fileExt) {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        return "AI生成图片_" + timestamp + "." + fileExt;
+    }
+
+    private String buildAiImageFileDesc(AiImageResult result) {
+        StringBuilder desc = new StringBuilder("AI生成图片");
+        appendDescPart(desc, "模型", result.getModel());
+        appendDescPart(desc, "尺寸", result.getSize());
+        appendDescPart(desc, "适配器", result.getAdapterName());
+        appendDescPart(desc, "提示词", result.getPrompt());
+        return truncate(desc.toString(), MAX_FILE_DESC_LENGTH);
+    }
+
+    private void appendDescPart(StringBuilder desc, String label, String value) {
+        if (!StringUtils.hasText(value)) {
+            return;
+        }
+        desc.append("；").append(label).append("：").append(value);
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength - 3) + "...";
     }
 
     private byte[] loadImageBytes(AiImageResult result) {
@@ -163,6 +225,19 @@ public class AiImageServiceImpl implements AiImageService {
             return "gif";
         }
         return "png";
+    }
+
+    private String resolveImageContentType(String fileExt) {
+        if ("jpg".equals(fileExt) || "jpeg".equals(fileExt)) {
+            return "image/jpeg";
+        }
+        if ("webp".equals(fileExt)) {
+            return "image/webp";
+        }
+        if ("gif".equals(fileExt)) {
+            return "image/gif";
+        }
+        return "image/png";
     }
 
 }

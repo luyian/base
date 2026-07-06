@@ -44,6 +44,8 @@ public class AiImageServiceImpl implements AiImageService {
 
     private static final int MAX_FILE_DESC_LENGTH = 500;
 
+    private static final int MAX_FILE_NAME_STEM_LENGTH = 80;
+
     private final AiConfigProvider aiConfigProvider;
 
     private final AiImageModelResolver imageModelResolver;
@@ -140,7 +142,7 @@ public class AiImageServiceImpl implements AiImageService {
     private void saveAiImageFileRecord(AiImageResult result, String cosKey, String fileExt, int fileSize) {
         SysFile sysFile = new SysFile();
         sysFile.setFileName(cosKey);
-        sysFile.setOriginalName(buildAiImageOriginalName(fileExt));
+        sysFile.setOriginalName(buildAiImageOriginalName(result, fileExt));
         sysFile.setFileExt(fileExt);
         sysFile.setFileSize((long) fileSize);
         sysFile.setFileType(resolveImageContentType(fileExt));
@@ -161,9 +163,43 @@ public class AiImageServiceImpl implements AiImageService {
         sysFileMapper.insert(sysFile);
     }
 
-    private String buildAiImageOriginalName(String fileExt) {
+    private String buildAiImageOriginalName(AiImageResult result, String fileExt) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        return "AI生成图片_" + timestamp + "." + fileExt;
+        String promptName = buildSafeFileNameStem(result == null ? null : result.getPrompt());
+        if (!StringUtils.hasText(promptName)) {
+            promptName = "AI生成图片";
+        }
+        return promptName + "_" + timestamp + "." + fileExt;
+    }
+
+    private String buildSafeFileNameStem(String prompt) {
+        if (!StringUtils.hasText(prompt)) {
+            return "";
+        }
+        StringBuilder stem = new StringBuilder();
+        boolean lastIsSeparator = false;
+        for (int i = 0; i < prompt.length() && stem.length() < MAX_FILE_NAME_STEM_LENGTH; i++) {
+            char ch = prompt.charAt(i);
+            if (Character.isLetterOrDigit(ch)) {
+                stem.append(ch);
+                lastIsSeparator = false;
+                continue;
+            }
+            if (ch == '-' || ch == '_') {
+                stem.append(ch);
+                lastIsSeparator = ch == '_';
+                continue;
+            }
+            if (!lastIsSeparator && stem.length() > 0) {
+                stem.append('_');
+                lastIsSeparator = true;
+            }
+        }
+        String value = stem.toString();
+        while (value.endsWith("_") || value.endsWith("-")) {
+            value = value.substring(0, value.length() - 1);
+        }
+        return value;
     }
 
     private String buildAiImageFileDesc(AiImageResult result) {

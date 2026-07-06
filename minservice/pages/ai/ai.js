@@ -111,7 +111,9 @@ Page({
       referenceImageUrl: imageUrl.trim(),
       referenceImagePrompt: this.extractLineValue(content, '提示词'),
       referenceImageRevisedPrompt: this.extractLineValue(content, '优化提示词'),
-      localImageUrl: ''
+      localImageUrl: '',
+      displayImageUrl: imageUrl.trim(),
+      imageLoadFailed: false
     };
   },
 
@@ -158,6 +160,22 @@ Page({
     };
   },
 
+  updateImageContext(messageId, patch) {
+    const messages = this.data.messages.map(item => {
+      if (item.id !== messageId || !item.imageContext) {
+        return item;
+      }
+      return {
+        ...item,
+        imageContext: {
+          ...item.imageContext,
+          ...patch
+        }
+      };
+    });
+    this.setData({ messages });
+  },
+
   downloadAiImage(messageId, imageUrl) {
     if (!imageUrl) return;
     if (imageUrl.indexOf('data:image/') === 0) {
@@ -172,25 +190,25 @@ Page({
       },
       success: (res) => {
         if (res.statusCode !== 200 || !res.tempFilePath) {
-          wx.showToast({ title: '图片加载失败', icon: 'none' });
+          console.warn('[AI Image] proxy download failed:', res);
+          this.updateImageContext(messageId, {
+            displayImageUrl: imageUrl,
+            imageLoadFailed: false
+          });
           return;
         }
-        const messages = this.data.messages.map(item => {
-          if (item.id !== messageId || !item.imageContext) {
-            return item;
-          }
-          return {
-            ...item,
-            imageContext: {
-              ...item.imageContext,
-              localImageUrl: res.tempFilePath
-            }
-          };
+        this.updateImageContext(messageId, {
+          localImageUrl: res.tempFilePath,
+          displayImageUrl: res.tempFilePath,
+          imageLoadFailed: false
         });
-        this.setData({ messages });
       },
       fail: () => {
-        wx.showToast({ title: '图片下载失败', icon: 'none' });
+        console.warn('[AI Image] proxy download failed');
+        this.updateImageContext(messageId, {
+          displayImageUrl: imageUrl,
+          imageLoadFailed: false
+        });
       }
     });
   },
@@ -206,24 +224,37 @@ Page({
       data: dataUrl.slice(commaIndex + 1),
       encoding: 'base64',
       success: () => {
-        const messages = this.data.messages.map(item => {
-          if (item.id !== messageId || !item.imageContext) {
-            return item;
-          }
-          return {
-            ...item,
-            imageContext: {
-              ...item.imageContext,
-              localImageUrl: filePath
-            }
-          };
+        this.updateImageContext(messageId, {
+          localImageUrl: filePath,
+          displayImageUrl: filePath,
+          imageLoadFailed: false
         });
-        this.setData({ messages });
       },
       fail: () => {
         wx.showToast({ title: '图片保存失败', icon: 'none' });
       }
     });
+  },
+
+  onAiImageLoad(e) {
+    const messageId = Number(e.currentTarget.dataset.id);
+    if (!messageId) return;
+    this.updateImageContext(messageId, { imageLoadFailed: false });
+  },
+
+  onAiImageLoadError(e) {
+    const messageId = Number(e.currentTarget.dataset.id);
+    if (!messageId) return;
+    const currentUrl = e.currentTarget.dataset.currentUrl;
+    const originalUrl = e.currentTarget.dataset.originalUrl;
+    if (originalUrl && currentUrl !== originalUrl) {
+      this.updateImageContext(messageId, {
+        displayImageUrl: originalUrl,
+        imageLoadFailed: false
+      });
+      return;
+    }
+    this.updateImageContext(messageId, { imageLoadFailed: true });
   },
 
   previewAiImage(e) {

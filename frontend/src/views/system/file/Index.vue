@@ -64,6 +64,11 @@
             </el-tag>
           </template>
         </el-table-column>
+        <el-table-column prop="fileDesc" label="描述" min-width="220" show-overflow-tooltip>
+          <template #default="{ row }">
+            <span class="file-desc-text">{{ row.fileDesc || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="uploadUserName" label="上传人" width="150">
           <template #default="{ row }">
             <template v-if="row.uploadUserName && row.uploadUserName.startsWith('OPEN:')">
@@ -375,6 +380,15 @@ function isPdf(file) {
 
 .upload-btn {
   display: inline-block;
+}
+
+.file-desc-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 .preview-content {

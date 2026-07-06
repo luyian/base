@@ -79,19 +79,26 @@
             <md-render content="{{item.displayContent || item.content}}" />
             <view wx:if="{{item.imageContext}}" class="ai-image-card">
               <image
-                wx:if="{{item.imageContext.localImageUrl}}"
+                wx:if="{{item.imageContext.displayImageUrl && !item.imageContext.imageLoadFailed}}"
                 class="ai-image-preview"
-                src="{{item.imageContext.localImageUrl}}"
+                src="{{item.imageContext.displayImageUrl}}"
                 mode="widthFix"
                 bindtap="previewAiImage"
-                data-local-url="{{item.imageContext.localImageUrl}}"
+                bindload="onAiImageLoad"
+                binderror="onAiImageLoadError"
+                data-id="{{item.id}}"
+                data-current-url="{{item.imageContext.displayImageUrl}}"
+                data-local-url="{{item.imageContext.displayImageUrl}}"
                 data-original-url="{{item.imageContext.referenceImageUrl}}"
               />
+              <view wx:elif="{{item.imageContext.imageLoadFailed}}" class="ai-image-loading ai-image-error">
+                <text>图片预览失败，点击查看大图</text>
+              </view>
               <view wx:else class="ai-image-loading">
                 <text>图片加载中...</text>
               </view>
               <view class="ai-image-actions" bindtap="previewAiImage"
-                data-local-url="{{item.imageContext.localImageUrl}}"
+                data-local-url="{{item.imageContext.displayImageUrl}}"
                 data-original-url="{{item.imageContext.referenceImageUrl}}"
               >
                 <text>点击查看大图</text>

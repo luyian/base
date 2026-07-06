@@ -190,6 +190,9 @@ import { getLatestNotices, getUnreadCount } from '@/api/notice'
 
 const router = useRouter()
 
+// 组件卸载标志，用于取消未完成的请求回调
+const isUnmounted = ref(false)
+
 // 打开 AI 对话页面
 function openAiChat() {
   router.push('/ai/chat')
@@ -207,6 +210,7 @@ async function loadServerStats() {
   if (!hasMonitorPermission.value) return
   try {
     const res = await getServerInfo()
+    if (isUnmounted.value) return
     if (res.code === 200 && res.data) {
       const data = res.data
       if (data.cpu) {
@@ -231,6 +235,7 @@ async function loadServerStats() {
       }
     }
   } catch (e) {
+    if (isUnmounted.value) return
     // 权限不足时静默处理，不显示错误
     if (e?.code === 403 || e?.message?.includes('Forbidden')) {
       return
@@ -261,6 +266,7 @@ async function loadLoginLogs() {
   loginLoading.value = true
   try {
     const res = await pageLoginLogs({ page: 1, pageSize: 3 })
+    if (isUnmounted.value) return
     if (res.code === 200) {
       recentLogins.value = (res.data?.records || []).map(item => ({
         username: item.username || item.createBy || '-',
@@ -270,9 +276,12 @@ async function loadLoginLogs() {
       }))
     }
   } catch (e) {
+    if (isUnmounted.value) return
     console.error('获取登录日志失败', e)
   } finally {
-    loginLoading.value = false
+    if (!isUnmounted.value) {
+      loginLoading.value = false
+    }
   }
 }
 
@@ -288,6 +297,7 @@ async function loadNotices() {
       getLatestNotices(10),
       getUnreadCount()
     ])
+    if (isUnmounted.value) return
     if (noticesRes.code === 200) {
       notices.value = (noticesRes.data || []).map(item => ({
         id: item.id,
@@ -302,9 +312,12 @@ async function loadNotices() {
       unreadNoticeCount.value = countRes.data || 0
     }
   } catch (e) {
+    if (isUnmounted.value) return
     console.error('获取通知失败', e)
   } finally {
-    noticeLoading.value = false
+    if (!isUnmounted.value) {
+      noticeLoading.value = false
+    }
   }
 }
 
@@ -435,6 +448,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  isUnmounted.value = true
   if (refreshTimer) clearInterval(refreshTimer)
   loginChart?.dispose()
   operationChart?.dispose()

@@ -1,9 +1,9 @@
 <template>
   <div class="dashboard-container">
-    <!-- 第一行：AI 助手入口 -->
+    <!-- 第一行：AI 能力入口 -->
     <el-row :gutter="20" class="dashboard-row">
-      <el-col :span="24">
-        <el-card class="ai-entry-card" shadow="hover" @click="openAiChat">
+      <el-col :xs="24" :md="12">
+        <el-card class="ai-entry-card chat-entry-card" shadow="hover" @click="openAiChat">
           <div class="ai-entry-content">
             <div class="ai-entry-left">
               <div class="ai-entry-icon">
@@ -22,6 +22,32 @@
               </div>
               <el-button type="primary" class="ai-entry-btn">
                 开始对话
+                <el-icon class="el-icon--right"><ArrowRight /></el-icon>
+              </el-button>
+            </div>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :md="12">
+        <el-card class="ai-entry-card image-entry-card" shadow="hover" @click="openAiImageGenerator">
+          <div class="ai-entry-content">
+            <div class="ai-entry-left">
+              <div class="ai-entry-icon">
+                <el-icon :size="32"><Picture /></el-icon>
+              </div>
+              <div class="ai-entry-info">
+                <h3 class="ai-entry-title">AI 作图</h3>
+                <p class="ai-entry-desc">提示词作图、多尺寸、多图生成，结果直接预览下载</p>
+              </div>
+            </div>
+            <div class="ai-entry-right">
+              <div class="ai-entry-features">
+                <el-tag effect="plain" size="small">最多8张</el-tag>
+                <el-tag effect="plain" size="small">不走OSS</el-tag>
+                <el-tag effect="plain" size="small">专用页面</el-tag>
+              </div>
+              <el-button type="primary" class="ai-entry-btn image-entry-btn">
+                开始作图
                 <el-icon class="el-icon--right"><ArrowRight /></el-icon>
               </el-button>
             </div>
@@ -180,7 +206,7 @@ import {
   User, UserFilled, Lock, OfficeBuilding, ChatDotRound, DocumentCopy,
   WarningFilled, Promotion, Service, TrendCharts, PieChart, Clock,
   Refresh, Bell, InfoFilled, SuccessFilled, Cpu, Odometer, Monitor, FolderOpened,
-  DataBoard, Folder, ArrowRight
+  DataBoard, Folder, ArrowRight, Picture
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
@@ -196,6 +222,11 @@ const isUnmounted = ref(false)
 // 打开 AI 对话页面
 function openAiChat() {
   router.push('/ai/chat')
+}
+
+// 打开 AI 作图专用页面
+function openAiImageGenerator() {
+  router.push('/ai/image-generator')
 }
 
 // 服务器状态
@@ -472,8 +503,16 @@ onUnmounted(() => {
 .ai-entry-card {
   cursor: pointer;
   transition: all 0.3s ease;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
+  height: 100%;
+}
+
+.chat-entry-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.image-entry-card {
+  background: linear-gradient(135deg, #0f766e 0%, #2563eb 100%);
 }
 
 .ai-entry-card:hover {
@@ -481,11 +520,17 @@ onUnmounted(() => {
   box-shadow: 0 12px 24px rgba(102, 126, 234, 0.4);
 }
 
+.image-entry-card:hover {
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.35);
+}
+
 .ai-entry-card :deep(.el-card__body) {
   padding: 24px;
+  height: 100%;
 }
 
 .ai-entry-content {
+  min-height: 116px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -555,6 +600,14 @@ onUnmounted(() => {
 .ai-entry-btn:hover {
   background: rgba(255, 255, 255, 0.9);
   color: #764ba2;
+}
+
+.image-entry-btn {
+  color: #0f766e;
+}
+
+.image-entry-btn:hover {
+  color: #2563eb;
 }
 
 /* 统计卡片 */

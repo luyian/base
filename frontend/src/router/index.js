@@ -40,6 +40,12 @@ const constantRoutes = [
     meta: { title: 'AI 智能助手' }
   },
   {
+    path: '/ai/image-generator',
+    name: 'AiImageGenerator',
+    component: () => import('@/views/ai/ImageGenerator.vue'),
+    meta: { title: 'AI 作图' }
+  },
+  {
     path: '/',
     name: 'Layout',
     component: () => import('@/layout/Index.vue'),

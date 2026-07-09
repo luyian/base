@@ -22,9 +22,12 @@ const request = (options) => {
           if (res.data.data && res.data.data.token) {
             wx.setStorageSync('token', res.data.data.token);
             app.globalData.token = res.data.data.token;  // Update globalData
+            if (app.clearManualLogout) {
+              app.clearManualLogout();
+            }
           }
           resolve(res.data);
-        } else if (res.data.code === 401) {
+        } else if (res.data.code === 401 && !options.skipAuthRedirect) {
           // Token expired, redirect to login
           app.logout();
           wx.redirectTo({
@@ -32,19 +35,23 @@ const request = (options) => {
           });
           reject(res.data);
         } else {
-          wx.showToast({
-            title: res.data.message || '请求失败',
-            icon: 'none'
-          });
+          if (!options.silentError) {
+            wx.showToast({
+              title: res.data.message || '请求失败',
+              icon: 'none'
+            });
+          }
           reject(res.data);
         }
       },
       fail: (err) => {
         console.log('请求失败:', err);
-        wx.showToast({
-          title: '网络请求失败',
-          icon: 'none'
-        });
+        if (!options.silentError) {
+          wx.showToast({
+            title: '网络请求失败',
+            icon: 'none'
+          });
+        }
         reject(err);
       }
     });
@@ -53,7 +60,7 @@ const request = (options) => {
 
 module.exports = {
   get: (url, data) => request({ url, data, method: 'GET' }),
-  post: (url, data) => request({ url, data, method: 'POST' }),
+  post: (url, data, options = {}) => request({ url, data, method: 'POST', ...options }),
   put: (url, data) => request({ url, data, method: 'PUT' }),
   delete: (url, data) => request({ url, data, method: 'DELETE' })
 };

@@ -135,11 +135,18 @@ App({
     return Array.isArray(roles) && (roles.includes('SUPER_ADMIN') || roles.includes('ADMIN'));
   },
 
-  logout() {
+  logout(options = {}) {
     this.globalData.token = null;
     this.globalData.userInfo = null;
     wx.removeStorageSync('token');
     wx.removeStorageSync('userInfo');
+    if (options.manual) {
+      wx.setStorageSync('manualLogout', true);
+    }
+  },
+
+  clearManualLogout() {
+    wx.removeStorageSync('manualLogout');
   },
 
   login(code) {
@@ -157,6 +164,7 @@ App({
             this.globalData.userInfo = userInfo;
             wx.setStorageSync('token', token);
             wx.setStorageSync('userInfo', userInfo);
+            this.clearManualLogout();
             resolve(userInfo);
           } else {
             reject(new Error(res.data.message));

@@ -12,7 +12,7 @@ module.exports = {
   register: (data) => request.post('/auth/register', data),
   
   // WeChat mini program login
-  wxLogin: (code) => request.post('/auth/wx-login', { code }),
+  wxLogin: (code, options = {}) => request.post('/auth/wx-login', { code }, options),
   
   // WeChat bind (bind existing account or create new)
   bindWechat: (data) => request.post('/auth/wx-bind', data),

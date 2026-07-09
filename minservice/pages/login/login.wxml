@@ -6,68 +6,79 @@
   <view class="circle circle-2"></view>
   <view class="circle circle-3"></view>
   
-  <view class="header">
-    <view class="logo-container">
+  <view class="auto-login-loading" wx:if="{{!loginReady && autoLogin}}">
+    <view class="logo-container loading-logo">
       <image class="logo-icon" src="/assets/logo.png" mode="aspectFit" />
     </view>
-    <text class="title">简基</text>
-    <text class="subtitle">专业的基金估值分析平台</text>
+    <view class="loading-spinner"></view>
+    <text class="loading-title">正在登录</text>
+    <text class="loading-desc">正在使用已绑定微信号登录...</text>
   </view>
 
-  <!-- Tab Switcher -->
-  <view class="tab-bar">
-    <view class="tab {{activeTab==='password' ? 'active' : ''}}" bindtap="switchTab" data-tab="password">账号登录</view>
-    <view class="tab {{activeTab==='wechat' ? 'active' : ''}}" bindtap="switchTab" data-tab="wechat">微信登录</view>
-  </view>
+  <block wx:if="{{loginReady}}">
+    <view class="header">
+      <view class="logo-container">
+        <image class="logo-icon" src="/assets/logo.png" mode="aspectFit" />
+      </view>
+      <text class="title">简基</text>
+      <text class="subtitle">专业的基金估值分析平台</text>
+    </view>
 
-  <!-- Password Login -->
-  <view class="login-form" wx:if="{{activeTab === 'password'}}">
-    <view class="input-group">
-      <view class="input-icon">👤</view>
-      <input class="input" placeholder="请输入用户名" value="{{username}}" bindinput="onUsernameInput" />
+    <!-- Tab Switcher -->
+    <view class="tab-bar">
+      <view class="tab {{activeTab==='password' ? 'active' : ''}}" bindtap="switchTab" data-tab="password">账号登录</view>
+      <view class="tab {{activeTab==='wechat' ? 'active' : ''}}" bindtap="switchTab" data-tab="wechat">微信登录</view>
     </view>
-    <view class="input-group">
-      <view class="input-icon">🔒</view>
-      <input class="input password" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
-    </view>
-    <!-- Captcha -->
-    <view class="input-group" wx:if="{{captchaEnabled}}">
-      <view class="input-icon">🔢</view>
-      <input class="input" placeholder="请输入验证码" value="{{captcha}}" bindinput="onCaptchaInput" style="width: 280rpx;" />
-      <image class="captcha-img" src="{{captchaImage}}" mode="aspectFit" bindtap="refreshCaptcha"></image>
-    </view>
-    <button class="login-btn primary" bindtap="handlePasswordLogin" loading="{{loading}}">
-      <text wx:if="{{!loading}}">登 录</text>
-      <text wx:else>登录中...</text>
-    </button>
-    <view class="register-link" bindtap="goToRegister">
-      <text>还没有账号？立即注册</text>
-    </view>
-  </view>
 
-  <!-- WeChat Login -->
-  <view class="login-form" wx:if="{{activeTab === 'wechat'}}">
-    <view class="wechat-tip">
-      <text>使用微信登录前，请先在「账号登录」页面注册账号并绑定微信</text>
+    <!-- Password Login -->
+    <view class="login-form" wx:if="{{activeTab === 'password'}}">
+      <view class="input-group">
+        <view class="input-icon">👤</view>
+        <input class="input" placeholder="请输入用户名" value="{{username}}" bindinput="onUsernameInput" />
+      </view>
+      <view class="input-group">
+        <view class="input-icon">🔒</view>
+        <input class="input password" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
+      </view>
+      <!-- Captcha -->
+      <view class="input-group" wx:if="{{captchaEnabled}}">
+        <view class="input-icon">🔢</view>
+        <input class="input" placeholder="请输入验证码" value="{{captcha}}" bindinput="onCaptchaInput" style="width: 280rpx;" />
+        <image class="captcha-img" src="{{captchaImage}}" mode="aspectFit" bindtap="refreshCaptcha"></image>
+      </view>
+      <button class="login-btn primary" bindtap="handlePasswordLogin" loading="{{loading}}">
+        <text wx:if="{{!loading}}">登 录</text>
+        <text wx:else>登录中...</text>
+      </button>
+      <view class="register-link" bindtap="goToRegister">
+        <text>还没有账号？立即注册</text>
+      </view>
     </view>
-    <button class="login-btn wechat" bindtap="handleWxLogin" loading="{{loading}}">
-      <text wx:if="{{!loading}}">💬 微信一键登录</text>
-      <text wx:else>登录中...</text>
-    </button>
-  </view>
 
-  <!-- WeChat Bind Modal -->
-  <view class="modal-mask" wx:if="{{showBindModal}}">
-    <view class="modal">
-      <view class="modal-title">绑定微信</view>
-      <view class="modal-content">
-        <view class="tip">是否将微信绑定到当前账号？绑定后可直接用微信登录</view>
-        
-        <view class="modal-btns">
-          <button class="btn cancel" bindtap="closeBindModal">取消</button>
-          <button class="btn confirm" bindtap="confirmBind" loading="{{binding}}">确认绑定</button>
+    <!-- WeChat Login -->
+    <view class="login-form" wx:if="{{activeTab === 'wechat'}}">
+      <view class="wechat-tip">
+        <text>使用微信登录前，请先在「账号登录」页面注册账号并绑定微信</text>
+      </view>
+      <button class="login-btn wechat" bindtap="handleWxLogin" loading="{{loading}}">
+        <text wx:if="{{!loading}}">💬 微信一键登录</text>
+        <text wx:else>登录中...</text>
+      </button>
+    </view>
+
+    <!-- WeChat Bind Modal -->
+    <view class="modal-mask" wx:if="{{showBindModal}}">
+      <view class="modal">
+        <view class="modal-title">绑定微信</view>
+        <view class="modal-content">
+          <view class="tip">是否将微信绑定到当前账号？绑定后可直接用微信登录</view>
+
+          <view class="modal-btns">
+            <button class="btn cancel" bindtap="closeBindModal">取消</button>
+            <button class="btn confirm" bindtap="confirmBind" loading="{{binding}}">确认绑定</button>
+          </view>
         </view>
       </view>
     </view>
-  </view>
+  </block>
 </view>

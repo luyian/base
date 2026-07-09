@@ -121,7 +121,7 @@ Page({
       success: (res) => {
         if (res.confirm) {
           authApi.logout().finally(() => {
-            app.logout();
+            app.logout({ manual: true });
             wx.reLaunch({ url: '/pages/login/login' });
           });
         }

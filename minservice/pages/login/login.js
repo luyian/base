@@ -14,6 +14,9 @@ Page({
     captcha: '',
     showBindModal: false,
     binding: false,
+    loginReady: false,
+    autoLogin: false,
+    autoLoginTried: false,
     wxCode: '',
     bindUsername: '',
     bindPassword: '',
@@ -21,15 +24,14 @@ Page({
   },
 
   onLoad() {
-    const theme = app.getTheme();
     this.applyTheme();
     
     const token = wx.getStorageSync('token');
     if (token) {
       wx.switchTab({ url: '/pages/index/index' });
+      return;
     }
-    // Check and load captcha
-    this.loadCaptcha();
+    this.tryAutoWxLogin();
   },
 
   // 应用主题
@@ -77,6 +79,32 @@ Page({
     this.loadCaptcha();
   },
 
+  tryAutoWxLogin() {
+    if (wx.getStorageSync('manualLogout') || this.data.autoLoginTried) {
+      this.showLoginPage();
+      return;
+    }
+    this.setData({
+      activeTab: 'password',
+      loginReady: false,
+      autoLogin: true,
+      autoLoginTried: true
+    });
+    this.loginByWechat({
+      auto: true,
+      failMessage: '微信自动登录失败，请使用账号密码登录或微信一键登录'
+    });
+  },
+
+  showLoginPage() {
+    this.setData({
+      activeTab: 'password',
+      loginReady: true,
+      autoLogin: false
+    });
+    this.loadCaptcha();
+  },
+
   onBindUsernameInput(e) {
     this.setData({ bindUsername: e.detail.value });
   },
@@ -106,6 +134,7 @@ Page({
         const token = res.data.token;
         wx.setStorageSync('token', token);
         app.globalData.token = token;
+        app.clearManualLogout();
         return authApi.getUserInfo();
       })
       .then(userRes => {
@@ -124,12 +153,14 @@ Page({
               if (modalRes.confirm) {
                 this.bindWechat();
               } else {
+                app.clearManualLogout();
                 wx.switchTab({ url: '/pages/index/index' });
               }
             }
           });
         } else {
           wx.showToast({ title: '登录成功', icon: 'success' });
+          app.clearManualLogout();
           setTimeout(() => { wx.switchTab({ url: '/pages/index/index' }); }, 1000);
         }
       })
@@ -158,6 +189,7 @@ Page({
             if (res.data) {
               wx.setStorageSync('userInfo', res.data);
               that.setData({ userInfo: res.data });
+              app.globalData.userInfo = res.data;
             }
           })
           .catch(err => {
@@ -178,18 +210,29 @@ Page({
 
   // 微信登录
   handleWxLogin() {
+    this.loginByWechat({
+      auto: false,
+      failMessage: '微信登录失败'
+    });
+  },
+
+  loginByWechat(options = {}) {
     const that = this;
+    const isAuto = !!options.auto;
+    const failMessage = options.failMessage || '微信登录失败';
     wx.login({
       success(res) {
-        that.setData({ loading: true });
-        authApi.wxLogin(res.code)
+        that.setData({ loading: !isAuto, autoLogin: isAuto });
+        authApi.wxLogin(res.code, { skipAuthRedirect: true, silentError: true })
           .then(res => {
             if (res.data && res.data.needBind) {
-              that.setData({ wxCode: res.code, showBindModal: true });
+              that.handleWxLoginNeedBind(isAuto);
+              return null;
             } else {
               const token = res.data.token;
               wx.setStorageSync('token', token);
               app.globalData.token = token;
+              app.clearManualLogout();
               return authApi.getUserInfo();
             }
           })
@@ -203,15 +246,48 @@ Page({
           })
           .catch(err => {
             console.error('WeChat login error:', err);
-            wx.showToast({ title: '微信登录失败', icon: 'none' });
+            if (that.isNeedBindError(err)) {
+              that.handleWxLoginNeedBind(isAuto);
+              return;
+            }
+            if (isAuto) {
+              that.showLoginPage();
+            }
+            wx.showToast({ title: failMessage, icon: 'none' });
           })
           .finally(() => {
-            that.setData({ loading: false });
+            const nextData = { loading: false };
+            if (!isAuto) {
+              nextData.autoLogin = false;
+            }
+            that.setData(nextData);
           });
       },
       fail() {
-        wx.showToast({ title: '微信登录失败', icon: 'none' });
+        if (isAuto) {
+          that.showLoginPage();
+        } else {
+          that.setData({ autoLogin: false, activeTab: 'password' });
+        }
+        that.setData({ loading: false });
+        wx.showToast({ title: failMessage, icon: 'none' });
       }
+    });
+  },
+
+  isNeedBindError(err) {
+    return err && err.message === 'NEED_BIND';
+  },
+
+  handleWxLoginNeedBind(isAuto) {
+    if (isAuto) {
+      this.showLoginPage();
+    } else {
+      this.setData({ activeTab: 'password' });
+    }
+    wx.showToast({
+      title: isAuto ? '微信未绑定，请使用账号密码登录' : '微信未绑定，请先账号登录并绑定微信',
+      icon: 'none'
     });
   },
 
@@ -230,6 +306,7 @@ Page({
         const token = res.data.token;
         wx.setStorageSync('token', token);
         app.globalData.token = token;
+        app.clearManualLogout();
         wx.showToast({ title: '绑定成功', icon: 'success' });
         this.setData({ showBindModal: false });
         return authApi.getUserInfo();

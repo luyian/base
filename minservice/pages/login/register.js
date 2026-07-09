@@ -57,6 +57,7 @@ Page({
         wx.setStorageSync('userInfo', res.data.user);
         app.globalData.token = token;
         app.globalData.userInfo = res.data.user;
+        app.clearManualLogout();
         wx.showToast({ title: '注册成功', icon: 'success' });
         setTimeout(() => wx.switchTab({ url: '/pages/index/index' }), 1500);
       })

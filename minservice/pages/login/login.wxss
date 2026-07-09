@@ -35,6 +35,10 @@ page {
 
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20rpx); } }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .header { display: flex; flex-direction: column; align-items: center; margin-top: 80rpx; margin-bottom: 60rpx; position: relative; z-index: 1; }
 .logo-container { margin-bottom: 32rpx; }
 .logo-icon { width: 140rpx; height: 140rpx; border-radius: 36rpx; box-shadow: 0 12rpx 32rpx rgba(59, 130, 246, 0.3); }
@@ -44,6 +48,44 @@ page {
 .tab-bar { display: flex; background: var(--card); border-radius: 50rpx; padding: 8rpx; margin-bottom: 48rpx; box-shadow: var(--shadow); }
 .tab { padding: 20rpx 48rpx; font-size: 28rpx; color: var(--text-secondary); border-radius: 40rpx; font-weight: 500; transition: all 0.25s ease; }
 .tab.active { background: var(--primary); color: #fff; box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.3); }
+
+.auto-login-loading {
+  flex: 1;
+  width: 100%;
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.loading-logo {
+  margin-bottom: 40rpx;
+}
+
+.loading-spinner {
+  width: 52rpx;
+  height: 52rpx;
+  border: 6rpx solid rgba(59, 130, 246, 0.16);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  margin-bottom: 28rpx;
+}
+
+.loading-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 12rpx;
+}
+
+.loading-desc {
+  font-size: 26rpx;
+  color: var(--text-secondary);
+}
 
 .login-form { width: 100%; }
 .input-group { display: flex; align-items: center; background: var(--card); border-radius: 16rpx; margin-bottom: 20rpx; box-shadow: var(--shadow); border: 1rpx solid var(--border); transition: all 0.2s ease; }

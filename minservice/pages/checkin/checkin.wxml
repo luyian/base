@@ -1,0 +1,113 @@
+<!--pages/checkin/checkin.wxml-->
+<view class="container {{themeClass}}">
+  <nav-bar title="打卡" />
+
+  <!-- 月历区 -->
+  <view class="calendar-card">
+    <view class="calendar-header">
+      <view class="month-switch" bindtap="onPrevMonth">
+        <text class="switch-icon">‹</text>
+      </view>
+      <text class="month-label">{{monthLabel}}</text>
+      <view class="month-switch" bindtap="onNextMonth">
+        <text class="switch-icon">›</text>
+      </view>
+    </view>
+
+    <view class="week-row">
+      <text class="week-cell" wx:for="{{weekDays}}" wx:key="*this">{{item}}</text>
+    </view>
+
+    <view class="day-grid">
+      <view wx:for="{{calendarCells}}" wx:key="key"
+            class="day-cell {{item.inMonth ? '' : 'day-empty'}} {{item.isToday ? 'day-today' : ''}}">
+        <block wx:if="{{item.inMonth}}">
+          <view class="day-num-wrap {{item.ratio >= 1 ? 'ratio-full' : (item.ratio > 0 ? 'ratio-partial' : '')}}">
+            <text class="day-num">{{item.day}}</text>
+          </view>
+          <text class="day-progress" wx:if="{{item.total > 0}}">{{item.completed}}/{{item.total}}</text>
+        </block>
+      </view>
+    </view>
+  </view>
+
+  <!-- 今日计划 -->
+  <view class="section-header">
+    <text class="section-title">今日计划</text>
+    <text class="section-date">{{today}}</text>
+  </view>
+
+  <!-- Loading -->
+  <view wx:if="{{loading}}" class="loading-area">
+    <view class="loading-dot"></view>
+    <view class="loading-dot"></view>
+    <view class="loading-dot"></view>
+  </view>
+
+  <!-- 空状态 -->
+  <view wx:elif="{{planList.length === 0}}" class="empty-area">
+    <text class="empty-icon">📅</text>
+    <text class="empty-text">还没有计划，点击下方按钮添加吧</text>
+  </view>
+
+  <!-- 计划卡片网格 -->
+  <view wx:else class="plan-grid">
+    <view wx:for="{{planList}}" wx:key="id"
+          class="plan-card {{item.todayChecked ? 'plan-checked' : ''}}"
+          style="--plan-color: {{item.color || '#3B82F6'}}"
+          bindtap="onTogglePlan"
+          bindlongpress="onLongPressPlan"
+          data-id="{{item.id}}">
+      <view class="plan-icon">{{item.icon || '✔️'}}</view>
+      <text class="plan-title">{{item.title}}</text>
+      <text class="plan-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
+      <view class="plan-status {{item.todayChecked ? 'status-checked' : ''}}">
+        {{item.todayChecked ? '已完成 ✓' : '点击完成'}}
+      </view>
+    </view>
+  </view>
+
+  <!-- 新增按钮 -->
+  <view class="add-btn" bindtap="onAddPlan">
+    <text class="add-icon">+</text>
+    <text class="add-text">新增计划</text>
+  </view>
+
+  <!-- 新增/编辑弹窗 -->
+  <view wx:if="{{showModal}}" class="modal-mask" bindtap="onCloseModal">
+    <view class="modal" catchtap="">
+      <view class="modal-title">{{isEdit ? '编辑计划' : '新增计划'}}</view>
+
+      <view class="form-item">
+        <text class="form-label">名称</text>
+        <input class="form-input" placeholder="如：背单词、运动" value="{{form.title}}" bindinput="onInputTitle" maxlength="50" />
+      </view>
+
+      <view class="form-item">
+        <text class="form-label">图标</text>
+        <input class="form-input" placeholder="填一个 emoji，如 📚" value="{{form.icon}}" bindinput="onInputIcon" maxlength="4" />
+      </view>
+
+      <view class="form-item">
+        <text class="form-label">颜色</text>
+        <view class="color-row">
+          <view wx:for="{{colorOptions}}" wx:key="*this"
+                class="color-dot {{form.color === item ? 'color-active' : ''}}"
+                style="background: {{item}}"
+                data-color="{{item}}"
+                bindtap="onChooseColor"></view>
+        </view>
+      </view>
+
+      <view class="form-item">
+        <text class="form-label">备注</text>
+        <input class="form-input" placeholder="可选" value="{{form.remark}}" bindinput="onInputRemark" maxlength="200" />
+      </view>
+
+      <view class="modal-actions">
+        <view class="btn btn-cancel" bindtap="onCloseModal">取消</view>
+        <view class="btn btn-confirm" bindtap="onSubmitPlan">{{isEdit ? '保存' : '添加'}}</view>
+      </view>
+    </view>
+  </view>
+</view>

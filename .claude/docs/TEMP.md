@@ -1,4 +1,13 @@
 
+## 2026-07-23 完善小程序打卡功能（原子切换、历史统计与权限冲突修复）
+
+- 后端新增 `com.base.checkin` 包：CheckinPlan/CheckinRecord 实体、Mapper、Service 与 CheckinController（6 个接口，按当前用户隔离并校验权限）
+- `checkin_plan` 增加 `deleted_time`，日历按计划创建/删除日期统计每天有效计划总数，删除计划不改变历史完成度
+- 打卡 toggle 改为事务内原子 upsert 并锁定计划，前端增加重复点击锁；缺失或非法请求参数统一返回 400
+- 权限 ID 调整为目录11、菜单110000、按钮110001~110005，避免覆盖既有 `system:export:task:query` 权限；增量建表脚本改为非删表执行
+- 新增打卡服务与请求参数异常测试，支持通过 `-DskipTests=false` 覆盖默认跳过配置，定向测试 7 项通过
+- 小程序端新增 `api/checkin.js`、`pages/checkin/checkin.{js,wxml,wxss,json}`（月历+计划卡片网格+新增/编辑/删除+点击打卡），app.json 注册页面并新增 tabBar 第5项"打卡"及 assets/checkin.png、checkin-active.png 图标
+
 ## 2026-07-07 修复枚举管理历史菜单数据未迁移导致动态路由显示首页的问题
 
 ## 2026-07-06 AI 生成图片文件名改为基于提示词生成，文件管理列表新增单行省略的描述列并支持悬停查看完整信息

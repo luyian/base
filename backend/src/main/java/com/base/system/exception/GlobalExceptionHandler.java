@@ -9,10 +9,12 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.validation.ConstraintViolation;
@@ -75,6 +77,26 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 请求参数缺失异常
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public Result<Void> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        String message = "缺少请求参数：" + e.getParameterName();
+        log.error("请求参数缺失：{}", message);
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), message);
+    }
+
+    /**
+     * 请求参数类型或格式错误
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public Result<Void> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        String message = "请求参数" + e.getName() + "格式错误";
+        log.error("请求参数格式错误：{}", message);
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), message);
+    }
+
+    /**
      * 权限不足异常
      */
     @ExceptionHandler(AccessDeniedException.class)
@@ -118,7 +140,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(java.sql.SQLIntegrityConstraintViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    public Result<Void> handleSQLIntegrityConstraintViolationException(java.sql.SQLIntegrityConstraintViolationException e) {
+    public Result<Void> handleSQLIntegrityConstraintViolationException(
+            java.sql.SQLIntegrityConstraintViolationException e) {
         String message = e.getMessage();
         if (message != null && message.contains("Duplicate entry")) {
             // 提取重复的键名

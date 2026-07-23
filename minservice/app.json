@@ -8,6 +8,7 @@
     "pages/fund/edit",
     "pages/stock/stock",
     "pages/watchlist/watchlist",
+    "pages/checkin/checkin",
     "pages/profile/profile",
     "pages/ai/ai"
   ],
@@ -44,6 +45,12 @@
         "text": "自选",
         "iconPath": "assets/star.png",
         "selectedIconPath": "assets/star-active.png"
+      },
+      {
+        "pagePath": "pages/checkin/checkin",
+        "text": "打卡",
+        "iconPath": "assets/checkin.png",
+        "selectedIconPath": "assets/checkin-active.png"
       },
       {
         "pagePath": "pages/profile/profile",

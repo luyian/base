@@ -20,7 +20,9 @@
 
     <view class="day-grid">
       <view wx:for="{{calendarCells}}" wx:key="key"
-            class="day-cell {{item.inMonth ? '' : 'day-empty'}} {{item.isToday ? 'day-today' : ''}}">
+            class="day-cell {{item.inMonth ? '' : 'day-empty'}} {{item.isToday ? 'day-today' : ''}}"
+            data-date="{{item.date}}"
+            bindlongpress="onLongPressDay">
         <block wx:if="{{item.inMonth}}">
           <view class="day-num-wrap {{item.ratio >= 1 ? 'ratio-full' : (item.ratio > 0 ? 'ratio-partial' : '')}}">
             <text class="day-num">{{item.day}}</text>
@@ -50,17 +52,21 @@
     <text class="empty-text">还没有计划，点击下方按钮添加吧</text>
   </view>
 
-  <!-- 计划卡片网格 -->
-  <view wx:else class="plan-grid">
+  <!-- 计划列表 -->
+  <view wx:else class="plan-list">
     <view wx:for="{{planList}}" wx:key="id"
-          class="plan-card {{item.todayChecked ? 'plan-checked' : ''}}"
+          class="plan-row {{item.todayChecked ? 'plan-checked' : ''}}"
           style="--plan-color: {{item.color || '#3B82F6'}}"
           bindtap="onTogglePlan"
           bindlongpress="onLongPressPlan"
           data-id="{{item.id}}">
-      <view class="plan-icon">{{item.icon || '✔️'}}</view>
-      <text class="plan-title">{{item.title}}</text>
-      <text class="plan-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
+      <view class="plan-left">
+        <view class="plan-icon">{{item.icon || '✔️'}}</view>
+        <view class="plan-info">
+          <text class="plan-title">{{item.title}}</text>
+          <text class="plan-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
+        </view>
+      </view>
       <view class="plan-status {{item.todayChecked ? 'status-checked' : ''}}">
         {{item.todayChecked ? '已完成 ✓' : '点击完成'}}
       </view>
@@ -75,8 +81,13 @@
 
   <!-- 新增/编辑弹窗 -->
   <view wx:if="{{showModal}}" class="modal-mask" bindtap="onCloseModal">
-    <view class="modal" catchtap="">
+    <view class="modal" catchtap="preventBubble">
       <view class="modal-title">{{isEdit ? '编辑计划' : '新增计划'}}</view>
+
+      <view wx:if="{{form.targetDate}}" class="form-item">
+        <text class="form-label">日期</text>
+        <view class="form-date-display">{{form.targetDate}}</view>
+      </view>
 
       <view class="form-item">
         <text class="form-label">名称</text>

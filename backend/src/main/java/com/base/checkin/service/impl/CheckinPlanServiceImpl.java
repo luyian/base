@@ -44,6 +44,13 @@ public class CheckinPlanServiceImpl implements CheckinPlanService {
     public List<CheckinPlanResponse> listByUserId(Long userId) {
         LambdaQueryWrapper<CheckinPlan> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CheckinPlan::getUserId, userId)
+                .and(w -> w
+                        // 长期计划
+                        .eq(CheckinPlan::getPlanType, 0)
+                        // 或者今天到期的单日事件
+                        .or(x -> x.eq(CheckinPlan::getPlanType, 1)
+                                .eq(CheckinPlan::getTargetDate, LocalDate.now()))
+                )
                 .orderByAsc(CheckinPlan::getSortOrder)
                 .orderByAsc(CheckinPlan::getId);
         List<CheckinPlan> plans = checkinPlanMapper.selectList(wrapper);
@@ -70,10 +77,12 @@ public class CheckinPlanServiceImpl implements CheckinPlanService {
         plan.setIcon(request.getIcon());
         plan.setColor(StringUtils.hasText(request.getColor()) ? request.getColor() : DEFAULT_COLOR);
         plan.setRemark(request.getRemark());
+        plan.setPlanType(request.getPlanType() != null ? request.getPlanType() : 0);
+        plan.setTargetDate(request.getTargetDate());
         plan.setSortOrder(0);
         plan.setStatus(1);
         checkinPlanMapper.insert(plan);
-        log.info("新增打卡计划成功，userId: {}, title: {}", userId, request.getTitle());
+        log.info("新增打卡计划成功，userId: {}, title: {}, planType: {}", userId, request.getTitle(), plan.getPlanType());
         return plan.getId();
     }
 

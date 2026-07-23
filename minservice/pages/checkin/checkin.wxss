@@ -144,56 +144,68 @@ page {
     color: var(--text-tertiary);
 }
 
-.plan-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20rpx;
-}
-
-.plan-card {
-    width: calc(50% - 10rpx);
-    box-sizing: border-box;
-    background: var(--card);
-    border-radius: 24rpx;
-    padding: 28rpx;
-    box-shadow: var(--shadow);
+.plan-list {
     display: flex;
     flex-direction: column;
-    border-top: 6rpx solid var(--plan-color, var(--primary));
+    gap: 16rpx;
+}
+
+.plan-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card);
+    border-radius: 20rpx;
+    padding: 24rpx 28rpx;
+    box-shadow: var(--shadow);
+    border-left: 8rpx solid var(--plan-color, var(--primary));
     transition: transform 0.15s ease;
 }
 
-.plan-card:active { transform: scale(0.97); }
+.plan-row:active { transform: scale(0.98); }
+
+.plan-left {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    flex: 1;
+    min-width: 0;
+}
 
 .plan-icon {
-    font-size: 48rpx;
-    margin-bottom: 12rpx;
+    font-size: 40rpx;
+    flex-shrink: 0;
+}
+
+.plan-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
 .plan-title {
     font-size: 30rpx;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 6rpx;
 }
 
 .plan-remark {
     font-size: 22rpx;
     color: var(--text-tertiary);
-    margin-bottom: 12rpx;
+    margin-top: 4rpx;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
 .plan-status {
-    margin-top: auto;
-    align-self: flex-start;
+    flex-shrink: 0;
     font-size: 22rpx;
-    padding: 6rpx 20rpx;
+    padding: 8rpx 24rpx;
     border-radius: 999rpx;
     background: var(--primary-light);
     color: var(--primary);
+    margin-left: 16rpx;
 }
 
 .plan-status.status-checked {
@@ -312,6 +324,15 @@ page {
     padding: 18rpx 20rpx;
     font-size: 28rpx;
     color: var(--text-primary);
+}
+
+.form-date-display {
+    background: var(--primary-light);
+    border-radius: 12rpx;
+    padding: 18rpx 20rpx;
+    font-size: 28rpx;
+    color: var(--primary);
+    font-weight: 600;
 }
 
 .color-row {

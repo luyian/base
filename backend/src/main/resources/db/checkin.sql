@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS `checkin_plan` (
   `icon` varchar(20) DEFAULT NULL COMMENT '图标（emoji）',
   `color` varchar(20) DEFAULT NULL COMMENT '卡片颜色（hex）',
   `remark` varchar(200) DEFAULT NULL COMMENT '备注',
+  `plan_type` tinyint(1) NOT NULL DEFAULT '0' COMMENT '计划类型（0长期计划 1单日事件）',
+  `target_date` date DEFAULT NULL COMMENT '目标日期（仅单日事件）',
   `sort_order` int NOT NULL DEFAULT '0' COMMENT '排序号（越小越靠前）',
   `status` tinyint(1) NOT NULL DEFAULT '1' COMMENT '状态（0停用 1启用）',
   `deleted_time` datetime DEFAULT NULL COMMENT '删除时间（用于历史统计）',
@@ -22,7 +24,8 @@ CREATE TABLE IF NOT EXISTS `checkin_plan` (
   `update_by` varchar(50) DEFAULT NULL COMMENT '更新人',
   `deleted` tinyint(1) DEFAULT '0' COMMENT '删除标志（0未删除 1已删除）',
   PRIMARY KEY (`id`) USING BTREE,
-  KEY `idx_user_id` (`user_id`) USING BTREE
+  KEY `idx_user_id` (`user_id`) USING BTREE,
+  KEY `idx_target_date` (`target_date`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='打卡计划表';
 
 -- ----------------------------

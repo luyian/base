@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 
 /**
  * 打卡计划响应（含今日打卡状态）
@@ -46,6 +47,18 @@ public class CheckinPlanResponse implements Serializable {
      */
     @ApiModelProperty("备注")
     private String remark;
+
+    /**
+     * 计划类型（0长期计划 1单日事件）
+     */
+    @ApiModelProperty("计划类型（0长期计划 1单日事件）")
+    private Integer planType;
+
+    /**
+     * 目标日期（仅单日事件）
+     */
+    @ApiModelProperty("目标日期（仅单日事件）")
+    private LocalDate targetDate;
 
     /**
      * 排序号

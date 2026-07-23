@@ -8,6 +8,7 @@ import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 import java.io.Serializable;
+import java.time.LocalDate;
 
 /**
  * 打卡计划新增/编辑请求
@@ -49,4 +50,16 @@ public class CheckinPlanRequest implements Serializable {
     @Size(max = 200, message = "备注不能超过200个字符")
     @ApiModelProperty("备注")
     private String remark;
+
+    /**
+     * 计划类型（0长期计划 1单日事件）
+     */
+    @ApiModelProperty("计划类型（0长期计划 1单日事件）")
+    private Integer planType;
+
+    /**
+     * 目标日期（仅单日事件，格式 yyyy-MM-dd）
+     */
+    @ApiModelProperty("目标日期（仅单日事件，格式 yyyy-MM-dd）")
+    private LocalDate targetDate;
 }

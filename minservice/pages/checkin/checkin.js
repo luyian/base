@@ -30,7 +30,7 @@ Page({
     // 新增/编辑弹窗
     showModal: false,
     isEdit: false,
-    form: { id: null, title: '', icon: '', color: COLOR_OPTIONS[0], remark: '' }
+    form: { id: null, title: '', icon: '', color: COLOR_OPTIONS[0], remark: '', planType: 0, targetDate: '' }
   },
 
   onLoad() {
@@ -183,12 +183,41 @@ Page({
     });
   },
 
-  // 打开新增弹窗
+  // 长按日历日期：添加单日事件
+  onLongPressDay(e) {
+    const date = e.currentTarget.dataset.date;
+    if (!date) { return; }
+    // 只能添加今天及未来的日期
+    if (date < this.data.today) {
+      wx.showToast({ title: '不能添加过去的事件', icon: 'none' });
+      return;
+    }
+    wx.showActionSheet({
+      itemList: ['添加单日事件'],
+      success: () => {
+        this.setData({
+          showModal: true,
+          isEdit: false,
+          form: {
+            id: null,
+            title: '',
+            icon: '',
+            color: COLOR_OPTIONS[0],
+            remark: '',
+            planType: 1,
+            targetDate: date
+          }
+        });
+      }
+    });
+  },
+
+  // 打开新增弹窗（长期计划）
   onAddPlan() {
     this.setData({
       showModal: true,
       isEdit: false,
-      form: { id: null, title: '', icon: '', color: COLOR_OPTIONS[0], remark: '' }
+      form: { id: null, title: '', icon: '', color: COLOR_OPTIONS[0], remark: '', planType: 0, targetDate: '' }
     });
   },
 
@@ -202,7 +231,9 @@ Page({
         title: plan.title,
         icon: plan.icon || '',
         color: plan.color || COLOR_OPTIONS[0],
-        remark: plan.remark || ''
+        remark: plan.remark || '',
+        planType: plan.planType || 0,
+        targetDate: plan.targetDate || ''
       }
     });
   },
@@ -225,6 +256,9 @@ Page({
     });
   },
 
+  // 阻止弹窗内容点击冒泡
+  preventBubble() {},
+
   // 表单输入
   onInputTitle(e) { this.setData({ 'form.title': e.detail.value }); },
   onInputIcon(e) { this.setData({ 'form.icon': e.detail.value }); },
@@ -246,7 +280,9 @@ Page({
       title: form.title.trim(),
       icon: form.icon,
       color: form.color,
-      remark: form.remark
+      remark: form.remark,
+      planType: form.planType || 0,
+      targetDate: form.targetDate || null
     };
     const req = isEdit
       ? checkinApi.updatePlan(form.id, data)

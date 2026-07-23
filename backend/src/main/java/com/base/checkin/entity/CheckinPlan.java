@@ -7,6 +7,7 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
@@ -51,6 +52,18 @@ public class CheckinPlan extends BaseEntity {
      */
     @ApiModelProperty("备注")
     private String remark;
+
+    /**
+     * 计划类型（0长期计划 1单日事件）
+     */
+    @ApiModelProperty("计划类型（0长期计划 1单日事件）")
+    private Integer planType;
+
+    /**
+     * 目标日期（仅单日事件）
+     */
+    @ApiModelProperty("目标日期（仅单日事件）")
+    private LocalDate targetDate;
 
     /**
      * 排序号（越小越靠前）

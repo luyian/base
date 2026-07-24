@@ -5,6 +5,9 @@ module.exports = {
   // 查询我的计划列表（含今日打卡状态）
   getPlanList: () => request.get('/checkin/plan/list'),
 
+  // 查询指定日期的计划列表（含打卡状态）
+  getPlanListByDate: (date) => request.get(`/checkin/plan/list/${date}`),
+
   // 新增计划
   createPlan: (data) => request.post('/checkin/plan', data),
 

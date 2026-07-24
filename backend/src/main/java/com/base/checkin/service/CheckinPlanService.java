@@ -3,6 +3,7 @@ package com.base.checkin.service;
 import com.base.checkin.dto.CheckinPlanRequest;
 import com.base.checkin.dto.CheckinPlanResponse;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -45,6 +46,15 @@ public interface CheckinPlanService {
      * @param id     计划ID
      */
     void deletePlan(Long userId, Long id);
+
+    /**
+     * 查询指定日期的计划列表（含打卡状态）
+     *
+     * @param userId 用户ID
+     * @param date   日期
+     * @return 计划列表
+     */
+    List<CheckinPlanResponse> listByUserIdAndDate(Long userId, LocalDate date);
 
     /**
      * 统计用户启用计划总数

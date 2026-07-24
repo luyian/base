@@ -125,6 +125,14 @@ page {
     box-shadow: 0 0 0 2rpx var(--primary) inset;
 }
 
+.day-selected .day-num-wrap {
+    background: var(--primary) !important;
+}
+
+.day-selected .day-num {
+    color: #FFFFFF !important;
+}
+
 /* ==================== 计划区 ==================== */
 .section-header {
     display: flex;
@@ -142,6 +150,11 @@ page {
 .section-date {
     font-size: 22rpx;
     color: var(--text-tertiary);
+}
+
+.section-date.date-back {
+    color: var(--primary);
+    font-weight: 600;
 }
 
 .plan-list {

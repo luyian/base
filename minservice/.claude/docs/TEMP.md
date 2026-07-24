@@ -1,5 +1,41 @@
 # 代码修改记录
 
+## 2026-07-23 小程序打卡功能优化
+
+### 修改的功能模块
+- 小程序打卡页面（`minservice/pages/checkin/checkin.wxml`、`checkin.js`、`checkin.wxss`）
+- 后端打卡计划实体和服务（`CheckinPlan.java`、`CheckinPlanRequest.java`、`CheckinPlanResponse.java`、`CheckinPlanServiceImpl.java`、`CheckinRecordServiceImpl.java`）
+- 数据库建表脚本（`checkin.sql`）
+
+### 业务逻辑变更说明
+1. **新增单日事件功能**
+   - 长按日历日期可添加单日事件（只能添加今天及未来的日期）
+   - `checkin_plan` 表新增 `plan_type`（0长期计划/1单日事件）和 `target_date` 字段
+   - 单日事件只在目标日期生效，不会出现在其他日期的计划列表中
+
+2. **修复弹框点击后立即关闭的问题**
+   - 原因：`catchtap=""` 绑定空字符串无法正确阻止事件冒泡
+   - 修复：改为 `catchtap="preventBubble"` 并添加空函数
+
+3. **修复删除计划后日历统计不准确的问题**
+   - 原因：删除当天的计划仍被计入总数
+   - 修复：将 `!date.isAfter(deletedTime.toLocalDate())` 改为 `date.isBefore(deletedTime.toLocalDate())`
+
+4. **计划列表改为长条形布局**
+   - 从卡片网格改为单行列表，左侧图标+信息，右侧状态按钮
+   - 左侧彩色边框标识计划颜色
+
+### 数据库变更
+```sql
+ALTER TABLE checkin_plan 
+ADD COLUMN plan_type tinyint(1) NOT NULL DEFAULT '0' COMMENT '计划类型（0长期计划 1单日事件）' AFTER remark,
+ADD COLUMN target_date date DEFAULT NULL COMMENT '目标日期（仅单日事件）' AFTER plan_type,
+ADD INDEX idx_target_date (target_date);
+```
+
+### 与其他模块的关联影响
+- 无关联影响
+
 ## 2026-06-23 小程序首页自选基金置顶功能
 
 ### 修改的功能模块

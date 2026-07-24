@@ -109,4 +109,16 @@ public class CheckinController {
         Long userId = SecurityUtils.getCurrentUserId();
         return Result.success(checkinRecordService.getCalendar(userId, month));
     }
+
+    /**
+     * 查询指定日期的计划列表（含打卡状态）
+     */
+    @ApiOperation("查询指定日期的计划列表")
+    @GetMapping("/plan/list/{date}")
+    @PreAuthorize("hasAuthority('checkin:plan:list')")
+    public Result<List<CheckinPlanResponse>> listByDate(
+            @ApiParam("日期(yyyy-MM-dd)") @PathVariable @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date) {
+        Long userId = SecurityUtils.getCurrentUserId();
+        return Result.success(checkinPlanService.listByUserIdAndDate(userId, date));
+    }
 }

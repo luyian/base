@@ -20,8 +20,9 @@
 
     <view class="day-grid">
       <view wx:for="{{calendarCells}}" wx:key="key"
-            class="day-cell {{item.inMonth ? '' : 'day-empty'}} {{item.isToday ? 'day-today' : ''}}"
+            class="day-cell {{item.inMonth ? '' : 'day-empty'}} {{item.isToday ? 'day-today' : ''}} {{item.date === selectedDate ? 'day-selected' : ''}}"
             data-date="{{item.date}}"
+            bindtap="onTapDay"
             bindlongpress="onLongPressDay">
         <block wx:if="{{item.inMonth}}">
           <view class="day-num-wrap {{item.ratio >= 1 ? 'ratio-full' : (item.ratio > 0 ? 'ratio-partial' : '')}}">
@@ -34,9 +35,9 @@
   </view>
 
   <!-- 今日计划 -->
-  <view class="section-header">
-    <text class="section-title">今日计划</text>
-    <text class="section-date">{{today}}</text>
+  <view class="section-header" bindtap="onTapTitle">
+    <text class="section-title">{{selectedDate ? selectedDate + ' 计划' : '今日计划'}}</text>
+    <text class="section-date {{selectedDate ? 'date-back' : ''}}">{{selectedDate ? '返回今日' : today}}</text>
   </view>
 
   <!-- Loading -->

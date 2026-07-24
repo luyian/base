@@ -108,6 +108,38 @@ public class CheckinPlanServiceImpl implements CheckinPlanService {
     }
 
     @Override
+    public List<CheckinPlanResponse> listByUserIdAndDate(Long userId, LocalDate date) {
+        // 查询在指定日期生效的计划（长期计划 + 该日期的单日事件）
+        LambdaQueryWrapper<CheckinPlan> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(CheckinPlan::getUserId, userId)
+                .eq(CheckinPlan::getStatus, 1)
+                .eq(CheckinPlan::getDeleted, 0)
+                .and(w -> w
+                        // 长期计划
+                        .eq(CheckinPlan::getPlanType, 0)
+                        // 或者指定日期的单日事件
+                        .or(x -> x.eq(CheckinPlan::getPlanType, 1)
+                                .eq(CheckinPlan::getTargetDate, date))
+                )
+                .orderByAsc(CheckinPlan::getSortOrder)
+                .orderByAsc(CheckinPlan::getId);
+        List<CheckinPlan> plans = checkinPlanMapper.selectList(wrapper);
+        if (plans.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 查询指定日期已打卡的计划ID集合
+        Set<Long> checkedPlanIds = queryCheckedPlanIds(userId, date);
+
+        return plans.stream().map(plan -> {
+            CheckinPlanResponse response = new CheckinPlanResponse();
+            BeanUtils.copyProperties(plan, response);
+            response.setTodayChecked(checkedPlanIds.contains(plan.getId()));
+            return response;
+        }).collect(Collectors.toList());
+    }
+
+    @Override
     public int countEnabledByUserId(Long userId) {
         LambdaQueryWrapper<CheckinPlan> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CheckinPlan::getUserId, userId)

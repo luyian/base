@@ -25,7 +25,8 @@ import org.springframework.context.annotation.Configuration;
     "com.base.workflow.mapper",
     "com.base.approval.mapper",
     "com.base.dev.mapper",
-    "com.base.gaokao.mapper"
+    "com.base.gaokao.mapper",
+    "com.base.checkin.mapper"
 })
 public class MybatisPlusConfig {
 

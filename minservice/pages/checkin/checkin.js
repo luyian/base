@@ -21,6 +21,7 @@ Page({
     loading: true,
     planList: [],
     today: '',
+    selectedDate: '',  // 当前选中日期，空表示今日
     weekDays: ['日', '一', '二', '三', '四', '五', '六'],
     currentYear: 2026,
     currentMonth: 1,
@@ -59,7 +60,7 @@ Page({
       return;
     }
     this.setData({ loading: true });
-    Promise.all([this.loadPlans(), this.loadCalendar()])
+    Promise.all([this.loadPlans(this.data.selectedDate), this.loadCalendar()])
       .finally(() => this.setData({ loading: false }));
   },
 
@@ -69,8 +70,9 @@ Page({
     setTimeout(() => wx.stopPullDownRefresh(), 600);
   },
 
-  loadPlans() {
-    return checkinApi.getPlanList()
+  loadPlans(date) {
+    const req = date ? checkinApi.getPlanListByDate(date) : checkinApi.getPlanList();
+    return req
       .then(res => this.setData({ planList: res.data || [] }))
       .catch(() => {});
   },
@@ -146,12 +148,18 @@ Page({
   // 点击卡片：打卡/取消
   onTogglePlan(e) {
     const id = e.currentTarget.dataset.id;
+    const date = this.data.selectedDate || this.data.today;
+    // 只能对今天及未来的日期打卡
+    if (date < this.data.today) {
+      wx.showToast({ title: '不能对过去的日期打卡', icon: 'none' });
+      return;
+    }
     this.togglingPlanIds = this.togglingPlanIds || {};
     if (this.togglingPlanIds[id]) {
       return;
     }
     this.togglingPlanIds[id] = true;
-    checkinApi.toggleRecord(id, this.data.today)
+    checkinApi.toggleRecord(id, date)
       .then(res => {
         const checked = res.data && res.data.checked;
         const planList = this.data.planList.map(p =>
@@ -183,6 +191,20 @@ Page({
     });
   },
 
+  // 点击日历日期：查看当天计划
+  onTapDay(e) {
+    const date = e.currentTarget.dataset.date;
+    if (!date) { return; }
+    // 如果点击的是已选中的日期，返回今日
+    if (date === this.data.selectedDate) {
+      this.setData({ selectedDate: '' });
+      this.loadPlans();
+    } else {
+      this.setData({ selectedDate: date, loading: true });
+      this.loadPlans(date).finally(() => this.setData({ loading: false }));
+    }
+  },
+
   // 长按日历日期：添加单日事件
   onLongPressDay(e) {
     const date = e.currentTarget.dataset.date;
@@ -210,6 +232,14 @@ Page({
         });
       }
     });
+  },
+
+  // 点击标题返回今日
+  onTapTitle() {
+    if (this.data.selectedDate) {
+      this.setData({ selectedDate: '' });
+      this.loadPlans();
+    }
   },
 
   // 打开新增弹窗（长期计划）

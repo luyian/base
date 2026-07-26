@@ -1,77 +1,124 @@
 /* pages/checkin/checkin.wxss */
+/* 设计概念：打卡即盖章。瓷青纸面 + 墨色结构，朱砂红只留给「已完成」的印章 */
 page {
-    --primary: #3B82F6;
-    --primary-light: #EFF6FF;
-    --bg: #F8FAFC;
-    --card: #FFFFFF;
-    --text-primary: #0F172A;
-    --text-secondary: #475569;
-    --text-tertiary: #94A3B8;
-    --border: #E2E8F0;
-    --success: #10B981;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03);
+    --paper: #F1F3EF;
+    --card: #FBFBF8;
+    --ink: #22302A;
+    --ink-2: #5C6B63;
+    --ink-3: #9AA69F;
+    --seal: #C6402E;
+    --seal-soft: rgba(198, 64, 46, 0.10);
+    --gold: #B08D46;
+    --hairline: #E1E5DF;
+    --shadow: 0 2rpx 6rpx rgba(34, 48, 42, 0.05), 0 10rpx 28rpx rgba(34, 48, 42, 0.06);
 
-    background: var(--bg);
-    color: var(--text-primary);
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+
+/* 数字统一使用窄体数字字体，形成版面记忆点 */
+.num {
+    font-family: 'DIN Alternate', 'Bahnschrift', 'Arial Narrow', sans-serif;
 }
 
 .container {
     min-height: 100vh;
-    background: var(--bg);
-    padding: 24rpx 24rpx 60rpx;
+    background: var(--paper);
+    padding: 24rpx 28rpx 64rpx;
 }
 
 /* ==================== 月历卡片 ==================== */
 .calendar-card {
     background: var(--card);
-    border-radius: 24rpx;
-    padding: 28rpx;
+    border: 1rpx solid var(--hairline);
+    border-radius: 28rpx;
+    padding: 32rpx 28rpx 24rpx;
     box-shadow: var(--shadow);
+    animation: fade-up 0.4s ease both;
 }
 
-.calendar-header {
+.cal-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 20rpx;
+    margin-bottom: 24rpx;
 }
 
-.month-label {
-    font-size: 34rpx;
+.cal-title {
+    display: flex;
+    align-items: baseline;
+    gap: 16rpx;
+}
+
+.cal-month-num {
+    font-size: 88rpx;
     font-weight: 700;
-    color: var(--text-primary);
+    line-height: 1;
+    letter-spacing: -2rpx;
+    color: var(--ink);
 }
 
-.month-switch {
-    width: 64rpx;
-    height: 64rpx;
+.cal-ym {
+    display: flex;
+    flex-direction: column;
+    gap: 4rpx;
+}
+
+.cal-year {
+    font-size: 26rpx;
+    font-weight: 600;
+    letter-spacing: 4rpx;
+    color: var(--gold);
+}
+
+.cal-sub {
+    font-size: 20rpx;
+    color: var(--ink-3);
+    letter-spacing: 2rpx;
+}
+
+.cal-switch {
+    display: flex;
+    gap: 14rpx;
+}
+
+.switch-btn {
+    width: 60rpx;
+    height: 60rpx;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1rpx solid var(--hairline);
     border-radius: 50%;
-    background: var(--primary-light);
+    background: var(--card);
 }
 
-.month-switch:active { opacity: 0.7; }
+.switch-btn:active {
+    background: var(--seal-soft);
+    border-color: var(--seal);
+}
 
 .switch-icon {
-    font-size: 40rpx;
-    color: var(--primary);
+    font-size: 38rpx;
+    color: var(--ink-2);
     line-height: 1;
+    margin-top: -4rpx;
 }
 
 .week-row {
     display: flex;
-    margin-bottom: 8rpx;
+    margin-bottom: 6rpx;
+    border-bottom: 1rpx solid var(--hairline);
+    padding-bottom: 10rpx;
 }
 
 .week-cell {
     flex: 1;
     text-align: center;
-    font-size: 22rpx;
-    color: var(--text-tertiary);
-    padding: 8rpx 0;
+    font-size: 20rpx;
+    letter-spacing: 2rpx;
+    color: var(--ink-3);
 }
 
 .day-grid {
@@ -84,49 +131,65 @@ page {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10rpx 0;
+    padding: 10rpx 0 6rpx;
     box-sizing: border-box;
 }
 
-.day-empty { visibility: hidden; }
+.day-empty {
+    visibility: hidden;
+}
 
 .day-num-wrap {
-    width: 56rpx;
-    height: 56rpx;
+    width: 60rpx;
+    height: 60rpx;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 0.2s ease;
 }
 
 .day-num {
-    font-size: 28rpx;
-    color: var(--text-primary);
+    font-size: 30rpx;
+    color: var(--ink);
 }
 
 .day-progress {
     font-size: 18rpx;
-    color: var(--text-tertiary);
+    color: var(--ink-3);
     margin-top: 2rpx;
 }
 
-/* 完成度：部分完成浅色，全部完成实心 */
+/* 部分完成：淡朱砂底 + 细红圈，像章印未落实 */
 .ratio-partial {
-    background: var(--primary-light);
+    background: var(--seal-soft);
+    box-shadow: inset 0 0 0 2rpx rgba(198, 64, 46, 0.35);
 }
 
+/* 全部完成：一枚落定的朱砂章，圆形略不规则 */
 .ratio-full {
-    background: var(--primary);
+    background: var(--seal);
+    border-radius: 46% 54% 50% 50%;
+    transform: rotate(-6deg);
 }
 
-.ratio-full .day-num { color: #FFFFFF; }
+.ratio-full .day-num {
+    color: #FFFFFF;
+    transform: rotate(6deg);
+}
 
 .day-today .day-num-wrap {
-    box-shadow: 0 0 0 2rpx var(--primary) inset;
+    box-shadow: inset 0 0 0 2rpx var(--ink);
+}
+
+.day-today.day-cell .day-progress {
+    color: var(--ink);
+    font-weight: 600;
 }
 
 .day-selected .day-num-wrap {
-    background: var(--primary) !important;
+    background: var(--ink) !important;
+    box-shadow: none;
 }
 
 .day-selected .day-num {
@@ -138,95 +201,155 @@ page {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    padding: 32rpx 8rpx 20rpx;
+    padding: 36rpx 8rpx 20rpx;
 }
 
 .section-title {
-    font-size: 32rpx;
+    font-size: 30rpx;
     font-weight: 700;
-    color: var(--text-primary);
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+}
+
+/* 标题前的小朱砂方章，页面的落款 */
+.section-title::before {
+    content: '';
+    width: 14rpx;
+    height: 14rpx;
+    background: var(--seal);
+    border-radius: 4rpx;
+    margin-right: 12rpx;
+    transform: rotate(-8deg);
 }
 
 .section-date {
     font-size: 22rpx;
-    color: var(--text-tertiary);
+    color: var(--ink-3);
+    letter-spacing: 1rpx;
 }
 
 .section-date.date-back {
-    color: var(--primary);
+    color: var(--seal);
     font-weight: 600;
 }
 
 .plan-list {
     display: flex;
     flex-direction: column;
-    gap: 16rpx;
+    gap: 18rpx;
 }
 
 .plan-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     background: var(--card);
-    border-radius: 20rpx;
-    padding: 24rpx 28rpx;
+    border: 1rpx solid var(--hairline);
+    border-radius: 22rpx;
+    padding: 22rpx 24rpx;
     box-shadow: var(--shadow);
-    border-left: 8rpx solid var(--plan-color, var(--primary));
     transition: transform 0.15s ease;
+    animation: fade-up 0.4s ease both;
 }
 
-.plan-row:active { transform: scale(0.98); }
+.plan-row:nth-child(1) { animation-delay: 0.03s; }
+.plan-row:nth-child(2) { animation-delay: 0.06s; }
+.plan-row:nth-child(3) { animation-delay: 0.09s; }
+.plan-row:nth-child(4) { animation-delay: 0.12s; }
+.plan-row:nth-child(5) { animation-delay: 0.15s; }
+.plan-row:nth-child(6) { animation-delay: 0.18s; }
 
-.plan-left {
+.plan-row:active {
+    transform: scale(0.98);
+}
+
+.plan-icon-well {
+    width: 76rpx;
+    height: 76rpx;
+    border-radius: 20rpx;
+    background: var(--plan-color, var(--seal));
     display: flex;
     align-items: center;
-    gap: 20rpx;
-    flex: 1;
-    min-width: 0;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 22rpx;
 }
 
 .plan-icon {
-    font-size: 40rpx;
-    flex-shrink: 0;
+    font-size: 38rpx;
+    line-height: 1;
 }
 
 .plan-info {
     display: flex;
     flex-direction: column;
+    flex: 1;
     min-width: 0;
 }
 
 .plan-title {
     font-size: 30rpx;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--ink);
 }
 
 .plan-remark {
     font-size: 22rpx;
-    color: var(--text-tertiary);
+    color: var(--ink-3);
     margin-top: 4rpx;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.plan-status {
+/* 已完成：文字划线让位给印章 */
+.plan-checked .plan-title {
+    color: var(--ink-3);
+    text-decoration: line-through;
+}
+
+.stamp-slot {
     flex-shrink: 0;
-    font-size: 22rpx;
-    padding: 8rpx 24rpx;
-    border-radius: 999rpx;
-    background: var(--primary-light);
-    color: var(--primary);
     margin-left: 16rpx;
+    width: 96rpx;
+    display: flex;
+    justify-content: center;
 }
 
-.plan-status.status-checked {
-    background: var(--plan-color, var(--primary));
-    color: #FFFFFF;
+/* 签名元素：朱砂方章，歪 8 度盖下 */
+.stamp {
+    width: 88rpx;
+    height: 88rpx;
+    border: 4rpx solid var(--seal);
+    border-radius: 14rpx 20rpx 12rpx 18rpx;
+    color: var(--seal);
+    font-size: 22rpx;
+    font-weight: 700;
+    letter-spacing: 2rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rpx;
+    box-sizing: border-box;
+    transform: rotate(-8deg);
+    animation: stamp-in 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both;
 }
 
-.plan-checked { opacity: 0.85; }
+/* 空章位：等待落章 */
+.stamp-empty {
+    width: 88rpx;
+    height: 88rpx;
+    border: 2rpx dashed var(--ink-3);
+    border-radius: 50%;
+    color: var(--ink-3);
+    font-size: 22rpx;
+    letter-spacing: 2rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
 
 /* ==================== Loading / 空状态 ==================== */
 .loading-area {
@@ -240,7 +363,7 @@ page {
     width: 14rpx;
     height: 14rpx;
     border-radius: 50%;
-    background: var(--primary);
+    background: var(--seal);
     animation: bounce 1.4s ease-in-out infinite both;
 }
 
@@ -256,48 +379,68 @@ page {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 100rpx 0;
+    padding: 90rpx 0;
+    gap: 24rpx;
 }
 
-.empty-icon { font-size: 80rpx; margin-bottom: 20rpx; }
+/* 空状态也是一枚章：灰色的「空」 */
+.empty-stamp {
+    width: 110rpx;
+    height: 110rpx;
+    border: 4rpx solid var(--ink-3);
+    border-radius: 16rpx 22rpx 14rpx 20rpx;
+    color: var(--ink-3);
+    font-size: 44rpx;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-8deg);
+    opacity: 0.6;
+}
 
 .empty-text {
     font-size: 26rpx;
-    color: var(--text-tertiary);
+    color: var(--ink-3);
 }
 
 /* ==================== 新增按钮 ==================== */
 .add-btn {
-    margin-top: 32rpx;
+    margin-top: 36rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8rpx;
-    background: var(--primary);
+    gap: 14rpx;
+    background: var(--ink);
     border-radius: 999rpx;
-    padding: 26rpx 0;
+    padding: 28rpx 0;
     box-shadow: var(--shadow);
 }
 
-.add-btn:active { opacity: 0.85; }
+.add-btn:active {
+    opacity: 0.85;
+}
 
-.add-icon {
-    font-size: 36rpx;
-    color: #FFFFFF;
-    line-height: 1;
+.add-dot {
+    width: 14rpx;
+    height: 14rpx;
+    background: var(--seal);
+    border-radius: 4rpx;
+    transform: rotate(-8deg);
 }
 
 .add-text {
     font-size: 30rpx;
     color: #FFFFFF;
     font-weight: 600;
+    letter-spacing: 2rpx;
 }
 
 /* ==================== 弹窗 ==================== */
 .modal-mask {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(20, 26, 23, 0.55);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -307,16 +450,18 @@ page {
 .modal {
     width: 620rpx;
     background: var(--card);
-    border-radius: 24rpx;
-    padding: 36rpx;
+    border: 1rpx solid var(--hairline);
+    border-radius: 26rpx;
+    padding: 40rpx 36rpx 36rpx;
 }
 
 .modal-title {
     font-size: 32rpx;
     font-weight: 700;
-    color: var(--text-primary);
-    margin-bottom: 28rpx;
+    color: var(--ink);
+    margin-bottom: 30rpx;
     text-align: center;
+    letter-spacing: 2rpx;
 }
 
 .form-item {
@@ -326,26 +471,28 @@ page {
 .form-label {
     display: block;
     font-size: 24rpx;
-    color: var(--text-secondary);
+    color: var(--ink-2);
     margin-bottom: 12rpx;
+    letter-spacing: 1rpx;
 }
 
 .form-input {
-    background: var(--bg);
-    border: 1rpx solid var(--border);
-    border-radius: 12rpx;
+    background: var(--paper);
+    border: 1rpx solid var(--hairline);
+    border-radius: 14rpx;
     padding: 18rpx 20rpx;
     font-size: 28rpx;
-    color: var(--text-primary);
+    color: var(--ink);
 }
 
 .form-date-display {
-    background: var(--primary-light);
-    border-radius: 12rpx;
+    background: var(--seal-soft);
+    border-radius: 14rpx;
     padding: 18rpx 20rpx;
     font-size: 28rpx;
-    color: var(--primary);
+    color: var(--seal);
     font-weight: 600;
+    letter-spacing: 1rpx;
 }
 
 .color-row {
@@ -359,10 +506,11 @@ page {
     height: 56rpx;
     border-radius: 50%;
     border: 4rpx solid transparent;
+    box-sizing: border-box;
 }
 
 .color-dot.color-active {
-    border-color: var(--text-primary);
+    border-color: var(--ink);
     transform: scale(1.1);
 }
 
@@ -376,41 +524,74 @@ page {
     flex: 1;
     text-align: center;
     padding: 22rpx 0;
-    border-radius: 12rpx;
+    border-radius: 14rpx;
     font-size: 30rpx;
 }
 
 .btn-cancel {
-    background: var(--bg);
-    color: var(--text-secondary);
-    border: 1rpx solid var(--border);
+    background: var(--paper);
+    color: var(--ink-2);
+    border: 1rpx solid var(--hairline);
 }
 
 .btn-confirm {
-    background: var(--primary);
+    background: var(--seal);
     color: #FFFFFF;
     font-weight: 600;
+    letter-spacing: 2rpx;
 }
 
-/* ==================== Dark Theme ==================== */
+/* ==================== 动效 ==================== */
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(16rpx); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes stamp-in {
+    0% { transform: rotate(-8deg) scale(1.7); opacity: 0; }
+    60% { transform: rotate(-8deg) scale(0.94); opacity: 1; }
+    100% { transform: rotate(-8deg) scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .calendar-card,
+    .plan-row,
+    .stamp,
+    .loading-dot {
+        animation: none !important;
+    }
+}
+
+/* ==================== Dark Theme：夜里的墨与朱 ==================== */
 .dark-theme,
 .dark-theme page {
-    --primary: #60A5FA;
-    --primary-light: #1E3A5F;
-    --bg: #0F172A;
-    --card: #1E293B;
-    --text-primary: #F1F5F9;
-    --text-secondary: #CBD5E1;
-    --text-tertiary: #64748B;
-    --border: #334155;
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+    --paper: #131A16;
+    --card: #1B231F;
+    --ink: #E9EDE9;
+    --ink-2: #A7B2AB;
+    --ink-3: #6C7871;
+    --seal: #E25A45;
+    --seal-soft: rgba(226, 90, 69, 0.16);
+    --gold: #C6A25C;
+    --hairline: #2A342E;
+    --shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.3), 0 10rpx 28rpx rgba(0, 0, 0, 0.25);
 
-    background: var(--bg);
-    color: var(--text-primary);
+    background: var(--paper);
+    color: var(--ink);
 }
 
-.dark-theme .calendar-card,
-.dark-theme .plan-card,
-.dark-theme .modal {
-    border: 1rpx solid var(--border);
+.dark-theme .day-selected .day-num-wrap {
+    background: var(--ink) !important;
+}
+
+.dark-theme .day-selected .day-num {
+    color: var(--paper) !important;
+}
+
+.dark-theme .add-btn {
+    background: var(--ink);
+}
+
+.dark-theme .add-text {
+    color: var(--paper);
 }

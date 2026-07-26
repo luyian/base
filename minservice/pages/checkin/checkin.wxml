@@ -4,13 +4,21 @@
 
   <!-- 月历区 -->
   <view class="calendar-card">
-    <view class="calendar-header">
-      <view class="month-switch" bindtap="onPrevMonth">
-        <text class="switch-icon">‹</text>
+    <view class="cal-head">
+      <view class="cal-title">
+        <text class="cal-month-num num">{{displayMonth}}</text>
+        <view class="cal-ym">
+          <text class="cal-year num">{{displayYear}}</text>
+          <text class="cal-sub">月 · 打卡日历</text>
+        </view>
       </view>
-      <text class="month-label">{{monthLabel}}</text>
-      <view class="month-switch" bindtap="onNextMonth">
-        <text class="switch-icon">›</text>
+      <view class="cal-switch">
+        <view class="switch-btn" bindtap="onPrevMonth">
+          <text class="switch-icon">‹</text>
+        </view>
+        <view class="switch-btn" bindtap="onNextMonth">
+          <text class="switch-icon">›</text>
+        </view>
       </view>
     </view>
 
@@ -26,18 +34,18 @@
             bindlongpress="onLongPressDay">
         <block wx:if="{{item.inMonth}}">
           <view class="day-num-wrap {{item.ratio >= 1 ? 'ratio-full' : (item.ratio > 0 ? 'ratio-partial' : '')}}">
-            <text class="day-num">{{item.day}}</text>
+            <text class="day-num num">{{item.day}}</text>
           </view>
-          <text class="day-progress" wx:if="{{item.total > 0}}">{{item.completed}}/{{item.total}}</text>
+          <text class="day-progress num" wx:if="{{item.total > 0}}">{{item.completed}}/{{item.total}}</text>
         </block>
       </view>
     </view>
   </view>
 
-  <!-- 今日计划 -->
+  <!-- 计划区标题 -->
   <view class="section-header" bindtap="onTapTitle">
     <text class="section-title">{{selectedDate ? selectedDate + ' 计划' : '今日计划'}}</text>
-    <text class="section-date {{selectedDate ? 'date-back' : ''}}">{{selectedDate ? '返回今日' : today}}</text>
+    <text class="section-date num {{selectedDate ? 'date-back' : ''}}">{{selectedDate ? '返回今日' : today}}</text>
   </view>
 
   <!-- Loading -->
@@ -49,34 +57,39 @@
 
   <!-- 空状态 -->
   <view wx:elif="{{planList.length === 0}}" class="empty-area">
-    <text class="empty-icon">📅</text>
-    <text class="empty-text">还没有计划，点击下方按钮添加吧</text>
+    <view class="empty-stamp"><text>空</text></view>
+    <text class="empty-text">还没有计划，先添加一项吧</text>
   </view>
 
   <!-- 计划列表 -->
   <view wx:else class="plan-list">
     <view wx:for="{{planList}}" wx:key="id"
           class="plan-row {{item.todayChecked ? 'plan-checked' : ''}}"
-          style="--plan-color: {{item.color || '#3B82F6'}}"
+          style="--plan-color: {{item.color || '#C6402E'}}"
           bindtap="onTogglePlan"
           bindlongpress="onLongPressPlan"
           data-id="{{item.id}}">
-      <view class="plan-left">
-        <view class="plan-icon">{{item.icon || '✔️'}}</view>
-        <view class="plan-info">
-          <text class="plan-title">{{item.title}}</text>
-          <text class="plan-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
-        </view>
+      <view class="plan-icon-well">
+        <text class="plan-icon">{{item.icon || '✔️'}}</text>
       </view>
-      <view class="plan-status {{item.todayChecked ? 'status-checked' : ''}}">
-        {{item.todayChecked ? '已完成 ✓' : '点击完成'}}
+      <view class="plan-info">
+        <text class="plan-title">{{item.title}}</text>
+        <text class="plan-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
+      </view>
+      <view class="stamp-slot">
+        <view wx:if="{{item.todayChecked}}" class="stamp">
+          <text>已完成</text>
+        </view>
+        <view wx:else class="stamp-empty">
+          <text>打卡</text>
+        </view>
       </view>
     </view>
   </view>
 
   <!-- 新增按钮 -->
   <view class="add-btn" bindtap="onAddPlan">
-    <text class="add-icon">+</text>
+    <view class="add-dot"></view>
     <text class="add-text">新增计划</text>
   </view>
 
@@ -87,7 +100,7 @@
 
       <view wx:if="{{form.targetDate}}" class="form-item">
         <text class="form-label">日期</text>
-        <view class="form-date-display">{{form.targetDate}}</view>
+        <view class="form-date-display num">{{form.targetDate}}</view>
       </view>
 
       <view class="form-item">

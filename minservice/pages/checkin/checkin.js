@@ -2,8 +2,8 @@
 const checkinApi = require('../../api/checkin');
 const app = getApp();
 
-// 预设卡片颜色
-const COLOR_OPTIONS = ['#3B82F6', '#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#EC4899', '#06B6D4', '#64748B'];
+// 预设卡片颜色（朱砂、鎏金、松绿、黛蓝、青莲、胭脂、青瓷、墨灰）
+const COLOR_OPTIONS = ['#C6402E', '#B08D46', '#3E6B5A', '#33658A', '#7D5BA6', '#C05B76', '#4E8C82', '#5C6B63'];
 
 // 补零
 function pad(n) {
@@ -26,6 +26,8 @@ Page({
     currentYear: 2026,
     currentMonth: 1,
     monthLabel: '',
+    displayYear: '',
+    displayMonth: '',
     calendarCells: [],
     colorOptions: COLOR_OPTIONS,
     // 新增/编辑弹窗
@@ -124,7 +126,9 @@ Page({
 
     this.setData({
       calendarCells: cells,
-      monthLabel: `${year}年${month}月`
+      monthLabel: `${year}年${month}月`,
+      displayYear: '' + year,
+      displayMonth: pad(month)
     });
   },
 

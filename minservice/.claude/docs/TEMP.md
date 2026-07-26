@@ -1,5 +1,51 @@
 # 代码修改记录
 
+## 2026-07-26 打卡页面视觉重设计（印章主题）+ 日历完成数統计修复
+
+### 修改的功能模块
+- 小程序打卡页面（`minservice/pages/checkin/checkin.wxml`、`checkin.js`、`checkin.wxss` 全量重写样式）
+- 后端（`CheckinRecordServiceImpl.java`、`CheckinPlanServiceImpl.java`）
+
+### 业务逻辑变更说明
+1. **打卡页面视觉重设计（frontend-design）**
+   - 设计概念：打卡即盖章。瓷青纸面 `#F1F3EF` + 墨绿黑 `#22302A`，朱砂红 `#C6402E` 仅用于「已完成」语义
+   - 签名元素：完成计划右侧盖下歪 8° 的朱砂方章（stamp-in 回弹动效）；未完成为虚线空章位
+   - 日历全勤日显示为不规则圆形朱砂章；月份用大号 DIN 数字做版面主角
+   - 计划色板换为中式色（朱砂/鎏金/松绿/黛蓝/青莲/胭脂/青瓷/墨灰），后端默认色同步改为 `#C6402E`
+   - 进场淡升 stagger 动效，respect prefers-reduced-motion；暗色主题同步适配
+   - 功能无变更：所有事件绑定（点击/长按日历、打卡、编辑、弹窗）保持原样
+2. **修复日历"4/3"统计问题（completed 口径）**
+   - 原因：已删除计划的历史打卡记录仍被计入当天 completed
+   - 修复：`getCalendar` 统计 completed 时按 `isEffectiveOn` 过滤，只计打卡当天计划仍生效的记录，与 total 口径一致
+
+### 与其他模块的关联影响
+- 无关联影响
+
+## 2026-07-24 小程序打卡日历点击查看详情
+
+### 修改的功能模块
+- 小程序打卡页面（`minservice/pages/checkin/checkin.wxml`、`checkin.js`、`checkin.wxss`）
+- 后端 Controller 和 Service（`CheckinController.java`、`CheckinPlanService.java`、`CheckinPlanServiceImpl.java`）
+- 前端 API（`minservice/api/checkin.js`）
+- MyBatis 配置（`MybatisPlusConfig.java`）
+
+### 业务逻辑变更说明
+1. **点击日历日期查看当天计划**
+   - 点击日历日期后，下方列表切换为该日期的计划
+   - 标题显示"X月X日计划"，右侧显示"返回今日"
+   - 再次点击同一日期或点击"返回今日"恢复今日计划
+   - 选中日期在日历上高亮显示
+
+2. **新增查询指定日期计划接口**
+   - 后端新增 `GET /checkin/plan/list/{date}` 接口
+   - 前端新增 `getPlanListByDate(date)` API 方法
+
+3. **修复启动失败问题**
+   - `MybatisPlusConfig` 的 `@MapperScan` 缺少 `com.base.checkin.mapper`，已添加
+
+### 与其他模块的关联影响
+- 无关联影响
+
 ## 2026-07-23 小程序打卡功能优化
 
 ### 修改的功能模块

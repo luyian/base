@@ -69,14 +69,20 @@ public class CheckinRecordServiceImpl implements CheckinRecordService {
 
         // 包含已删除计划，用创建/删除时间还原每天实际生效的计划总数
         List<CheckinPlan> plans = checkinPlanMapper.selectEnabledByUserIdIncludeDeleted(userId);
+        Map<Long, CheckinPlan> planMap = plans.stream()
+                .collect(Collectors.toMap(CheckinPlan::getId, plan -> plan));
 
-        // 查询该月有效打卡记录，按日期分组计数
+        // 查询该月有效打卡记录，只统计打卡当天计划仍生效的记录，与 total 口径一致
         LambdaQueryWrapper<CheckinRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CheckinRecord::getUserId, userId)
                 .between(CheckinRecord::getCheckinDate, firstDay, lastDay)
-                .select(CheckinRecord::getCheckinDate);
+                .select(CheckinRecord::getPlanId, CheckinRecord::getCheckinDate);
         List<CheckinRecord> records = checkinRecordMapper.selectList(wrapper);
         Map<LocalDate, Long> completedMap = records.stream()
+                .filter(record -> {
+                    CheckinPlan plan = planMap.get(record.getPlanId());
+                    return plan != null && isEffectiveOn(plan, record.getCheckinDate());
+                })
                 .collect(Collectors.groupingBy(CheckinRecord::getCheckinDate, Collectors.counting()));
 
         // 组装当月每一天

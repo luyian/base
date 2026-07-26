@@ -35,7 +35,7 @@ public class CheckinPlanServiceImpl implements CheckinPlanService {
     /**
      * 默认卡片颜色（未指定时使用）
      */
-    private static final String DEFAULT_COLOR = "#3B82F6";
+    private static final String DEFAULT_COLOR = "#C6402E";
 
     private final CheckinPlanMapper checkinPlanMapper;
     private final CheckinRecordMapper checkinRecordMapper;

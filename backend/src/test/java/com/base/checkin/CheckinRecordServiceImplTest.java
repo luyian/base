@@ -117,7 +117,8 @@ class CheckinRecordServiceImplTest {
         assertEquals(1, day(calendar, 1).getTotal());
         assertEquals(1, day(calendar, 4).getTotal());
         assertEquals(2, day(calendar, 5).getTotal());
-        assertEquals(2, day(calendar, 10).getTotal());
+        assertEquals(2, day(calendar, 9).getTotal());
+        assertEquals(1, day(calendar, 10).getTotal());
         assertEquals(1, day(calendar, 11).getTotal());
         assertEquals(2, day(calendar, 6).getCompleted());
         assertEquals(1, day(calendar, 11).getCompleted());

@@ -1,4 +1,12 @@
 
+## 2026-07-29 修复打卡历史日期任务列表与日历完成度口径不一致
+
+- 按日期查计划列表（`CheckinPlanServiceImpl.listByUserIdAndDate`）原仅查 `deleted=0` 计划，导致删除任务后历史日期日历显示 N/N 但任务列表缺失已删除项；改为查询含已删除计划（`selectEnabledByUserIdIncludeDeleted`）并用生效判定过滤，与日历完成度口径一致
+- 新增 `com.base.checkin.util.CheckinPlanEffectiveUtil` 工具类，将原 `CheckinRecordServiceImpl` 私有 `isEffectiveOn` 提取为公共逻辑，供日历统计与历史日期列表共用，保证删除计划不改变历史日期生效状态
+- `CheckinPlanResponse` 新增 `deleted` 字段；历史日期列表中已删除计划回填 `deleted=true`
+- 小程序 `checkin.wxml/wxss` 对已删除计划置灰并显示“已删除”标签；`checkin.js` 的 `onTogglePlan`/`onLongPressPlan` 对已删除计划直接返回，不可打卡与编辑
+- 修正 `CheckinRecordServiceImplTest` 既有断言以匹配“删除日不计入”口径，新增 `CheckinPlanServiceImplTest`（3 项）覆盖历史还原口径，打卡服务测试 8 项全通过
+
 ## 2026-07-23 完善小程序打卡功能（原子切换、历史统计与权限冲突修复）
 
 - 后端新增 `com.base.checkin` 包：CheckinPlan/CheckinRecord 实体、Mapper、Service 与 CheckinController（6 个接口，按当前用户隔离并校验权限）

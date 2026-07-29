@@ -308,6 +308,31 @@ page {
     text-decoration: line-through;
 }
 
+.plan-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+}
+
+/* 已删除计划：历史日期保留显示但置灰，仅查看不可操作 */
+.plan-deleted {
+    opacity: 0.5;
+}
+
+.plan-deleted .plan-title {
+    color: var(--ink-3);
+}
+
+.plan-deleted-tag {
+    font-size: 20rpx;
+    color: var(--ink-3);
+    border: 1rpx solid var(--ink-3);
+    border-radius: 8rpx;
+    padding: 2rpx 10rpx;
+    letter-spacing: 1rpx;
+    flex-shrink: 0;
+}
+
 .stamp-slot {
     flex-shrink: 0;
     margin-left: 16rpx;

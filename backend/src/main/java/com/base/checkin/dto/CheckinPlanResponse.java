@@ -77,4 +77,10 @@ public class CheckinPlanResponse implements Serializable {
      */
     @ApiModelProperty("今日是否已打卡")
     private Boolean todayChecked;
+
+    /**
+     * 是否已删除（历史日期列表可能包含已删除计划，前端据此置灰且不可操作）
+     */
+    @ApiModelProperty("是否已删除")
+    private Boolean deleted;
 }

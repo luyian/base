@@ -64,7 +64,7 @@
   <!-- 计划列表 -->
   <view wx:else class="plan-list">
     <view wx:for="{{planList}}" wx:key="id"
-          class="plan-row {{item.todayChecked ? 'plan-checked' : ''}}"
+          class="plan-row {{item.todayChecked ? 'plan-checked' : ''}} {{item.deleted ? 'plan-deleted' : ''}}"
           style="--plan-color: {{item.color || '#C6402E'}}"
           bindtap="onTogglePlan"
           bindlongpress="onLongPressPlan"
@@ -73,7 +73,10 @@
         <text class="plan-icon">{{item.icon || '✔️'}}</text>
       </view>
       <view class="plan-info">
-        <text class="plan-title">{{item.title}}</text>
+        <view class="plan-title-row">
+          <text class="plan-title">{{item.title}}</text>
+          <text wx:if="{{item.deleted}}" class="plan-deleted-tag">已删除</text>
+        </view>
         <text class="plan-remark" wx:if="{{item.remark}}">{{item.remark}}</text>
       </view>
       <view class="stamp-slot">

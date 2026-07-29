@@ -158,6 +158,11 @@ Page({
       wx.showToast({ title: '不能对过去的日期打卡', icon: 'none' });
       return;
     }
+    // 已删除计划仅历史展示，不可打卡
+    const plan = this.data.planList.find(p => p.id === id);
+    if (plan && plan.deleted) {
+      return;
+    }
     this.togglingPlanIds = this.togglingPlanIds || {};
     if (this.togglingPlanIds[id]) {
       return;
@@ -183,6 +188,8 @@ Page({
     const id = e.currentTarget.dataset.id;
     const plan = this.data.planList.find(p => p.id === id);
     if (!plan) { return; }
+    // 已删除计划不可编辑/删除
+    if (plan.deleted) { return; }
     wx.showActionSheet({
       itemList: ['编辑', '删除'],
       success: (res) => {

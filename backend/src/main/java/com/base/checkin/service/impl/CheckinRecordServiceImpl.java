@@ -7,6 +7,7 @@ import com.base.checkin.entity.CheckinRecord;
 import com.base.checkin.mapper.CheckinPlanMapper;
 import com.base.checkin.mapper.CheckinRecordMapper;
 import com.base.checkin.service.CheckinRecordService;
+import com.base.checkin.util.CheckinPlanEffectiveUtil;
 import com.base.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -79,10 +79,8 @@ public class CheckinRecordServiceImpl implements CheckinRecordService {
                 .select(CheckinRecord::getPlanId, CheckinRecord::getCheckinDate);
         List<CheckinRecord> records = checkinRecordMapper.selectList(wrapper);
         Map<LocalDate, Long> completedMap = records.stream()
-                .filter(record -> {
-                    CheckinPlan plan = planMap.get(record.getPlanId());
-                    return plan != null && isEffectiveOn(plan, record.getCheckinDate());
-                })
+                .filter(record -> CheckinPlanEffectiveUtil.isEffectiveOn(
+                        planMap.get(record.getPlanId()), record.getCheckinDate()))
                 .collect(Collectors.groupingBy(CheckinRecord::getCheckinDate, Collectors.counting()));
 
         // 组装当月每一天
@@ -120,31 +118,8 @@ public class CheckinRecordServiceImpl implements CheckinRecordService {
      * @return 生效计划数
      */
     private int countEffectivePlans(List<CheckinPlan> plans, LocalDate date) {
-        return Math.toIntExact(plans.stream().filter(plan -> isEffectiveOn(plan, date)).count());
-    }
-
-    /**
-     * 判断计划在指定日期是否生效，创建日计入、删除日不计入
-     *
-     * @param plan 计划
-     * @param date 日期
-     * @return true表示生效
-     */
-    private boolean isEffectiveOn(CheckinPlan plan, LocalDate date) {
-        // 单日事件只在目标日期生效
-        if (plan.getPlanType() != null && plan.getPlanType() == 1) {
-            return plan.getTargetDate() != null && plan.getTargetDate().equals(date);
-        }
-
-        // 长期计划：创建后生效（含创建日），删除后失效（删除日不计入）
-        LocalDateTime createTime = plan.getCreateTime();
-        if (createTime != null && date.isBefore(createTime.toLocalDate())) {
-            return false;
-        }
-        if (plan.getDeleted() == null || plan.getDeleted() == 0) {
-            return true;
-        }
-        LocalDateTime deletedTime = plan.getDeletedTime() != null ? plan.getDeletedTime() : plan.getUpdateTime();
-        return deletedTime == null || date.isBefore(deletedTime.toLocalDate());
+        return Math.toIntExact(plans.stream()
+                .filter(plan -> CheckinPlanEffectiveUtil.isEffectiveOn(plan, date))
+                .count());
     }
 }

@@ -8,6 +8,7 @@ import com.base.checkin.entity.CheckinRecord;
 import com.base.checkin.mapper.CheckinPlanMapper;
 import com.base.checkin.mapper.CheckinRecordMapper;
 import com.base.checkin.service.CheckinPlanService;
+import com.base.checkin.util.CheckinPlanEffectiveUtil;
 import com.base.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -109,32 +111,32 @@ public class CheckinPlanServiceImpl implements CheckinPlanService {
 
     @Override
     public List<CheckinPlanResponse> listByUserIdAndDate(Long userId, LocalDate date) {
-        // 查询在指定日期生效的计划（长期计划 + 该日期的单日事件）
-        LambdaQueryWrapper<CheckinPlan> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(CheckinPlan::getUserId, userId)
-                .eq(CheckinPlan::getStatus, 1)
-                .eq(CheckinPlan::getDeleted, 0)
-                .and(w -> w
-                        // 长期计划
-                        .eq(CheckinPlan::getPlanType, 0)
-                        // 或者指定日期的单日事件
-                        .or(x -> x.eq(CheckinPlan::getPlanType, 1)
-                                .eq(CheckinPlan::getTargetDate, date))
-                )
-                .orderByAsc(CheckinPlan::getSortOrder)
-                .orderByAsc(CheckinPlan::getId);
-        List<CheckinPlan> plans = checkinPlanMapper.selectList(wrapper);
+        // 查询用户全部启用计划（含已逻辑删除），用创建/删除时间还原指定日期实际生效的计划，
+        // 与日历完成度统计口径保持一致：删除计划不改变历史日期的生效状态
+        List<CheckinPlan> plans = checkinPlanMapper.selectEnabledByUserIdIncludeDeleted(userId);
         if (plans.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 过滤出在指定日期生效的计划，按 sort_order、id 排序
+        List<CheckinPlan> effectivePlans = plans.stream()
+                .filter(plan -> CheckinPlanEffectiveUtil.isEffectiveOn(plan, date))
+                .sorted(Comparator
+                        .comparing(CheckinPlan::getSortOrder, Comparator.nullsFirst(Comparator.naturalOrder()))
+                        .thenComparing(CheckinPlan::getId))
+                .collect(Collectors.toList());
+        if (effectivePlans.isEmpty()) {
             return Collections.emptyList();
         }
 
         // 查询指定日期已打卡的计划ID集合
         Set<Long> checkedPlanIds = queryCheckedPlanIds(userId, date);
 
-        return plans.stream().map(plan -> {
+        return effectivePlans.stream().map(plan -> {
             CheckinPlanResponse response = new CheckinPlanResponse();
             BeanUtils.copyProperties(plan, response);
             response.setTodayChecked(checkedPlanIds.contains(plan.getId()));
+            response.setDeleted(plan.getDeleted() != null && plan.getDeleted() == 1);
             return response;
         }).collect(Collectors.toList());
     }

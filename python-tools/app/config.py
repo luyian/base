@@ -24,6 +24,10 @@ class Settings(BaseSettings):
 
     # 允许的文件类型
     allowed_pdf_extensions: set[str] = {".pdf"}
+    allowed_image_extensions: set[str] = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
+
+    # 图片转 PDF 压缩配置
+    max_image_size: int = 50 * 1024 * 1024  # 单张图片 50MB 上限
 
     model_config = {"env_prefix": "PYTOOL_", "env_file": ".env"}
 

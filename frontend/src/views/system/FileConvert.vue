@@ -79,6 +79,11 @@
             </div>
           </div>
         </el-tab-pane>
+
+        <!-- 扫描图片整理 -->
+        <el-tab-pane label="扫描图片整理" name="scanConvert">
+          <ScanDocConvert />
+        </el-tab-pane>
       </el-tabs>
     </el-card>
   </div>
@@ -89,6 +94,7 @@ import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document, UploadFilled, Download } from '@element-plus/icons-vue'
 import { pdfToWord, pdfToMarkdown } from '@/api/fileConvert'
+import ScanDocConvert from './ScanDocConvert.vue'
 
 const activeType = ref('pdfConvert')
 const outputFormat = ref('word')

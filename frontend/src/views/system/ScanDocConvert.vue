@@ -18,10 +18,14 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" :loading="creating" @click="startCreate">开始整理</el-button>
+          <el-button type="success" @click="startCameraCapture">
+            <el-icon><Camera /></el-icon> 拍照整理
+          </el-button>
         </el-form-item>
       </el-form>
       <p class="init-tip">
-        上传手机拍摄的文档扫描图片，系统会自动「灰度 + 降采样 + JPEG 压缩」后合并成一份 PDF。
+        上传手机拍摄的文档扫描图片，系统会自动「灰度 + 降采样 + JPEG 压缩」后合并成一份 PDF。<br />
+        手机端点「📷 拍照整理」可直接唤起相机逐张拍摄。
       </p>
     </div>
 
@@ -36,6 +40,12 @@
 
       <!-- 上传追加区 -->
       <div class="upload-section">
+        <div class="camera-bar">
+          <el-button type="success" size="large" @click="startCameraCapture">
+            <el-icon><Camera /></el-icon> 拍照整理
+          </el-button>
+          <span class="camera-tip">手机点此唤起相机逐张拍摄、依序追加；PC 上退化为选择图片</span>
+        </div>
         <el-upload
           class="upload-box"
           drag
@@ -111,13 +121,23 @@
         </div>
       </div>
     </div>
+
+    <!-- 隐藏的摄像头文件输入：capture=environment 在手机端唤起后置相机，PC 端忽略退化为选图 -->
+    <input
+      ref="cameraInput"
+      type="file"
+      accept="image/*"
+      capture="environment"
+      style="display: none"
+      @change="onCameraCapture"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { ArrowDown, ArrowUp, Delete, Download, UploadFilled } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowUp, Camera, Delete, Download, UploadFilled } from '@element-plus/icons-vue'
 import {
   createScanDoc,
   pushScanImages,
@@ -146,6 +166,9 @@ const creating = ref(false)
 const uploading = ref(false)
 const finalizing = ref(false)
 const result = ref(null)
+
+// 隐藏的摄像头文件输入（手机端唤起相机）
+const cameraInput = ref(null)
 
 const pendingCount = computed(() => images.value.filter((i) => i.pending).length)
 
@@ -188,6 +211,57 @@ async function startCreate() {
   } finally {
     creating.value = false
   }
+}
+
+/**
+ * 点击「拍照整理」：若无工作区先创建一个（命名缺省「拍摄文档」），随后唤起相机。
+ */
+async function startCameraCapture() {
+  if (!doc.value) {
+    if (!initForm.value.docName.trim()) {
+      initForm.value.docName = '拍摄文档'
+    }
+    await startCreate()
+  }
+  cameraInput.value && cameraInput.value.click()
+}
+
+/**
+ * 拍照/选图回调：校验并追加为待上传项，重置 input 以支持连拍，随后自动上传到工作区末尾。
+ */
+function onCameraCapture(e) {
+  const input = e.target
+  const file = input && input.files && input.files[0]
+  // 立即重置，下次点击仍能唤起相机/选择器（连拍）
+  if (input) {
+    input.value = ''
+  }
+  if (!file) {
+    return
+  }
+  if (result.value) {
+    ElMessage.warning('已完成归档，如需追加请重新开始整理')
+    return
+  }
+  if (!/\.(jpg|jpeg|png|bmp|webp)$/i.test(file.name)) {
+    ElMessage.error(`「${file.name}」不是支持的图片格式，请重拍或改用相册选图`)
+    return
+  }
+  if (file.size > 50 * 1024 * 1024) {
+    ElMessage.error(`「${file.name}」超过 50MB`)
+    return
+  }
+  images.value.push({
+    key: ++keySeq,
+    id: null,
+    fileName: file.name,
+    size: file.size,
+    url: URL.createObjectURL(file),
+    pending: true,
+    file
+  })
+  // 拍照即上传，依序追加到工作区末尾
+  doUpload()
 }
 
 async function doUpload() {
@@ -382,6 +456,17 @@ function formatSize(bytes) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.camera-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.camera-tip {
+  font-size: 12px;
+  color: #909399;
 }
 
 .upload-box {

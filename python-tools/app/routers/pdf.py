@@ -108,6 +108,61 @@ async def pdf_to_markdown(file: UploadFile) -> FileResponse:
         temp_path.unlink(missing_ok=True)
 
 
+@router.post("/compress", summary="PDF 压缩")
+async def pdf_compress(
+    file: UploadFile,
+    level: str = Form("medium", description="压缩档位 high|medium|low"),
+) -> FileResponse:
+    """
+    上传 PDF 文件，按档位压缩后返回下载
+
+    - 压缩管线：图像降采样重编码 → 字体子集化 → 结构清理
+    - 压缩后体积不小于原文件时返回原文件（不劣化）
+    - 最大支持 50MB，返回 application/pdf 文件流
+    """
+    # 校验文件
+    content = await file.read()
+    error = pdf_service.validate_file(file.filename or "unknown.pdf", len(content))
+    if error:
+        return JSONResponse(  # type: ignore[return-value]
+            status_code=400,
+            content=Result.fail(message=error, code=400).model_dump(),
+        )
+    if level not in pdf_service.COMPRESS_LEVELS:
+        return JSONResponse(  # type: ignore[return-value]
+            status_code=400,
+            content=Result.fail(
+                message=f"非法压缩档位: {level}，仅支持 high/medium/low", code=400
+            ).model_dump(),
+        )
+
+    # 保存临时文件
+    temp_filename = f"{uuid.uuid4().hex}.pdf"
+    temp_path = settings.upload_dir / temp_filename
+
+    try:
+        temp_path.write_bytes(content)
+
+        # 执行压缩
+        output_path = pdf_service.compress_pdf(temp_path, level)
+
+        # 返回文件下载
+        download_name = Path(file.filename or "output").stem + ".pdf"
+        return FileResponse(
+            path=str(output_path),
+            filename=download_name,
+            media_type="application/pdf",
+        )
+    except RuntimeError as e:
+        return JSONResponse(  # type: ignore[return-value]
+            status_code=500,
+            content=Result.fail(message=str(e)).model_dump(),
+        )
+    finally:
+        # 清理上传的临时文件
+        temp_path.unlink(missing_ok=True)
+
+
 @router.post("/images-to-pdf", summary="多张图片压缩合并为 PDF")
 async def images_to_pdf(
     files: list[UploadFile] = File(..., description="图片文件列表，顺序即 PDF 页序"),

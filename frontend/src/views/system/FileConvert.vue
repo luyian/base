@@ -37,6 +37,17 @@
                 <el-radio-group v-model="outputFormat">
                   <el-radio-button label="word">Word (.docx)</el-radio-button>
                   <el-radio-button label="markdown">Markdown (.md)</el-radio-button>
+                  <el-radio-button label="compress">压缩 PDF (.pdf)</el-radio-button>
+                </el-radio-group>
+              </div>
+
+              <!-- 压缩档位选择（仅压缩模式） -->
+              <div v-if="outputFormat === 'compress'" class="format-section">
+                <span class="format-label">压缩档位：</span>
+                <el-radio-group v-model="compressLevel">
+                  <el-radio-button label="high">清晰优先</el-radio-button>
+                  <el-radio-button label="medium">均衡</el-radio-button>
+                  <el-radio-button label="low">极致压缩</el-radio-button>
                 </el-radio-group>
               </div>
 
@@ -48,7 +59,7 @@
                   :disabled="!selectedFile"
                   @click="doConvert"
                 >
-                  {{ converting ? '转换中...' : '开始转换' }}
+                  {{ converting ? '处理中...' : (outputFormat === 'compress' ? '开始压缩' : '开始转换') }}
                 </el-button>
                 <el-button v-if="selectedFile" @click="clearFile">清除文件</el-button>
               </div>
@@ -69,6 +80,9 @@
                 </el-descriptions-item>
                 <el-descriptions-item label="转换后大小">
                   {{ formatSize(convertResult.targetFile.fileSize) }}
+                </el-descriptions-item>
+                <el-descriptions-item v-if="outputFormat === 'compress'" label="压缩率">
+                  {{ compressionRatio }}
                 </el-descriptions-item>
               </el-descriptions>
               <div class="download-bar">
@@ -93,17 +107,29 @@
 import { ref, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Document, UploadFilled, Download } from '@element-plus/icons-vue'
-import { pdfToWord, pdfToMarkdown } from '@/api/fileConvert'
+import { pdfToWord, pdfToMarkdown, pdfCompress } from '@/api/fileConvert'
 import ScanDocConvert from './ScanDocConvert.vue'
 
 const activeType = ref('pdfConvert')
 const outputFormat = ref('word')
+const compressLevel = ref('medium')
 const selectedFile = ref(null)
 const converting = ref(false)
 const convertResult = ref(null)
 
 const formatLabel = computed(() => {
-  return outputFormat.value === 'word' ? ' Word ' : ' Markdown '
+  if (outputFormat.value === 'word') return ' Word '
+  if (outputFormat.value === 'markdown') return ' Markdown '
+  return '压缩'
+})
+
+// 压缩率 = (1 - 目标大小/源大小) × 100%，无增益时显示 0%
+const compressionRatio = computed(() => {
+  const source = convertResult.value?.sourceFile?.fileSize
+  const target = convertResult.value?.targetFile?.fileSize
+  if (!source || !target) return '-'
+  const ratio = Math.max(0, (1 - target / source) * 100)
+  return ratio.toFixed(1) + '%'
 })
 
 function handleFileChange(uploadFile) {
@@ -130,12 +156,17 @@ async function doConvert() {
   converting.value = true
   convertResult.value = null
   try {
-    const convertFn = outputFormat.value === 'word' ? pdfToWord : pdfToMarkdown
-    const res = await convertFn(selectedFile.value)
+    let res
+    if (outputFormat.value === 'compress') {
+      res = await pdfCompress(selectedFile.value, compressLevel.value)
+    } else {
+      const convertFn = outputFormat.value === 'word' ? pdfToWord : pdfToMarkdown
+      res = await convertFn(selectedFile.value)
+    }
     convertResult.value = res.data
-    ElMessage.success('转换成功')
+    ElMessage.success(outputFormat.value === 'compress' ? '压缩成功' : '转换成功')
   } catch (e) {
-    ElMessage.error(e.message || '转换失败')
+    ElMessage.error(e.message || (outputFormat.value === 'compress' ? '压缩失败' : '转换失败'))
   } finally {
     converting.value = false
   }

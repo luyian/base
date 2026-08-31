@@ -33,6 +33,24 @@ export function pdfToMarkdown(file) {
 }
 
 /**
+ * PDF 压缩
+ * @param {File} file PDF 文件
+ * @param {string} level 压缩档位 high|medium|low
+ */
+export function pdfCompress(file, level = 'medium') {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('level', level)
+  return request({
+    url: '/system/file-convert/pdf-compress',
+    method: 'post',
+    data: formData,
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000
+  })
+}
+
+/**
  * 扫描文档整理：开始整理（创建文档工作区）
  * @param {string} docName 文档命名
  */

@@ -11,7 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 文件转换控制器
@@ -24,6 +27,9 @@ import java.util.Map;
 @RestController
 @RequestMapping("/system/file-convert")
 public class FileConvertController {
+
+    /** PDF 压缩支持的档位 */
+    private static final Set<String> COMPRESS_LEVELS = new HashSet<>(Arrays.asList("high", "medium", "low"));
 
     @Resource
     private FileConvertService fileConvertService;
@@ -65,6 +71,30 @@ public class FileConvertController {
         } catch (Exception e) {
             log.error("PDF转Markdown失败", e);
             return Result.error("文件转换失败，请稍后重试");
+        }
+    }
+
+    /**
+     * PDF 压缩
+     */
+    @ApiOperation("PDF压缩")
+    @PostMapping("/pdf-compress")
+    @PreAuthorize("hasAuthority('system:fileConvert:use')")
+    public Result<Map<String, Object>> pdfCompress(@RequestParam("file") MultipartFile file,
+                                                   @RequestParam(value = "level", defaultValue = "medium") String level) {
+        String errorMsg = validatePdfFile(file);
+        if (errorMsg != null) {
+            return Result.error(errorMsg);
+        }
+        if (!COMPRESS_LEVELS.contains(level)) {
+            return Result.error("非法压缩档位，仅支持 high/medium/low");
+        }
+        try {
+            Map<String, Object> result = fileConvertService.compressPdf(file, level);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("PDF压缩失败", e);
+            return Result.error("PDF压缩失败，请稍后重试");
         }
     }
 

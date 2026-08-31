@@ -87,6 +87,30 @@ public class FileConvertServiceImpl implements FileConvertService {
         return result;
     }
 
+    @Override
+    public Map<String, Object> compressPdf(MultipartFile file, String level) {
+        String originalName = file.getOriginalFilename();
+        log.info("开始 PDF 压缩: {}，档位: {}", originalName, level);
+
+        // 1. 上传源 PDF 到 COS 并记录
+        SysFile sourceSysFile = uploadAndRecord(file, "pdf");
+
+        // 2. 调用 python-tools 压缩（level 作为额外表单字段透传）
+        Map<String, String> formFields = new HashMap<>(2);
+        formFields.put("level", level);
+        byte[] compressedBytes = callPythonToolsConvert(file, "/api/pdf/compress", formFields);
+
+        // 3. 上传压缩后的 PDF 到 COS 并记录
+        String compressedName = originalName != null ? originalName : "output.pdf";
+        SysFile targetSysFile = uploadBytesAndRecord(compressedBytes, compressedName, "pdf", MediaType.APPLICATION_PDF_VALUE);
+
+        // 4. 组装返回结果
+        Map<String, Object> result = new HashMap<>(4);
+        result.put("sourceFile", buildFileInfo(sourceSysFile));
+        result.put("targetFile", buildFileInfo(targetSysFile));
+        return result;
+    }
+
     /**
      * 调用 python-tools PDF 转换接口
      *
@@ -95,6 +119,18 @@ public class FileConvertServiceImpl implements FileConvertService {
      * @return 转换后的文件字节
      */
     private byte[] callPythonToolsConvert(MultipartFile file, String apiPath) {
+        return callPythonToolsConvert(file, apiPath, null);
+    }
+
+    /**
+     * 调用 python-tools PDF 转换接口
+     *
+     * @param file PDF 文件
+     * @param apiPath 接口路径
+     * @param formFields 额外表单字段，可为 null
+     * @return 转换后的文件字节
+     */
+    private byte[] callPythonToolsConvert(MultipartFile file, String apiPath, Map<String, String> formFields) {
         String url = aiSkillConfig.getPythonToolsUrl() + apiPath;
 
         try {
@@ -110,6 +146,9 @@ public class FileConvertServiceImpl implements FileConvertService {
                 }
             };
             body.add("file", new HttpEntity<>(resource, createFileHeaders(file)));
+            if (formFields != null) {
+                formFields.forEach(body::add);
+            }
 
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 

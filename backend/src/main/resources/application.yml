@@ -10,11 +10,11 @@ spring:
     pathmatch:
       matching-strategy: ant_path_matcher
 
-  # 文件上传配置
+  # 文件上传配置（业务上限 50MB，此处留 60MB 余量覆盖 multipart 边界开销）
   servlet:
     multipart:
-      max-file-size: 10MB
-      max-request-size: 10MB
+      max-file-size: 60MB
+      max-request-size: 60MB
 
   # Jackson 配置
   jackson:

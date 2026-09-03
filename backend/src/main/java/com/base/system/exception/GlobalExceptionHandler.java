@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import javax.validation.ConstraintViolation;
@@ -155,6 +156,16 @@ public class GlobalExceptionHandler {
         }
         log.error("数据库唯一约束冲突", e);
         return Result.error(ResultCode.INTERNAL_SERVER_ERROR.getCode(), "数据已存在，请勿重复添加");
+    }
+
+    /**
+     * 上传文件大小超限（multipart 解析阶段，先于 Controller 校验触发）
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
+        log.warn("上传文件大小超限：{}", e.getMessage());
+        return Result.error(HttpStatus.BAD_REQUEST.value(), "文件大小超出限制，最大允许 50MB");
     }
 
     /**

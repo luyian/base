@@ -34,6 +34,12 @@ const constantRoutes = [
     meta: { title: '分支管理' }
   },
   {
+    path: '/dev/json',
+    name: 'DevJson',
+    component: () => import('@/views/dev/json/index.vue'),
+    meta: { title: 'JSON 格式化工具' }
+  },
+  {
     path: '/ai/chat',
     name: 'AiChat',
     component: () => import('@/views/ai/Chat.vue'),
@@ -220,7 +226,7 @@ const router = createRouter({
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
   // 设置页面标题
-  document.title = to.meta.title ? `${to.meta.title} - 后台管理系统` : '后台管理系统'
+  document.title = to.meta.title ? `${to.meta.title} - 元宝工具箱` : '元宝工具箱'
 
   // 获取 token
   const token = localStorage.getItem('token')
@@ -242,8 +248,8 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // 分支管理页面，直接放行
-  if (to.path.startsWith('/dev/branch')) {
+  // 分支管理、JSON 格式化等开发工具页面，直接放行
+  if (to.path.startsWith('/dev/')) {
     next()
     return
   }

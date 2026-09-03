@@ -16,7 +16,7 @@
     <artifactId>base-system</artifactId>
     <version>1.0.0</version>
     <name>base-system</name>
-    <description>基础权限管理系统</description>
+    <description>元宝工具箱</description>
 
     <properties>
         <java.version>1.8</java.version>

@@ -9,7 +9,7 @@
     <div class="login-brand">
       <div class="brand-content">
         <img src="/logo.svg" alt="Logo" class="brand-logo" />
-        <h1 class="brand-title">后台管理系统</h1>
+        <h1 class="brand-title">元宝工具箱</h1>
         <p class="brand-desc">高效 · 安全 · 可靠</p>
       </div>
     </div>

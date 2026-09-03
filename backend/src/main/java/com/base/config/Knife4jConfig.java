@@ -84,8 +84,8 @@ public class Knife4jConfig {
      */
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("基础权限管理系统 API 文档")
-                .description("基础权限管理系统接口文档")
+                .title("元宝工具箱 API 文档")
+                .description("元宝工具箱接口文档")
                 .contact(new Contact("base", "", ""))
                 .version("1.0.0")
                 .build();

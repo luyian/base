@@ -13,7 +13,7 @@
         <div class="logo-icon-wrap">
           <img src="/logo.svg" alt="Logo" class="logo-img" />
         </div>
-        <span v-if="!isCollapse || isMobile" class="logo-text">后台管理系统</span>
+        <span v-if="!isCollapse || isMobile" class="logo-text">元宝工具箱</span>
       </div>
       <div class="sidebar-nav-wrap">
       <el-menu

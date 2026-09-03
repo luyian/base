@@ -622,7 +622,7 @@ INSERT INTO `sys_enum` (`id`, `enum_type`, `type_desc`, `enum_code`, `enum_value
 -- ----------------------------
 DELETE FROM `sys_config`;
 INSERT INTO `sys_config` (`id`, `config_key`, `config_value`, `config_name`, `description`, `type`, `status`, `remark`, `create_time`, `create_by`, `update_time`, `update_by`, `deleted`) VALUES
-(1, 'system.name', '基础管理系统', '系统名称', '系统的名称', 'string', 1, NULL, '2026-01-14 14:59:03', 'system', '2026-01-14 14:59:03', NULL, 0),
+(1, 'system.name', '元宝工具箱', '系统名称', '系统的名称', 'string', 1, NULL, '2026-01-14 14:59:03', 'system', '2026-01-14 14:59:03', NULL, 0),
 (2, 'system.version', '1.0.0', '系统版本', '系统的版本号', 'string', 1, NULL, '2026-01-14 14:59:03', 'system', '2026-01-14 14:59:03', NULL, 0),
 (3, 'user.password.maxRetryCount', '5', '密码最大重试次数', '用户登录密码最大重试次数', 'number', 1, NULL, '2026-01-14 14:59:03', 'system', '2026-01-14 14:59:03', NULL, 0),
 (4, 'user.password.lockTime', '10', '账号锁定时间', '密码输错后账号锁定时间（分钟）', 'number', 1, NULL, '2026-01-14 14:59:03', 'system', '2026-01-14 14:59:03', NULL, 0),

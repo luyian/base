@@ -47,6 +47,14 @@ Page({
   },
   onShow() {
     this.applyTheme();
+    // 首页桌面图标点击时通过 storage 指定目标 tab（switchTab 不支持带参）
+    const pending = wx.getStorageSync('pendingFileConvertTab');
+    if (pending) {
+      wx.removeStorageSync('pendingFileConvertTab');
+      if (pending !== this.data.activeTab) {
+        this.setData({ activeTab: pending });
+      }
+    }
   },
   onUnload() {
     // 离开时若存在未完成工作区，清理本地引用（后端保留可二次整理）

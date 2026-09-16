@@ -1,4 +1,4 @@
-/* pages/index/index.wxss - 元灵工具箱首页 */
+/* pages/index/index.wxss - 元灵工具箱首页（手机桌面式） */
 /* 设计概念：瓷青纸面 + 墨色结构，朱砂只用于点睛（seal） */
 page {
   --paper: #F1F3EF;
@@ -18,9 +18,18 @@ page {
 }
 
 .container {
-  min-height: 100vh;
+  height: 100vh;
   background: var(--paper);
-  padding: 24rpx 40rpx 64rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 桌面滚动区：占满导航栏以下剩余高度，可上下滑动 */
+.desktop {
+  flex: 1;
+  min-height: 0;
+  padding: 24rpx 40rpx 96rpx;
   box-sizing: border-box;
 }
 
@@ -29,26 +38,26 @@ page {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 60rpx 0 48rpx;
+  padding: 48rpx 0 40rpx;
   animation: fade-up 0.4s ease both;
 }
 
 .hero-logo {
-  width: 160rpx;
-  height: 160rpx;
-  border-radius: 36rpx;
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 34rpx;
   background: var(--card);
   border: 1rpx solid var(--hairline);
   box-shadow: var(--shadow);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 28rpx;
+  margin-bottom: 26rpx;
 }
 
 .hero-logo-img {
-  width: 120rpx;
-  height: 120rpx;
+  width: 112rpx;
+  height: 112rpx;
 }
 
 .hero-title-row {
@@ -58,15 +67,15 @@ page {
 }
 
 .hero-title {
-  font-size: 56rpx;
+  font-size: 52rpx;
   font-weight: 700;
   letter-spacing: 4rpx;
   color: var(--ink);
 }
 
 .hero-seal {
-  width: 48rpx;
-  height: 48rpx;
+  width: 46rpx;
+  height: 46rpx;
   border: 4rpx solid var(--seal);
   border-radius: 8rpx 12rpx 8rpx 12rpx;
   color: var(--seal);
@@ -79,69 +88,76 @@ page {
 }
 
 .hero-sub {
-  margin-top: 16rpx;
+  margin-top: 14rpx;
   font-size: 24rpx;
   letter-spacing: 4rpx;
   color: var(--ink-3);
 }
 
-/* ==================== 工具宫格 ==================== */
-.grid {
-  display: flex;
-  gap: 24rpx;
-  margin-top: 12rpx;
+/* ==================== 桌面应用网格 ==================== */
+.desktop-label {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  letter-spacing: 4rpx;
+  margin: 12rpx 8rpx 20rpx;
 }
 
-.tool-card {
-  flex: 1;
-  background: var(--card);
-  border: 1rpx solid var(--hairline);
-  border-radius: 28rpx;
-  padding: 40rpx 28rpx;
-  box-shadow: var(--shadow);
+.app-grid {
+  display: flex;
+  gap: 28rpx;
+  flex-wrap: wrap;
+}
+
+/* 桌面 app 图标：圆角色块 + 名称，纵向排列，可下拉/上滑 */
+.app-icon {
+  width: calc((100% - 56rpx) / 3);
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: transform 0.15s ease;
   animation: fade-up 0.4s ease both;
-  box-sizing: border-box;
+}
+.app-icon:nth-child(1) { animation-delay: 0.05s; }
+.app-icon:nth-child(2) { animation-delay: 0.1s; }
+.app-icon:nth-child(3) { animation-delay: 0.15s; }
+
+.app-icon:active .app-glyph {
+  transform: scale(0.94);
 }
 
-.tool-card:nth-child(1) { animation-delay: 0.05s; }
-.tool-card:nth-child(2) { animation-delay: 0.1s; }
-
-.tool-card:active {
-  transform: scale(0.97);
-}
-
-.tool-icon {
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 24rpx;
-  background: var(--seal-soft);
+.app-glyph {
+  width: 116rpx;
+  height: 116rpx;
+  border-radius: 30rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 52rpx;
-  margin-bottom: 24rpx;
+  font-size: 58rpx;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s ease;
+}
+.app-glyph.se {
+  background: linear-gradient(145deg, #E25A45, #C6402E);
+}
+.app-glyph.go {
+  background: linear-gradient(145deg, #C6A25C, #B08D46);
+}
+.app-glyph.bl {
+  background: linear-gradient(145deg, #7093B0, #4E6E8E);
 }
 
-.tool-name {
-  font-size: 32rpx;
-  font-weight: 600;
+.app-name {
+  margin-top: 14rpx;
+  font-size: 26rpx;
   color: var(--ink);
+  font-weight: 500;
 }
-
-.tool-desc {
-  margin-top: 10rpx;
-  font-size: 22rpx;
-  color: var(--ink-3);
-  text-align: center;
+.app-icon:active .app-name {
+  color: var(--seal);
 }
 
 /* ==================== 底部 ==================== */
 .footer {
-  margin-top: 80rpx;
+  margin-top: 96rpx;
   text-align: center;
 }
 
@@ -159,7 +175,7 @@ page {
 
 @media (prefers-reduced-motion: reduce) {
   .hero,
-  .tool-card {
+  .app-icon {
     animation: none !important;
   }
 }

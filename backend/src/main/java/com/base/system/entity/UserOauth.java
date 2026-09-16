@@ -53,6 +53,12 @@ public class UserOauth implements Serializable {
     private String unionId;
 
     /**
+     * 小程序 appId（微信 openid 与 appId 绑定，按此区分各小程序的绑定关系）
+     */
+    @ApiModelProperty("小程序appId")
+    private String appId;
+
+    /**
      * 第三方平台用户名
      */
     @ApiModelProperty("第三方平台用户名")

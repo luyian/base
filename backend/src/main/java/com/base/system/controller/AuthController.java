@@ -118,11 +118,13 @@ public class AuthController {
 
     /**
      * 获取当前用户信息
+     *
+     * @param appId 小程序 appId（可选；传入时 wxOpenid 仅反映该小程序的微信绑定状态）
      */
     @GetMapping("/info")
     @ApiOperation("获取当前用户信息")
-    public Result<UserInfoResponse> getUserInfo() {
-        UserInfoResponse userInfo = authService.getUserInfo();
+    public Result<UserInfoResponse> getUserInfo(@RequestParam(required = false) String appId) {
+        UserInfoResponse userInfo = authService.getUserInfo(appId);
         return Result.success(userInfo);
     }
 

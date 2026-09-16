@@ -58,8 +58,10 @@ public interface AuthService {
 
     /**
      * 获取当前用户信息
+     *
+     * @param appId 小程序 appId（可选；传入时 wxOpenid 仅反映该小程序的微信绑定状态，不传则返回任意绑定）
      */
-    UserInfoResponse getUserInfo();
+    UserInfoResponse getUserInfo(String appId);
 
     /**
      * 获取当前用户的路由菜单

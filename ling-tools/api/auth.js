@@ -25,7 +25,8 @@ module.exports = {
   unbindCurrentUserWechat: () => request.delete('/auth/unbind-wx'),
   
   // Get user info
-  getUserInfo: () => request.get('/auth/info'),
+  // 携带 appId：绑定状态按「当前小程序」维度返回（历史绑定记录 app_id 为空不会误匹配）
+  getUserInfo: () => request.get('/auth/info', { appId: 'wx9d17e9aff6f97cbb' }),
   
   // Logout
   logout: () => request.post('/auth/logout')

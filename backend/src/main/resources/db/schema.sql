@@ -1082,6 +1082,7 @@ CREATE TABLE `sys_user_oauth` (
   `oauth_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '第三方平台类型（github/wechat/gitee）',
   `oauth_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '第三方平台用户唯一标识（微信为 openid，与 appid 绑定）',
   `union_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '微信开放平台unionid（跨小程序/公众号唯一，用于多小程序打通）',
+  `app_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '小程序appId（openid与appId绑定，按此区分各小程序的绑定）',
   `oauth_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '第三方平台用户名',
   `oauth_avatar` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '第三方平台头像',
   `oauth_email` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci DEFAULT NULL COMMENT '第三方平台邮箱',
@@ -1091,7 +1092,8 @@ CREATE TABLE `sys_user_oauth` (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE KEY `uk_oauth` (`oauth_type`,`oauth_id`) USING BTREE,
   KEY `idx_user_id` (`user_id`) USING BTREE,
-  KEY `idx_union` (`oauth_type`,`union_id`) USING BTREE
+  KEY `idx_union` (`oauth_type`,`union_id`) USING BTREE,
+  KEY `idx_user_app` (`oauth_type`,`user_id`,`app_id`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户第三方登录绑定表';
 
 -- ----------------------------

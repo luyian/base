@@ -254,7 +254,7 @@ public class AuthServiceImpl implements AuthService {
         if (userOauth == null && StringUtils.hasText(session.getUnionid())) {
             userOauth = findWechatOauthByUnionid(session.getUnionid());
             if (userOauth != null) {
-                addWechatOauth(userOauth.getUserId(), openid, session.getUnionid());
+                addWechatOauth(userOauth.getUserId(), openid, session.getUnionid(), request.getAppId());
                 log.info("微信跨小程序自动补录 openid，userId: {}, appId: {}", userOauth.getUserId(), request.getAppId());
             }
         } else if (userOauth != null && !StringUtils.hasText(userOauth.getUnionId())
@@ -398,6 +398,7 @@ public class AuthServiceImpl implements AuthService {
         oauth.setOauthType("wechat");
         oauth.setOauthId(openid);
         oauth.setUnionId(session.getUnionid());
+        oauth.setAppId(request.getAppId());
         oauth.setCreateTime(java.time.LocalDateTime.now());
         userOauthMapper.insert(oauth);
         // 同一微信用户可能已绑定其他小程序：补齐该用户所有微信记录的 unionid
@@ -444,7 +445,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 支持多小程序各自绑定：同一用户可持有多条微信记录（每个小程序的 openid 一条，
         // 唯一键 oauth_type+oauth_id 保证 openid 不冲突）。同一 openid 的幂等/冲突已在上方处理。
-        addWechatOauth(userId, openid, session.getUnionid());
+        addWechatOauth(userId, openid, session.getUnionid(), appId);
         // 同一微信用户可能已绑定其他小程序：补齐该用户所有微信记录的 unionid
         fillUnionIdForUser(userId, session.getUnionid());
 
@@ -535,14 +536,15 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 新增一条微信绑定记录（openid + unionid）
+     * 新增一条微信绑定记录（openid + unionid + appId）
      */
-    private void addWechatOauth(Long userId, String openid, String unionid) {
+    private void addWechatOauth(Long userId, String openid, String unionid, String appId) {
         UserOauth oauth = new UserOauth();
         oauth.setUserId(userId);
         oauth.setOauthType("wechat");
         oauth.setOauthId(openid);
         oauth.setUnionId(unionid);
+        oauth.setAppId(appId);
         oauth.setCreateTime(java.time.LocalDateTime.now());
         userOauthMapper.insert(oauth);
     }
@@ -684,7 +686,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UserInfoResponse getUserInfo() {
+    public UserInfoResponse getUserInfo(String appId) {
         // 获取当前用户名
         String username = SecurityUtils.getCurrentUsername();
         if (username == null) {
@@ -737,8 +739,15 @@ public class AuthServiceImpl implements AuthService {
                 .filter(StringUtils::hasText)
                 .collect(Collectors.toList()));
 
-        // 查询微信绑定状态（跨小程序下同一用户可能有多条 openid 记录，取一条即可）
-        UserOauth userOauth = listWechatOauthByUserId(user.getId()).stream()
+        // 查询微信绑定状态：传入 appId 时仅反映「当前小程序」的绑定（历史记录 app_id 为空，
+        // 不会误匹配），不传则保持旧行为（任意一条绑定即视为已绑定，兼容 web 端）
+        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
+        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
+        oauthWrapper.eq(UserOauth::getUserId, user.getId());
+        if (StringUtils.hasText(appId)) {
+            oauthWrapper.eq(UserOauth::getAppId, appId);
+        }
+        UserOauth userOauth = userOauthMapper.selectList(oauthWrapper).stream()
                 .findFirst()
                 .orElse(null);
         if (userOauth != null) {

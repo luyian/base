@@ -45,18 +45,15 @@
               <div v-if="outputFormat === 'compress'" class="format-section slider-section">
                 <span class="format-label">压缩强度：</span>
                 <div class="slider-wrap">
+                  <!-- 方向：左=高清(250) → 右=极致(40)；sliderPos 为定位轴，dpi = 250 - sliderPos -->
                   <el-slider
-                    v-model="compressDpi"
-                    :min="40"
-                    :max="250"
+                    v-model="sliderPos"
+                    :min="0"
+                    :max="210"
                     :step="5"
                     :marks="sliderMarks"
-                    show-input
-                    input-size="small"
                   />
                   <div class="slider-meta">
-                    <span>目标 DPI：{{ compressDpi }}</span>
-                    <span>质量：{{ compressQuality }}</span>
                     <span v-if="estimatedSize">预计：{{ estimatedSize }}</span>
                     <el-tooltip
                       v-if="compressDpi < 100"
@@ -130,16 +127,19 @@ import ScanDocConvert from './ScanDocConvert.vue'
 
 const activeType = ref('pdfConvert')
 const outputFormat = ref('word')
-const compressDpi = ref(150)
 const selectedFile = ref(null)
 const converting = ref(false)
 const convertResult = ref(null)
 
-// 滑动条基准档位 marks：高清 200 / 均衡 150 / 极致 100
+// 滑块定位轴：0(左端,最清晰) → 210(右端,极致)。dpi 反向：dpi = 250 - sliderPos
+const sliderPos = ref(100)
+const compressDpi = computed(() => 250 - sliderPos.value)
+
+// 滑动条基准档位 marks（按 sliderPos 位置标注实际 dpi）：高清200 / 均衡150 / 极致100
 const sliderMarks = {
-  200: '高清',
-  150: '均衡',
-  100: '极致'
+  50: '高清200',
+  100: '均衡150',
+  150: '极致100'
 }
 
 // quality 由 dpi 推导：clamp(dpi*0.35, 15, 85)

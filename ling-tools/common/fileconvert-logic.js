@@ -91,12 +91,17 @@ const COMMON_METHODS = {
   _pickMedia({ count, sourceType }) {
     const that = this;
     const doPick = () => {
-      wx.chooseMedia({
+      // 用兼容性最好的 wx.chooseImage（返回 res.tempFilePaths 字符串数组，各基础库一致），
+      // 替代 wx.chooseMedia，避免不同基础库返回结构差异导致选图后取不到路径。
+      wx.chooseImage({
         count,
-        mediaType: ['image'],
         sourceType,
         success(res) {
-          const paths = (res.tempFiles || []).map((t) => t.tempFilePath);
+          const paths = res.tempFilePaths || [];
+          if (!paths.length) {
+            wx.showToast({ title: '未获取到图片路径，请重试', icon: 'none' });
+            return;
+          }
           that._addImages(paths);
         },
         fail(err) {
@@ -110,7 +115,7 @@ const COMMON_METHODS = {
           } else {
             wx.showToast({ title: '无法打开相册/相机：' + (msg || '未知原因'), icon: 'none' });
           }
-          console.error('chooseMedia fail:', msg);
+          console.error('chooseImage fail:', msg);
         }
       });
     };

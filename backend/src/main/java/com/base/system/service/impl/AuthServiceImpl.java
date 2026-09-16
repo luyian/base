@@ -93,20 +93,8 @@ public class AuthServiceImpl implements AuthService {
     /**
      * 微信小程序是否启用
      */
-    @Value("${oauth.wechat.enabled:false}")
-    private Boolean wechatEnabled;
-
-    /**
-     * 微信小程序AppID
-     */
-    @Value("${oauth.wechat.app-id:}")
-    private String wechatAppId;
-
-    /**
-     * 微信小程序AppSecret
-     */
-    @Value("${oauth.wechat.app-secret:}")
-    private String wechatAppSecret;
+    @Autowired
+    private com.base.config.WechatOauthProperties wechatOauthProperties;
 
     /**
      * 默认角色ID
@@ -247,12 +235,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse wxLogin(WxLoginRequest request) {
         // 1. 检查微信登录是否启用
-        if (!Boolean.TRUE.equals(wechatEnabled)) {
+        if (!Boolean.TRUE.equals(wechatOauthProperties.getEnabled())) {
             throw new BusinessException(500, "微信登录未启用");
         }
 
-        // 2. 调用微信API获取openid
-        String openid = getWechatOpenid(request.getCode());
+        // 2. 调用微信API获取openid（按 appId 路由对应 secret）
+        String openid = getWechatOpenid(request.getCode(), request.getAppId());
         if (openid == null) {
             throw new BusinessException("微信登录失败：无效的code");
         }
@@ -336,7 +324,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse bindWechat(WxBindRequest request) {
         // 1. 调用微信API获取openid
-        String openid = getWechatOpenid(request.getCode());
+        String openid = getWechatOpenid(request.getCode(), request.getAppId());
         if (openid == null) {
             throw new BusinessException("微信绑定失败：无效的code");
         }
@@ -408,12 +396,12 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void bindWechatForCurrentUser(String code) {
+    public void bindWechatForCurrentUser(String code, String appId) {
         // 从SecurityUtils获取当前登录用户
         Long userId = SecurityUtils.getCurrentUserId();
-        
+
         // 调用微信API获取openid
-        String openid = getWechatOpenid(code);
+        String openid = getWechatOpenid(code, appId);
         if (openid == null) {
             throw new BusinessException("微信绑定失败：无效的code");
         }
@@ -473,12 +461,23 @@ public class AuthServiceImpl implements AuthService {
 
     /**
      * 调用微信API获取openid
+     * <p>支持多小程序：优先按 appId 从 {@link WechatOauthProperties#getAppSecrets()} 路由对应 secret，未命中时回退默认 appId/appSecret。</p>
+     *
+     * @param code  微信登录code
+     * @param appId 发起登录的小程序 appId（可为空）
      */
-    private String getWechatOpenid(String code) {
+    private String getWechatOpenid(String code, String appId) {
         try {
+            String resolvedAppId = wechatOauthProperties.getAppId();
+            String resolvedSecret = wechatOauthProperties.getAppSecret();
+            Map<String, String> appSecrets = wechatOauthProperties.getAppSecrets();
+            if (appId != null && appSecrets != null && appSecrets.containsKey(appId)) {
+                resolvedAppId = appId;
+                resolvedSecret = appSecrets.get(appId);
+            }
             String url = "https://api.weixin.qq.com/sns/jscode2session" +
-                    "?appid=" + wechatAppId +
-                    "&secret=" + wechatAppSecret +
+                    "?appid=" + resolvedAppId +
+                    "&secret=" + resolvedSecret +
                     "&js_code=" + code +
                     "&grant_type=authorization_code";
 

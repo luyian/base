@@ -1,0 +1,55 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/login/register",
+    "pages/index/index",
+    "pages/fileconvert/fileconvert",
+    "pages/checkin/checkin",
+    "pages/profile/profile"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationStyle": "custom",
+    "backgroundColor": "#F1F3EF",
+    "backgroundColorTop": "#F1F3EF",
+    "backgroundColorBottom": "#F1F3EF"
+  },
+  "darkMode": true,
+  "tabBar": {
+    "color": "#94A3B8",
+    "selectedColor": "#C6402E",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "assets/home.png",
+        "selectedIconPath": "assets/home-active.png"
+      },
+      {
+        "pagePath": "pages/fileconvert/fileconvert",
+        "text": "转换",
+        "iconPath": "assets/file.png",
+        "selectedIconPath": "assets/file-active.png"
+      },
+      {
+        "pagePath": "pages/checkin/checkin",
+        "text": "打卡",
+        "iconPath": "assets/checkin.png",
+        "selectedIconPath": "assets/checkin-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "assets/user.png",
+        "selectedIconPath": "assets/user-active.png"
+      }
+    ]
+  },
+  "usingComponents": {
+    "nav-bar": "/components/nav-bar/nav-bar"
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

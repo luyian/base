@@ -1,0 +1,622 @@
+/* pages/checkin/checkin.wxss */
+/* 设计概念：打卡即盖章。瓷青纸面 + 墨色结构，朱砂红只留给「已完成」的印章 */
+page {
+    --paper: #F1F3EF;
+    --card: #FBFBF8;
+    --ink: #22302A;
+    --ink-2: #5C6B63;
+    --ink-3: #9AA69F;
+    --seal: #C6402E;
+    --seal-soft: rgba(198, 64, 46, 0.10);
+    --gold: #B08D46;
+    --hairline: #E1E5DF;
+    --shadow: 0 2rpx 6rpx rgba(34, 48, 42, 0.05), 0 10rpx 28rpx rgba(34, 48, 42, 0.06);
+
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+
+/* 数字统一使用窄体数字字体，形成版面记忆点 */
+.num {
+    font-family: 'DIN Alternate', 'Bahnschrift', 'Arial Narrow', sans-serif;
+}
+
+.container {
+    min-height: 100vh;
+    background: var(--paper);
+    padding: 24rpx 28rpx 64rpx;
+}
+
+/* ==================== 月历卡片 ==================== */
+.calendar-card {
+    background: var(--card);
+    border: 1rpx solid var(--hairline);
+    border-radius: 28rpx;
+    padding: 32rpx 28rpx 24rpx;
+    box-shadow: var(--shadow);
+    animation: fade-up 0.4s ease both;
+}
+
+.cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24rpx;
+}
+
+.cal-title {
+    display: flex;
+    align-items: baseline;
+    gap: 16rpx;
+}
+
+.cal-month-num {
+    font-size: 88rpx;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -2rpx;
+    color: var(--ink);
+}
+
+.cal-ym {
+    display: flex;
+    flex-direction: column;
+    gap: 4rpx;
+}
+
+.cal-year {
+    font-size: 26rpx;
+    font-weight: 600;
+    letter-spacing: 4rpx;
+    color: var(--gold);
+}
+
+.cal-sub {
+    font-size: 20rpx;
+    color: var(--ink-3);
+    letter-spacing: 2rpx;
+}
+
+.cal-switch {
+    display: flex;
+    gap: 14rpx;
+}
+
+.switch-btn {
+    width: 60rpx;
+    height: 60rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1rpx solid var(--hairline);
+    border-radius: 50%;
+    background: var(--card);
+}
+
+.switch-btn:active {
+    background: var(--seal-soft);
+    border-color: var(--seal);
+}
+
+.switch-icon {
+    font-size: 38rpx;
+    color: var(--ink-2);
+    line-height: 1;
+    margin-top: -4rpx;
+}
+
+.week-row {
+    display: flex;
+    margin-bottom: 6rpx;
+    border-bottom: 1rpx solid var(--hairline);
+    padding-bottom: 10rpx;
+}
+
+.week-cell {
+    flex: 1;
+    text-align: center;
+    font-size: 20rpx;
+    letter-spacing: 2rpx;
+    color: var(--ink-3);
+}
+
+.day-grid {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.day-cell {
+    width: 14.2857%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10rpx 0 6rpx;
+    box-sizing: border-box;
+}
+
+.day-empty {
+    visibility: hidden;
+}
+
+.day-num-wrap {
+    width: 60rpx;
+    height: 60rpx;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+}
+
+.day-num {
+    font-size: 30rpx;
+    color: var(--ink);
+}
+
+.day-progress {
+    font-size: 18rpx;
+    color: var(--ink-3);
+    margin-top: 2rpx;
+}
+
+/* 部分完成：淡朱砂底 + 细红圈，像章印未落实 */
+.ratio-partial {
+    background: var(--seal-soft);
+    box-shadow: inset 0 0 0 2rpx rgba(198, 64, 46, 0.35);
+}
+
+/* 全部完成：一枚落定的朱砂章，圆形略不规则 */
+.ratio-full {
+    background: var(--seal);
+    border-radius: 46% 54% 50% 50%;
+    transform: rotate(-6deg);
+}
+
+.ratio-full .day-num {
+    color: #FFFFFF;
+    transform: rotate(6deg);
+}
+
+.day-today .day-num-wrap {
+    box-shadow: inset 0 0 0 2rpx var(--ink);
+}
+
+.day-today.day-cell .day-progress {
+    color: var(--ink);
+    font-weight: 600;
+}
+
+.day-selected .day-num-wrap {
+    background: var(--ink) !important;
+    box-shadow: none;
+}
+
+.day-selected .day-num {
+    color: #FFFFFF !important;
+}
+
+/* ==================== 计划区 ==================== */
+.section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 36rpx 8rpx 20rpx;
+}
+
+.section-title {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: var(--ink);
+    display: flex;
+    align-items: center;
+}
+
+/* 标题前的小朱砂方章，页面的落款 */
+.section-title::before {
+    content: '';
+    width: 14rpx;
+    height: 14rpx;
+    background: var(--seal);
+    border-radius: 4rpx;
+    margin-right: 12rpx;
+    transform: rotate(-8deg);
+}
+
+.section-date {
+    font-size: 22rpx;
+    color: var(--ink-3);
+    letter-spacing: 1rpx;
+}
+
+.section-date.date-back {
+    color: var(--seal);
+    font-weight: 600;
+}
+
+.plan-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18rpx;
+}
+
+.plan-row {
+    display: flex;
+    align-items: center;
+    background: var(--card);
+    border: 1rpx solid var(--hairline);
+    border-radius: 22rpx;
+    padding: 22rpx 24rpx;
+    box-shadow: var(--shadow);
+    transition: transform 0.15s ease;
+    animation: fade-up 0.4s ease both;
+}
+
+.plan-row:nth-child(1) { animation-delay: 0.03s; }
+.plan-row:nth-child(2) { animation-delay: 0.06s; }
+.plan-row:nth-child(3) { animation-delay: 0.09s; }
+.plan-row:nth-child(4) { animation-delay: 0.12s; }
+.plan-row:nth-child(5) { animation-delay: 0.15s; }
+.plan-row:nth-child(6) { animation-delay: 0.18s; }
+
+.plan-row:active {
+    transform: scale(0.98);
+}
+
+.plan-icon-well {
+    width: 76rpx;
+    height: 76rpx;
+    border-radius: 20rpx;
+    background: var(--plan-color, var(--seal));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 22rpx;
+}
+
+.plan-icon {
+    font-size: 38rpx;
+    line-height: 1;
+}
+
+.plan-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.plan-title {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.plan-remark {
+    font-size: 22rpx;
+    color: var(--ink-3);
+    margin-top: 4rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 已完成：文字划线让位给印章 */
+.plan-checked .plan-title {
+    color: var(--ink-3);
+    text-decoration: line-through;
+}
+
+.plan-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12rpx;
+}
+
+/* 已删除计划：历史日期保留显示但置灰，仅查看不可操作 */
+.plan-deleted {
+    opacity: 0.5;
+}
+
+.plan-deleted .plan-title {
+    color: var(--ink-3);
+}
+
+.plan-deleted-tag {
+    font-size: 20rpx;
+    color: var(--ink-3);
+    border: 1rpx solid var(--ink-3);
+    border-radius: 8rpx;
+    padding: 2rpx 10rpx;
+    letter-spacing: 1rpx;
+    flex-shrink: 0;
+}
+
+.stamp-slot {
+    flex-shrink: 0;
+    margin-left: 16rpx;
+    width: 96rpx;
+    display: flex;
+    justify-content: center;
+}
+
+/* 签名元素：朱砂方章，歪 8 度盖下 */
+.stamp {
+    width: 88rpx;
+    height: 88rpx;
+    border: 4rpx solid var(--seal);
+    border-radius: 14rpx 20rpx 12rpx 18rpx;
+    color: var(--seal);
+    font-size: 22rpx;
+    font-weight: 700;
+    letter-spacing: 2rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6rpx;
+    box-sizing: border-box;
+    transform: rotate(-8deg);
+    animation: stamp-in 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+/* 空章位：等待落章 */
+.stamp-empty {
+    width: 88rpx;
+    height: 88rpx;
+    border: 2rpx dashed var(--ink-3);
+    border-radius: 50%;
+    color: var(--ink-3);
+    font-size: 22rpx;
+    letter-spacing: 2rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+/* ==================== Loading / 空状态 ==================== */
+.loading-area {
+    display: flex;
+    justify-content: center;
+    gap: 12rpx;
+    padding: 120rpx 0;
+}
+
+.loading-dot {
+    width: 14rpx;
+    height: 14rpx;
+    border-radius: 50%;
+    background: var(--seal);
+    animation: bounce 1.4s ease-in-out infinite both;
+}
+
+.loading-dot:nth-child(1) { animation-delay: -0.32s; }
+.loading-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+}
+
+.empty-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 90rpx 0;
+    gap: 24rpx;
+}
+
+/* 空状态也是一枚章：灰色的「空」 */
+.empty-stamp {
+    width: 110rpx;
+    height: 110rpx;
+    border: 4rpx solid var(--ink-3);
+    border-radius: 16rpx 22rpx 14rpx 20rpx;
+    color: var(--ink-3);
+    font-size: 44rpx;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: rotate(-8deg);
+    opacity: 0.6;
+}
+
+.empty-text {
+    font-size: 26rpx;
+    color: var(--ink-3);
+}
+
+/* ==================== 新增按钮 ==================== */
+.add-btn {
+    margin-top: 36rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14rpx;
+    background: var(--ink);
+    border-radius: 999rpx;
+    padding: 28rpx 0;
+    box-shadow: var(--shadow);
+}
+
+.add-btn:active {
+    opacity: 0.85;
+}
+
+.add-dot {
+    width: 14rpx;
+    height: 14rpx;
+    background: var(--seal);
+    border-radius: 4rpx;
+    transform: rotate(-8deg);
+}
+
+.add-text {
+    font-size: 30rpx;
+    color: #FFFFFF;
+    font-weight: 600;
+    letter-spacing: 2rpx;
+}
+
+/* ==================== 弹窗 ==================== */
+.modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 26, 23, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal {
+    width: 620rpx;
+    background: var(--card);
+    border: 1rpx solid var(--hairline);
+    border-radius: 26rpx;
+    padding: 40rpx 36rpx 36rpx;
+}
+
+.modal-title {
+    font-size: 32rpx;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 30rpx;
+    text-align: center;
+    letter-spacing: 2rpx;
+}
+
+.form-item {
+    margin-bottom: 24rpx;
+}
+
+.form-label {
+    display: block;
+    font-size: 24rpx;
+    color: var(--ink-2);
+    margin-bottom: 12rpx;
+    letter-spacing: 1rpx;
+}
+
+.form-input {
+    background: var(--paper);
+    border: 1rpx solid var(--hairline);
+    border-radius: 14rpx;
+    padding: 18rpx 20rpx;
+    font-size: 28rpx;
+    color: var(--ink);
+}
+
+.form-date-display {
+    background: var(--seal-soft);
+    border-radius: 14rpx;
+    padding: 18rpx 20rpx;
+    font-size: 28rpx;
+    color: var(--seal);
+    font-weight: 600;
+    letter-spacing: 1rpx;
+}
+
+.color-row {
+    display: flex;
+    gap: 20rpx;
+    flex-wrap: wrap;
+}
+
+.color-dot {
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 50%;
+    border: 4rpx solid transparent;
+    box-sizing: border-box;
+}
+
+.color-dot.color-active {
+    border-color: var(--ink);
+    transform: scale(1.1);
+}
+
+.modal-actions {
+    display: flex;
+    gap: 20rpx;
+    margin-top: 36rpx;
+}
+
+.btn {
+    flex: 1;
+    text-align: center;
+    padding: 22rpx 0;
+    border-radius: 14rpx;
+    font-size: 30rpx;
+}
+
+.btn-cancel {
+    background: var(--paper);
+    color: var(--ink-2);
+    border: 1rpx solid var(--hairline);
+}
+
+.btn-confirm {
+    background: var(--seal);
+    color: #FFFFFF;
+    font-weight: 600;
+    letter-spacing: 2rpx;
+}
+
+/* ==================== 动效 ==================== */
+@keyframes fade-up {
+    from { opacity: 0; transform: translateY(16rpx); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes stamp-in {
+    0% { transform: rotate(-8deg) scale(1.7); opacity: 0; }
+    60% { transform: rotate(-8deg) scale(0.94); opacity: 1; }
+    100% { transform: rotate(-8deg) scale(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .calendar-card,
+    .plan-row,
+    .stamp,
+    .loading-dot {
+        animation: none !important;
+    }
+}
+
+/* ==================== Dark Theme：夜里的墨与朱 ==================== */
+.dark-theme,
+.dark-theme page {
+    --paper: #131A16;
+    --card: #1B231F;
+    --ink: #E9EDE9;
+    --ink-2: #A7B2AB;
+    --ink-3: #6C7871;
+    --seal: #E25A45;
+    --seal-soft: rgba(226, 90, 69, 0.16);
+    --gold: #C6A25C;
+    --hairline: #2A342E;
+    --shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.3), 0 10rpx 28rpx rgba(0, 0, 0, 0.25);
+
+    background: var(--paper);
+    color: var(--ink);
+}
+
+.dark-theme .day-selected .day-num-wrap {
+    background: var(--ink) !important;
+}
+
+.dark-theme .day-selected .day-num {
+    color: var(--paper) !important;
+}
+
+.dark-theme .add-btn {
+    background: var(--ink);
+}
+
+.dark-theme .add-text {
+    color: var(--paper);
+}

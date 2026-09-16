@@ -21,6 +21,12 @@ public class WxLoginRequest {
     private String code;
 
     /**
+     * 发起登录的小程序 appId（用于多小程序路由到对应 secret；不传走默认配置）
+     */
+    @ApiModelProperty(value = "小程序 appId（可选，多小程序路由）")
+    private String appId;
+
+    /**
      * 用户信息（可选）
      */
     @ApiModelProperty(value = "用户昵称")

@@ -1,0 +1,180 @@
+<!--pages/fileconvert/fileconvert.wxml - 元灵工具箱文件转换（三 tab：转换/压缩/整理）-->
+<view class="container {{themeClass}}">
+  <nav-bar title="文件转换" />
+
+  <!-- tab 切换 -->
+  <view class="tabs">
+    <view class="tab {{activeTab === 'convert' ? 'active' : ''}}" bindtap="switchTab" data-tab="convert">转换</view>
+    <view class="tab {{activeTab === 'compress' ? 'active' : ''}}" bindtap="switchTab" data-tab="compress">压缩</view>
+    <view class="tab {{activeTab === 'arrange' ? 'active' : ''}}" bindtap="switchTab" data-tab="arrange">整理</view>
+  </view>
+
+  <!-- ==================== tab: 转换（PDF → Word / Markdown） ==================== -->
+  <block wx:if="{{activeTab === 'convert'}}">
+    <!-- 选文件 -->
+    <view class="panel">
+      <view class="panel-title-row">
+        <text class="panel-title">选择 PDF</text>
+        <text class="panel-tip" wx:if="{{convertFile}}">{{convertFile.name}} · {{formatSize(convertFile.size)}}</text>
+      </view>
+      <view class="choose-btn" bindtap="choosePdf" data-tab="convert">
+        <text>{{convertFile ? '重新选择' : '选择文件'}}</text>
+      </view>
+
+      <view class="panel-title-row" wx:if="{{convertFile}}">
+        <text class="panel-title">输出格式</text>
+      </view>
+      <view class="format-row" wx:if="{{convertFile}}">
+        <view class="format-chip {{convertFormat === 'word' ? 'active' : ''}}" bindtap="setConvertFormat" data-fmt="word">Word</view>
+        <view class="format-chip {{convertFormat === 'markdown' ? 'active' : ''}}" bindtap="setConvertFormat" data-fmt="markdown">Markdown</view>
+      </view>
+
+      <button class="primary-btn"
+        bindtap="doConvert" wx:if="{{convertFile}}" loading="{{convertLoading}}">
+        {{convertLoading ? '转换中...' : '开始转换'}}
+      </button>
+
+      <!-- 转换结果 -->
+      <view wx:if="{{convertResult}}" class="result-card">
+        <view class="result-row"><text class="label">源文件</text><text class="value">{{convertResult.sourceFile.fileName}}</text></view>
+        <view class="result-row"><text class="label">源大小</text><text class="value">{{formatSize(convertResult.sourceFile.fileSize)}}</text></view>
+        <view class="result-row"><text class="label">结果</text><text class="value">{{convertResult.targetFile.fileName}}</text></view>
+        <view class="result-row"><text class="label">大小</text><text class="value">{{formatSize(convertResult.targetFile.fileSize)}}</text></view>
+        <view class="result-actions">
+          <button class="minor-btn" bindtap="previewResult" data-url="{{convertResult.targetFile.fileUrl}}" data-name="{{convertResult.targetFile.fileName}}" data-type="convert">预览</button>
+          <button class="minor-btn primary-minor" bindtap="saveResult" data-url="{{convertResult.targetFile.fileUrl}}" data-name="{{convertResult.targetFile.fileName}}">保存</button>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ==================== tab: 压缩 ==================== -->
+  <block wx:elif="{{activeTab === 'compress'}}">
+    <view class="panel">
+      <view class="panel-title-row">
+        <text class="panel-title">选择 PDF</text>
+        <text class="panel-tip" wx:if="{{compressFile}}">{{compressFile.name}} · {{formatSize(compressFile.size)}}</text>
+      </view>
+      <view class="choose-btn" bindtap="choosePdf" data-tab="compress">
+        <text>{{compressFile ? '重新选择' : '选择文件'}}</text>
+      </view>
+
+      <view wx:if="{{compressFile}}" class="compress-controls">
+        <view class="panel-title-row">
+          <text class="panel-title">压缩强度</text>
+          <text class="panel-tip num">{{compressDpi}} DPI</text>
+        </view>
+        <slider value="{{compressDpi}}" min="40" max="250" step="5" activeColor="#C6402E"
+          backgroundColor="#E1E5DF" block-size="24" bindchanging="onCompressDpiChg" bindchange="onCompressDpiChg" />
+        <view class="marks-row">
+          <text class="mark">高清 200</text>
+          <text class="mark">均衡 150</text>
+          <text class="mark">极致 100</text>
+        </view>
+        <!-- 低于极致 tips -->
+        <view class="tip-warn" wx:if="{{compressDpi < 100}}">
+          <text>⚠️ 已低于极致档位，清晰度会明显下降</text>
+        </view>
+        <view class="estimate-row">
+          <text>预计压缩后：<text class="num">{{estimatedSize}}</text>（估算）</text>
+        </view>
+
+        <button class="primary-btn" bindtap="doCompress" loading="{{compressLoading}}">
+          {{compressLoading ? '压缩中...' : '开始压缩'}}
+        </button>
+
+        <view wx:if="{{compressResult}}" class="result-card">
+          <view class="result-row"><text class="label">源文件</text><text class="value">{{compressResult.sourceFile.fileName}}</text></view>
+          <view class="result-row"><text class="label">源大小</text><text class="value">{{formatSize(compressResult.sourceFile.fileSize)}}</text></view>
+          <view class="result-row"><text class="label">结果</text><text class="value">{{compressResult.targetFile.fileName}}</text></view>
+          <view class="result-row"><text class="label">大小</text><text class="value">{{formatSize(compressResult.targetFile.fileSize)}}</text></view>
+          <view class="result-row"><text class="label">压缩率</text><text class="value highlight">{{compressionRatio}}</text></view>
+          <view class="result-actions">
+            <button class="minor-btn" bindtap="previewResult" data-url="{{compressResult.targetFile.fileUrl}}" data-name="{{compressResult.targetFile.fileName}}" data-type="compress">预览</button>
+            <button class="minor-btn primary-minor" bindtap="saveResult" data-url="{{compressResult.targetFile.fileUrl}}" data-name="{{compressResult.targetFile.fileName}}">保存</button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </block>
+
+  <!-- ==================== tab: 整理（扫描图片工作区） ==================== -->
+  <block wx:elif="{{activeTab === 'arrange'}}">
+    <view class="panel">
+      <!-- 未开始整理 -->
+      <block wx:if="{{!workDoc}}">
+        <view class="panel-title-row">
+          <text class="panel-title">新建整理</text>
+        </view>
+        <view class="field">
+          <text class="field-label">文档命名</text>
+          <input class="field-input" placeholder="如：报销单合集" value="{{arrangeName}}" bindinput="onArrangeNameInput" maxlength="50" />
+        </view>
+        <view class="field">
+          <text class="field-label">压缩档位</text>
+          <view class="format-row">
+            <view class="format-chip {{arrangeLevel === 'high' ? 'active' : ''}}" bindtap="setArrangeLevel" data-lv="high">清晰</view>
+            <view class="format-chip {{arrangeLevel === 'standard' ? 'active' : ''}}" bindtap="setArrangeLevel" data-lv="standard">常规</view>
+            <view class="format-chip {{arrangeLevel === 'compact' ? 'active' : ''}}" bindtap="setArrangeLevel" data-lv="compact">压缩</view>
+          </view>
+        </view>
+        <button class="primary-btn" bindtap="startArrange" loading="{{creatingWork}}">
+          {{creatingWork ? '创建中...' : '开始整理'}}
+        </button>
+      </block>
+
+      <!-- 工作区 -->
+      <block wx:else>
+        <view class="work-head">
+          <view class="work-info">
+            <text class="work-no num">{{workDoc.docNo}}</text>
+            <text class="work-name">{{workDoc.docName}}</text>
+          </view>
+          <text class="work-count">{{workImages.length}} 张图片</text>
+        </view>
+
+        <!-- 追加图片区 -->
+        <view class="append-row">
+          <view class="append-btn" bindtap="chooseArrangeImages">
+            <text>＋ 添加图片</text>
+          </view>
+          <view class="append-btn dark" bindtap="cameraArrange" wx:if="{{planChecked}}">
+            <text>📷 拍照</text>
+          </view>
+        </view>
+
+        <!-- 图片列表（可排序） -->
+        <view wx:if="{{workImages.length > 0}}" class="img-list">
+          <view wx:for="{{workImages}}" wx:key="_k" class="img-row">
+            <image class="img-thumb" src="{{item.localPath}}" mode="aspectFill" />
+            <view class="img-actions">
+              <view class="img-act {{index === 0 ? 'disabled' : ''}}" bindtap="arrangeMove" data-mode="up" data-index="{{index}}">↑</view>
+              <view class="img-act {{index === workImages.length - 1 ? 'disabled' : ''}}" bindtap="arrangeMove" data-mode="down" data-index="{{index}}">↓</view>
+              <view class="img-act danger" bindtap="arrangeRemove" data-id="{{item.id}}" data-index="{{index}}">✕</view>
+            </view>
+          </view>
+        </view>
+
+        <!-- 操作栏 -->
+        <view class="action-bar">
+          <button class="primary-btn" bindtap="finalizeArrange" disabled="{{workImages.length === 0}}" loading="{{finalizingWork}}">
+            {{finalizingWork ? '生成中...' : '完成并生成 PDF'}}
+          </button>
+          <button class="ghost-btn" bindtap="abortArrange">放弃</button>
+        </view>
+
+        <!-- 完成结果 -->
+        <view wx:if="{{arrangeResult}}" class="result-card">
+          <view class="result-row"><text class="label">PDF 文件</text><text class="value">{{arrangeResult.fileName}}</text></view>
+          <view class="result-row"><text class="label">大小</text><text class="value">{{formatSize(arrangeResult.fileSize)}}</text></view>
+          <view class="result-row"><text class="label">图片数</text><text class="value">{{arrangeResult.count}} 张</text></view>
+          <view class="result-row"><text class="label">状态</text><text class="value">已生成，源图已清理</text></view>
+          <view class="result-actions">
+            <button class="minor-btn" bindtap="previewResult" data-url="{{arrangeResult.fileUrl}}" data-name="{{arrangeResult.fileName}}" data-type="arrange">预览</button>
+            <button class="minor-btn primary-minor" bindtap="saveResult" data-url="{{arrangeResult.fileUrl}}" data-name="{{arrangeResult.fileName}}">保存</button>
+          </view>
+        </view>
+      </block>
+    </view>
+  </block>
+</view>

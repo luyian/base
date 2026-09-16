@@ -1,0 +1,9 @@
+<view class="nav-bar {{isDark ? 'dark' : ''}}" style="padding-top: {{statusBarHeight}}px;">
+  <view class="nav-bar-inner" style="height: {{navBarHeight}}px;">
+    <view class="nav-left" wx:if="{{back}}" bindtap="onBack">
+      <text class="back-icon">‹</text>
+    </view>
+    <view class="nav-title">{{title}}</view>
+  </view>
+</view>
+<view class="nav-bar-placeholder" style="height: {{statusBarHeight + navBarHeight}}px;"></view>

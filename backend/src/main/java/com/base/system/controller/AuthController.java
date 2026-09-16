@@ -80,7 +80,7 @@ public class AuthController {
     @PostMapping("/bind-wx")
     @ApiOperation("绑定当前账号的微信")
     public Result<Void> bindCurrentUserWechat(@Validated @RequestBody WxBindRequest request) {
-        authService.bindWechatForCurrentUser(request.getCode());
+        authService.bindWechatForCurrentUser(request.getCode(), request.getAppId());
         return Result.success();
     }
 

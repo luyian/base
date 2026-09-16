@@ -1,0 +1,187 @@
+/* pages/profile/profile.wxss - 我的 */
+page {
+  --paper: #F1F3EF;
+  --card: #FBFBF8;
+  --ink: #22302A;
+  --ink-2: #5C6B63;
+  --ink-3: #9AA69F;
+  --seal: #C6402E;
+  --seal-soft: rgba(198, 64, 46, 0.10);
+  --gold: #B08D46;
+  --hairline: #E1E5DF;
+  --shadow: 0 2rpx 6rpx rgba(34, 48, 42, 0.05), 0 10rpx 28rpx rgba(34, 48, 42, 0.06);
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+
+.container {
+  min-height: 100vh;
+  background: var(--paper);
+  padding: 24rpx 40rpx 64rpx;
+  box-sizing: border-box;
+}
+
+/* ==================== 用户卡片 ==================== */
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  background: var(--card);
+  border: 1rpx solid var(--hairline);
+  border-radius: 28rpx;
+  padding: 40rpx 32rpx;
+  box-shadow: var(--shadow);
+  margin-bottom: 28rpx;
+  animation: fade-up 0.4s ease both;
+}
+.avatar-seal {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 28rpx;
+  background: var(--seal);
+  color: #FFF;
+  font-size: 48rpx;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.user-name {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: var(--ink);
+}
+.user-sub {
+  margin-top: 10rpx;
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+
+/* ==================== 设置列表 ==================== */
+.settings {
+  margin-bottom: 28rpx;
+}
+.setting-group {
+  background: var(--card);
+  border: 1rpx solid var(--hairline);
+  border-radius: 28rpx;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 30rpx 32rpx;
+  border-bottom: 1rpx solid var(--hairline);
+}
+.setting-row:last-child {
+  border-bottom: none;
+}
+.setting-left {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.setting-icon {
+  font-size: 34rpx;
+  width: 44rpx;
+  text-align: center;
+}
+.setting-label {
+  font-size: 30rpx;
+  color: var(--ink);
+}
+.setting-value {
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+
+/* 主题开关 */
+.theme-switch {
+  width: 96rpx;
+  height: 52rpx;
+  border-radius: 26rpx;
+  background: var(--hairline);
+  padding: 4rpx;
+  box-sizing: border-box;
+  transition: background 0.2s ease;
+}
+.theme-switch .theme-knob {
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 22rpx;
+  background: #FFF;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.15);
+  transition: transform 0.2s ease;
+}
+.theme-switch.on {
+  background: var(--seal);
+}
+.theme-switch.on .theme-knob {
+  transform: translateX(44rpx);
+  background: #FFF;
+}
+
+/* ==================== 退出登录 ==================== */
+.logout-btn {
+  width: 100%;
+  height: 92rpx;
+  line-height: 92rpx;
+  background: var(--card);
+  color: var(--seal);
+  font-size: 32rpx;
+  font-weight: 600;
+  border: 1rpx solid var(--hairline);
+  border-radius: 16rpx;
+  box-shadow: var(--shadow);
+}
+.logout-btn::after {
+  border: none;
+}
+
+/* ==================== 底部 ==================== */
+.footer {
+  margin-top: 80rpx;
+  text-align: center;
+}
+.footer-text {
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
+  color: var(--ink-3);
+}
+
+/* ==================== 动效 ==================== */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(14rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .user-card { animation: none !important; }
+}
+
+/* ==================== Dark Theme ==================== */
+.dark-theme,
+.dark-theme page {
+  --paper: #131A16;
+  --card: #1B231F;
+  --ink: #E9EDE9;
+  --ink-2: #A7B2AB;
+  --ink-3: #6C7871;
+  --seal: #E25A45;
+  --seal-soft: rgba(226, 90, 69, 0.16);
+  --gold: #C6A25C;
+  --hairline: #2A342E;
+  --shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.3), 0 10rpx 28rpx rgba(0, 0, 0, 0.25);
+
+  background: var(--paper);
+  color: var(--ink);
+}

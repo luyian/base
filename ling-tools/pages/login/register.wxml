@@ -1,0 +1,43 @@
+<!--pages/login/register.wxml-->
+<view class="container {{themeClass}}">
+  <nav-bar title="注册" back="{{true}}" />
+  <view class="circle circle-1"></view>
+  <view class="circle circle-2"></view>
+  
+  <view class="header">
+    <text class="title">创建账号</text>
+    <text class="subtitle">加入元灵工具箱</text>
+  </view>
+
+  <view class="form">
+    <view class="input-group">
+      <view class="input-icon">👤</view>
+      <input class="input" placeholder="用户名（3-50位）" value="{{username}}" bindinput="onUsernameInput" />
+    </view>
+    <view class="input-group">
+      <view class="input-icon">🔒</view>
+      <input class="input password" type="password" placeholder="密码（6-20位）" value="{{password}}" bindinput="onPasswordInput" />
+    </view>
+    <view class="input-group">
+      <view class="input-icon">🔐</view>
+      <input class="input password" type="password" placeholder="确认密码" value="{{confirmPassword}}" bindinput="onConfirmPasswordInput" />
+    </view>
+    <view class="input-group">
+      <view class="input-icon">👔</view>
+      <input class="input" placeholder="昵称（可选）" value="{{nickname}}" bindinput="onNicknameInput" />
+    </view>
+    <view class="input-group">
+      <view class="input-icon">📱</view>
+      <input class="input" type="number" placeholder="手机号（可选）" value="{{phone}}" bindinput="onPhoneInput" />
+    </view>
+
+    <button class="register-btn" bindtap="handleRegister" loading="{{loading}}">
+      <text wx:if="{{!loading}}">注 册</text>
+      <text wx:else>注册中...</text>
+    </button>
+
+    <view class="login-link" bindtap="goToLogin">
+      <text>已有账号？立即登录</text>
+    </view>
+  </view>
+</view>

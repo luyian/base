@@ -17,6 +17,12 @@ public class WxBindRequest {
     @NotBlank(message = "code不能为空")
     private String code;
 
+    /**
+     * 发起登录的小程序 appId（用于多小程序路由到对应 secret；不传走默认配置）
+     */
+    @ApiModelProperty(value = "小程序 appId（可选，多小程序路由）")
+    private String appId;
+
     @ApiModelProperty(value = "用户名（账号密码登录时必填）")
     private String username;
 

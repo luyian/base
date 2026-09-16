@@ -35,8 +35,11 @@ public interface AuthService {
 
     /**
      * 绑定当前账号的微信（已登录用户）
+     *
+     * @param code  微信登录code
+     * @param appId 小程序 appId（可为空，多小程序路由）
      */
-    void bindWechatForCurrentUser(String code);
+    void bindWechatForCurrentUser(String code, String appId);
 
     /**
      * 解绑当前账号的微信

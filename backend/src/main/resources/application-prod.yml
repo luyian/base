@@ -118,6 +118,10 @@ oauth:
     enabled: true
     app-id: wx6a9b4067248fa5e9
     app-secret: 6260582938b30d7a58a7a3db35a05f6b
+    # 多小程序 appId → appSecret 映射：新小程序（元灵工具箱）微信登录路由用
+    app-secrets:
+      wx6a9b4067248fa5e9: 6260582938b30d7a58a7a3db35a05f6b
+      wx9d17e9aff6f97cbb: a41c8b2759969e9561e41e3a764cf79d
   mini-service-role-id: 4
   default-role-id: 2
 # 天气数据源配置

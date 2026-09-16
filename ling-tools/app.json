@@ -3,7 +3,9 @@
     "pages/login/login",
     "pages/login/register",
     "pages/index/index",
-    "pages/fileconvert/fileconvert",
+    "pages/pdfconvert/pdfconvert",
+    "pages/pdfcompress/pdfcompress",
+    "pages/pdfarrange/pdfarrange",
     "pages/checkin/checkin",
     "pages/profile/profile"
   ],

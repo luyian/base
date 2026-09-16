@@ -7,15 +7,15 @@
     <view class="desktop-label">文件工具</view>
     <view class="app-grid">
       <view class="app-icon" bindtap="goToFileTab" data-tab="compress">
-        <view class="app-glyph se"><image class="glyph-img" src="/assets/icon-compress.svg" mode="aspectFit" /></view>
+        <view class="app-glyph"><image class="glyph-img" src="/assets/icon-compress.png" mode="aspectFit" /></view>
         <text class="app-name">PDF 压缩</text>
       </view>
       <view class="app-icon" bindtap="goToFileTab" data-tab="arrange">
-        <view class="app-glyph go"><image class="glyph-img" src="/assets/icon-arrange.svg" mode="aspectFit" /></view>
+        <view class="app-glyph"><image class="glyph-img" src="/assets/icon-arrange.png" mode="aspectFit" /></view>
         <text class="app-name">PDF 整理</text>
       </view>
       <view class="app-icon" bindtap="goToFileTab" data-tab="convert">
-        <view class="app-glyph bl"><image class="glyph-img" src="/assets/icon-convert.svg" mode="aspectFit" /></view>
+        <view class="app-glyph"><image class="glyph-img" src="/assets/icon-convert.png" mode="aspectFit" /></view>
         <text class="app-name">PDF 转换</text>
       </view>
     </view>

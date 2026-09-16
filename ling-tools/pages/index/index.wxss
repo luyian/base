@@ -68,38 +68,16 @@ page {
   width: 116rpx;
   height: 116rpx;
   border-radius: 30rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   box-shadow: var(--shadow);
   transition: transform 0.15s ease;
   overflow: hidden;
+  background: var(--card);
 }
-/* 顶部内高光，营造玻璃质感 */
-.app-glyph::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 46%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.32), rgba(255, 255, 255, 0));
-  pointer-events: none;
-}
-.app-glyph.se {
-  background: linear-gradient(145deg, #E86147, #C6402E);
-}
-.app-glyph.go {
-  background: linear-gradient(145deg, #CFA766, #B08D46);
-}
-.app-glyph.bl {
-  background: linear-gradient(145deg, #7D9CBE, #4E6E8E);
-}
+/* 彩色图标占满整个方块，圆角由方块裁剪 */
 .glyph-img {
-  width: 62rpx;
-  height: 62rpx;
-  position: relative;
-  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .app-name {

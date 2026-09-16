@@ -27,10 +27,14 @@ Page({
     this.applyTheme();
   },
 
-  // 进入文件转换指定 tab（普通页导航，用 storage 传递目标 tab）
+  // 首页桌面图标 → 三个独立功能页
   goToFileTab(e) {
     const tab = e.currentTarget.dataset.tab;
-    wx.setStorageSync('pendingFileConvertTab', tab);
-    wx.navigateTo({ url: '/pages/fileconvert/fileconvert' });
+    const urls = {
+      compress: '/pages/pdfcompress/pdfcompress',
+      arrange: '/pages/pdfarrange/pdfarrange',
+      convert: '/pages/pdfconvert/pdfconvert'
+    };
+    wx.navigateTo({ url: urls[tab] || urls.convert });
   }
 });

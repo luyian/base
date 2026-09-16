@@ -1,0 +1,40 @@
+<!--pages/pdfconvert/pdfconvert.wxml - PDF 转换（独立页面）-->
+<wxs src="../../common/fmt.wxs" module="fmt" />
+<view class="container {{themeClass}}">
+  <nav-bar title="PDF 转换" back />
+
+  <view class="panel">
+    <view class="panel-title-row">
+      <text class="panel-title">选择 PDF</text>
+      <text class="panel-tip" wx:if="{{convertFile}}">{{convertFile.name}} · {{fmt.formatSize(convertFile.size)}}</text>
+    </view>
+    <view class="choose-btn" bindtap="choosePdf" data-tab="convert">
+      <text>{{convertFile ? '重新选择' : '选择文件'}}</text>
+    </view>
+
+    <view class="panel-title-row" wx:if="{{convertFile}}">
+      <text class="panel-title">输出格式</text>
+    </view>
+    <view class="format-row" wx:if="{{convertFile}}">
+      <view class="format-chip {{convertFormat === 'word' ? 'active' : ''}}" bindtap="setConvertFormat" data-fmt="word">Word</view>
+      <view class="format-chip {{convertFormat === 'markdown' ? 'active' : ''}}" bindtap="setConvertFormat" data-fmt="markdown">Markdown</view>
+    </view>
+
+    <button class="primary-btn"
+      bindtap="doConvert" wx:if="{{convertFile}}" loading="{{convertLoading}}">
+      {{convertLoading ? '转换中...' : '开始转换'}}
+    </button>
+
+    <!-- 转换结果 -->
+    <view wx:if="{{convertResult}}" class="result-card">
+      <view class="result-row"><text class="label">源文件</text><text class="value">{{convertResult.sourceFile.fileName}}</text></view>
+      <view class="result-row"><text class="label">源大小</text><text class="value">{{fmt.formatSize(convertResult.sourceFile.fileSize)}}</text></view>
+      <view class="result-row"><text class="label">结果</text><text class="value">{{convertResult.targetFile.fileName}}</text></view>
+      <view class="result-row"><text class="label">大小</text><text class="value">{{fmt.formatSize(convertResult.targetFile.fileSize)}}</text></view>
+      <view class="result-actions">
+        <button class="minor-btn" bindtap="previewResult" data-url="{{convertResult.targetFile.fileUrl}}" data-name="{{convertResult.targetFile.fileName}}" data-type="convert">预览</button>
+        <button class="minor-btn primary-minor" bindtap="saveResult" data-url="{{convertResult.targetFile.fileUrl}}" data-name="{{convertResult.targetFile.fileName}}">保存</button>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,19 @@
+// common/fmt.wxs - 格式化工具（WXML 数据绑定专用；WXS 语法严格，只用基础写法）
+function formatSize(bytes) {
+  if (bytes == null) {
+    return '--';
+  }
+  var b = bytes;
+  if (b < 1024) {
+    return b + ' B';
+  }
+  if (b < 1048576) {
+    return (b / 1024).toFixed(1) + ' KB';
+  }
+  if (b < 1073741824) {
+    return (b / 1048576).toFixed(1) + ' MB';
+  }
+  return (b / 1073741824).toFixed(2) + ' GB';
+}
+
+module.exports = { formatSize: formatSize };

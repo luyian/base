@@ -1,0 +1,52 @@
+<!--pages/pdfcompress/pdfcompress.wxml - PDF 压缩（独立页面）-->
+<wxs src="../../common/fmt.wxs" module="fmt" />
+<view class="container {{themeClass}}">
+  <nav-bar title="PDF 压缩" back />
+
+  <view class="panel">
+    <view class="panel-title-row">
+      <text class="panel-title">选择 PDF</text>
+      <text class="panel-tip" wx:if="{{compressFile}}">{{compressFile.name}} · {{fmt.formatSize(compressFile.size)}}</text>
+    </view>
+    <view class="choose-btn" bindtap="choosePdf" data-tab="compress">
+      <text>{{compressFile ? '重新选择' : '选择文件'}}</text>
+    </view>
+
+    <view wx:if="{{compressFile}}" class="compress-controls">
+      <view class="panel-title-row">
+        <text class="panel-title">压缩强度</text>
+        <text class="panel-tip num">{{compressDpi}} DPI</text>
+      </view>
+      <slider value="{{compressDpi}}" min="40" max="250" step="5" activeColor="#C6402E"
+        backgroundColor="#E1E5DF" block-size="24" bindchanging="onCompressDpiChg" bindchange="onCompressDpiChg" />
+      <view class="marks-row">
+        <text class="mark">高清 200</text>
+        <text class="mark">均衡 150</text>
+        <text class="mark">极致 100</text>
+      </view>
+      <!-- 低于极致 tips -->
+      <view class="tip-warn" wx:if="{{compressDpi < 100}}">
+        <text>⚠️ 已低于极致档位，清晰度会明显下降</text>
+      </view>
+      <view class="estimate-row">
+        <text>预计压缩后：<text class="num">{{estimatedSize}}</text>（估算）</text>
+      </view>
+
+      <button class="primary-btn" bindtap="doCompress" loading="{{compressLoading}}">
+        {{compressLoading ? '压缩中...' : '开始压缩'}}
+      </button>
+
+      <view wx:if="{{compressResult}}" class="result-card">
+        <view class="result-row"><text class="label">源文件</text><text class="value">{{compressResult.sourceFile.fileName}}</text></view>
+        <view class="result-row"><text class="label">源大小</text><text class="value">{{fmt.formatSize(compressResult.sourceFile.fileSize)}}</text></view>
+        <view class="result-row"><text class="label">结果</text><text class="value">{{compressResult.targetFile.fileName}}</text></view>
+        <view class="result-row"><text class="label">大小</text><text class="value">{{fmt.formatSize(compressResult.targetFile.fileSize)}}</text></view>
+        <view class="result-row"><text class="label">压缩率</text><text class="value highlight">{{compressionRatio}}</text></view>
+        <view class="result-actions">
+          <button class="minor-btn" bindtap="previewResult" data-url="{{compressResult.targetFile.fileUrl}}" data-name="{{compressResult.targetFile.fileName}}" data-type="compress">预览</button>
+          <button class="minor-btn primary-minor" bindtap="saveResult" data-url="{{compressResult.targetFile.fileUrl}}" data-name="{{compressResult.targetFile.fileName}}">保存</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

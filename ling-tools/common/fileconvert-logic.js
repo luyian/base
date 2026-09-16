@@ -86,6 +86,60 @@ const COMMON_METHODS = {
       wx.showToast({ title: e.message || '下载失败', icon: 'none' });
     }
   },
+  // 相册/相机选图：微信隐私协议未同意时 chooseMedia 会静默失败，这里先引导授权再选择，
+  // 任何失败都以 toast 明确指出，避免「点击没反应」。
+  _pickMedia({ count, sourceType }) {
+    const that = this;
+    const doPick = () => {
+      wx.chooseMedia({
+        count,
+        mediaType: ['image'],
+        sourceType,
+        success(res) {
+          const paths = (res.tempFiles || []).map((t) => t.tempFilePath);
+          that._addImages(paths);
+        },
+        fail(err) {
+          const msg = err && err.errMsg;
+          if (msg && msg.indexOf('privacy') >= 0) {
+            wx.showToast({ title: '需同意隐私协议才能使用相册/相机，请在小程序「设置」中开启', icon: 'none' });
+          } else if (msg && msg.indexOf('cancel') >= 0) {
+            wx.showToast({ title: '已取消', icon: 'none' });
+          } else if (msg && (msg.indexOf('auth') >= 0 || msg.indexOf('permission') >= 0 || msg.indexOf('denied') >= 0)) {
+            wx.showToast({ title: '未获得相册/相机权限，请在设置中开启', icon: 'none' });
+          } else {
+            wx.showToast({ title: '无法打开相册/相机：' + (msg || '未知原因'), icon: 'none' });
+          }
+          console.error('chooseMedia fail:', msg);
+        }
+      });
+    };
+    // 隐私协议：需要时引导授权
+    if (wx.getPrivacySetting && wx.requirePrivacyAuthorize) {
+      wx.getPrivacySetting({
+        success(r) {
+          if (r && r.needAuthorization && r.privacyContractName) {
+            wx.showModal({
+              title: '隐私授权',
+              content: '需要使用相册/相机上传图片，是否同意《' + r.privacyContractName + '》？',
+              success(m) {
+                if (m.confirm) {
+                  wx.requirePrivacyAuthorize({ success: doPick, fail: () => wx.showToast({ title: '未同意，无法使用相册/相机', icon: 'none' }) });
+                } else {
+                  wx.showToast({ title: '未同意，无法使用相册/相机', icon: 'none' });
+                }
+              }
+            });
+          } else {
+            doPick();
+          }
+        },
+        fail: doPick
+      });
+    } else {
+      doPick();
+    }
+  },
   // 保存：下载并写入本地缓存（微信保存文件到磁盘能力有限，返回临时文件已存小程序缓存）
   async saveResult(e) {
     const { url, name } = e.currentTarget.dataset;
@@ -272,31 +326,13 @@ const FEATURES = {
       chooseArrangeImages() {
         const docId = this.data.workDoc && this.data.workDoc.docId;
         if (!docId) return;
-        const that = this;
-        wx.chooseMedia({
-          count: 9,
-          mediaType: ['image'],
-          sourceType: ['album', 'camera'],
-          success(res) {
-            const paths = (res.tempFiles || []).map((t) => t.tempFilePath);
-            that._addImages(paths);
-          }
-        });
+        this._pickMedia({ count: 9, sourceType: ['album', 'camera'] });
       },
       // 拍照
       cameraArrange() {
         const docId = this.data.workDoc && this.data.workDoc.docId;
         if (!docId) return;
-        const that = this;
-        wx.chooseMedia({
-          count: 1,
-          mediaType: ['image'],
-          sourceType: ['camera'],
-          success(res) {
-            const paths = (res.tempFiles || []).map((t) => t.tempFilePath);
-            that._addImages(paths);
-          }
-        });
+        this._pickMedia({ count: 1, sourceType: ['camera'] });
       },
       // 追加图片：逐张上传，返回 sync
       async _addImages(paths) {

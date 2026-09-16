@@ -32,8 +32,9 @@ public interface FileConvertService {
      * PDF 压缩
      *
      * @param file PDF 文件
-     * @param level 压缩档位 high|medium|low
+     * @param dpi 图像降采样目标 DPI
+     * @param quality JPEG 压缩质量
      * @return 包含源文件和压缩后文件信息的 Map
      */
-    Map<String, Object> compressPdf(MultipartFile file, String level);
+    Map<String, Object> compressPdf(MultipartFile file, int dpi, int quality);
 }

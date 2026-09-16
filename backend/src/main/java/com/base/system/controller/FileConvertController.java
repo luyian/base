@@ -11,10 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.annotation.Resource;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 文件转换控制器
@@ -27,9 +24,6 @@ import java.util.Set;
 @RestController
 @RequestMapping("/system/file-convert")
 public class FileConvertController {
-
-    /** PDF 压缩支持的档位 */
-    private static final Set<String> COMPRESS_LEVELS = new HashSet<>(Arrays.asList("high", "medium", "low"));
 
     @Resource
     private FileConvertService fileConvertService;
@@ -81,16 +75,17 @@ public class FileConvertController {
     @PostMapping("/pdf-compress")
     @PreAuthorize("hasAuthority('system:fileConvert:use')")
     public Result<Map<String, Object>> pdfCompress(@RequestParam("file") MultipartFile file,
-                                                   @RequestParam(value = "level", defaultValue = "medium") String level) {
+                                                   @RequestParam(value = "dpi", defaultValue = "150") Integer dpi,
+                                                   @RequestParam(value = "quality", defaultValue = "65") Integer quality) {
         String errorMsg = validatePdfFile(file);
         if (errorMsg != null) {
             return Result.error(errorMsg);
         }
-        if (!COMPRESS_LEVELS.contains(level)) {
-            return Result.error("非法压缩档位，仅支持 high/medium/low");
+        if (dpi == null || quality == null || dpi < 40 || dpi > 250 || quality < 15 || quality > 85) {
+            return Result.error("压缩参数超出允许范围（dpi 40~250，quality 15~85）");
         }
         try {
-            Map<String, Object> result = fileConvertService.compressPdf(file, level);
+            Map<String, Object> result = fileConvertService.compressPdf(file, dpi, quality);
             return Result.success(result);
         } catch (Exception e) {
             log.error("PDF压缩失败", e);

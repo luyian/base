@@ -111,10 +111,11 @@ async def pdf_to_markdown(file: UploadFile) -> FileResponse:
 @router.post("/compress", summary="PDF 压缩")
 async def pdf_compress(
     file: UploadFile,
-    level: str = Form("medium", description="压缩档位 high|medium|low"),
+    dpi_target: int = Form(150, ge=40, le=250, description="图像降采样目标 DPI"),
+    quality: int = Form(65, ge=15, le=85, description="JPEG 压缩质量"),
 ) -> FileResponse:
     """
-    上传 PDF 文件，按档位压缩后返回下载
+    上传 PDF 文件，按目标 DPI 与质量压缩后返回下载
 
     - 压缩管线：图像降采样重编码 → 字体子集化 → 结构清理
     - 压缩后体积不小于原文件时返回原文件（不劣化）
@@ -128,13 +129,6 @@ async def pdf_compress(
             status_code=400,
             content=Result.fail(message=error, code=400).model_dump(),
         )
-    if level not in pdf_service.COMPRESS_LEVELS:
-        return JSONResponse(  # type: ignore[return-value]
-            status_code=400,
-            content=Result.fail(
-                message=f"非法压缩档位: {level}，仅支持 high/medium/low", code=400
-            ).model_dump(),
-        )
 
     # 保存临时文件
     temp_filename = f"{uuid.uuid4().hex}.pdf"
@@ -144,7 +138,7 @@ async def pdf_compress(
         temp_path.write_bytes(content)
 
         # 执行压缩
-        output_path = pdf_service.compress_pdf(temp_path, level)
+        output_path = pdf_service.compress_pdf(temp_path, dpi_target, quality)
 
         # 返回文件下载
         download_name = Path(file.filename or "output").stem + ".pdf"

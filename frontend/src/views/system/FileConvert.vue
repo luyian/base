@@ -41,14 +41,32 @@
                 </el-radio-group>
               </div>
 
-              <!-- 压缩档位选择（仅压缩模式） -->
-              <div v-if="outputFormat === 'compress'" class="format-section">
-                <span class="format-label">压缩档位：</span>
-                <el-radio-group v-model="compressLevel">
-                  <el-radio-button label="high">清晰优先</el-radio-button>
-                  <el-radio-button label="medium">均衡</el-radio-button>
-                  <el-radio-button label="low">极致压缩</el-radio-button>
-                </el-radio-group>
+              <!-- 压缩滑动条（仅压缩模式） -->
+              <div v-if="outputFormat === 'compress'" class="format-section slider-section">
+                <span class="format-label">压缩强度：</span>
+                <div class="slider-wrap">
+                  <el-slider
+                    v-model="compressDpi"
+                    :min="40"
+                    :max="250"
+                    :step="5"
+                    :marks="sliderMarks"
+                    show-input
+                    input-size="small"
+                  />
+                  <div class="slider-meta">
+                    <span>目标 DPI：{{ compressDpi }}</span>
+                    <span>质量：{{ compressQuality }}</span>
+                    <span v-if="estimatedSize">预计：{{ estimatedSize }}</span>
+                    <el-tooltip
+                      v-if="compressDpi < 100"
+                      content="已低于极致档位（100 DPI），清晰度会明显下降"
+                      placement="top"
+                    >
+                      <span class="tip-warn">⚠️ 低于极致档位</span>
+                    </el-tooltip>
+                  </div>
+                </div>
               </div>
 
               <div class="action-bar">
@@ -112,16 +130,40 @@ import ScanDocConvert from './ScanDocConvert.vue'
 
 const activeType = ref('pdfConvert')
 const outputFormat = ref('word')
-const compressLevel = ref('medium')
+const compressDpi = ref(150)
 const selectedFile = ref(null)
 const converting = ref(false)
 const convertResult = ref(null)
+
+// 滑动条基准档位 marks：高清 200 / 均衡 150 / 极致 100
+const sliderMarks = {
+  200: '高清',
+  150: '均衡',
+  100: '极致'
+}
+
+// quality 由 dpi 推导：clamp(dpi*0.35, 15, 85)
+const compressQuality = computed(() => {
+  const q = Math.round(compressDpi.value * 0.35)
+  return Math.min(85, Math.max(15, q))
+})
 
 const formatLabel = computed(() => {
   if (outputFormat.value === 'word') return ' Word '
   if (outputFormat.value === 'markdown') return ' Markdown '
   return '压缩'
 })
+
+// 预计压缩后大小 = 原大小 × 启发式因子(约), 仅供参考
+const estimatedSize = computed(() => {
+  if (!selectedFile.value) return null
+  const factor = clamp(0.15 + 0.70 * Math.pow(compressDpi.value / 200, 1.8), 0.15, 0.85)
+  return formatSize(Math.round(selectedFile.value.size * factor))
+})
+
+function clamp(v, min, max) {
+  return Math.min(max, Math.max(min, v))
+}
 
 // 压缩率 = (1 - 目标大小/源大小) × 100%，无增益时显示 0%
 const compressionRatio = computed(() => {
@@ -158,7 +200,7 @@ async function doConvert() {
   try {
     let res
     if (outputFormat.value === 'compress') {
-      res = await pdfCompress(selectedFile.value, compressLevel.value)
+      res = await pdfCompress(selectedFile.value, compressDpi.value, compressQuality.value)
     } else {
       const convertFn = outputFormat.value === 'word' ? pdfToWord : pdfToMarkdown
       res = await convertFn(selectedFile.value)
@@ -266,6 +308,33 @@ function formatSize(bytes) {
 .format-label {
   font-size: 14px;
   color: #606266;
+  flex-shrink: 0;
+}
+
+.slider-section {
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  max-width: 500px;
+}
+
+.slider-wrap {
+  width: 100%;
+  padding: 0 8px;
+}
+
+.slider-meta {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 13px;
+  color: #606266;
+  margin-top: 4px;
+}
+
+.tip-warn {
+  color: #e6a23c;
+  font-weight: 500;
 }
 
 .action-bar {

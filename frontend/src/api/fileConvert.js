@@ -35,12 +35,14 @@ export function pdfToMarkdown(file) {
 /**
  * PDF 压缩
  * @param {File} file PDF 文件
- * @param {string} level 压缩档位 high|medium|low
+ * @param {number} dpi 图像降采样目标 DPI（40~250）
+ * @param {number} quality JPEG 压缩质量（15~85）
  */
-export function pdfCompress(file, level = 'medium') {
+export function pdfCompress(file, dpi = 150, quality = 65) {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('level', level)
+  formData.append('dpi', dpi)
+  formData.append('quality', quality)
   return request({
     url: '/system/file-convert/pdf-compress',
     method: 'post',

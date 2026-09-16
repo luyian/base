@@ -88,16 +88,17 @@ public class FileConvertServiceImpl implements FileConvertService {
     }
 
     @Override
-    public Map<String, Object> compressPdf(MultipartFile file, String level) {
+    public Map<String, Object> compressPdf(MultipartFile file, int dpi, int quality) {
         String originalName = file.getOriginalFilename();
-        log.info("开始 PDF 压缩: {}，档位: {}", originalName, level);
+        log.info("开始 PDF 压缩: {}，dpi={}, quality={}", originalName, dpi, quality);
 
         // 1. 上传源 PDF 到 COS 并记录
         SysFile sourceSysFile = uploadAndRecord(file, "pdf");
 
-        // 2. 调用 python-tools 压缩（level 作为额外表单字段透传）
+        // 2. 调用 python-tools 压缩（dpi/quality 作为额外表单字段透传）
         Map<String, String> formFields = new HashMap<>(2);
-        formFields.put("level", level);
+        formFields.put("dpi_target", String.valueOf(dpi));
+        formFields.put("quality", String.valueOf(quality));
         byte[] compressedBytes = callPythonToolsConvert(file, "/api/pdf/compress", formFields);
 
         // 3. 上传压缩后的 PDF 到 COS 并记录

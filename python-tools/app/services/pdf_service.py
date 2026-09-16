@@ -19,15 +19,8 @@ logger = logging.getLogger(__name__)
 class PdfService:
     """PDF 文件处理服务"""
 
-    # PDF 压缩档位：level -> (dpi_threshold, dpi_target, jpeg_quality)
-    COMPRESS_LEVELS = {
-        "high": (220, 200, 80),
-        "medium": (170, 150, 65),
-        "low": (120, 100, 50),
-    }
-
     @staticmethod
-    def compress_pdf(input_path: Path, level: str = "medium") -> Path:
+    def compress_pdf(input_path: Path, dpi_target: int, quality: int) -> Path:
         """
         压缩 PDF 文件
 
@@ -36,17 +29,22 @@ class PdfService:
 
         Args:
             input_path: PDF 文件路径
-            level: 压缩档位 high|medium|low
+            dpi_target: 图像降采样目标 DPI（40~250）
+            quality: JPEG 压缩质量（15~85）
 
         Returns:
             压缩后的 PDF 文件路径
 
         Raises:
-            RuntimeError: 档位非法或压缩失败时抛出
+            RuntimeError: 参数越界或压缩失败时抛出
         """
-        if level not in PdfService.COMPRESS_LEVELS:
-            raise RuntimeError(f"非法压缩档位: {level}")
-        dpi_threshold, dpi_target, quality = PdfService.COMPRESS_LEVELS[level]
+        if not 40 <= int(dpi_target) <= 250:
+            raise RuntimeError(f"非法目标 DPI: {dpi_target}")
+        if not 15 <= int(quality) <= 85:
+            raise RuntimeError(f"非法压缩质量: {quality}")
+        dpi_target = int(dpi_target)
+        quality = int(quality)
+        dpi_threshold = dpi_target + 20
 
         output_filename = f"{input_path.stem}_{uuid.uuid4().hex[:8]}.pdf"
         output_path = settings.output_dir / output_filename
@@ -98,8 +96,9 @@ class PdfService:
             logger.info("PDF 压缩无增益，返回原文件: %s", input_path.name)
 
         logger.info(
-            "PDF 压缩成功[%s]: %s，%d -> %d bytes",
-            level,
+            "PDF 压缩成功[dpi=%d, q=%d]: %s，%d -> %d bytes",
+            dpi_target,
+            quality,
             input_path.name,
             input_size,
             output_path.stat().st_size,

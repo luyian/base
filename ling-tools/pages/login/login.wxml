@@ -38,7 +38,7 @@
       </view>
       <view class="input-group">
         <view class="input-icon">🔒</view>
-        <input class="input password" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
+        <input class="input password" password="{{true}}" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
       </view>
       <!-- Captcha -->
       <view class="input-group" wx:if="{{captchaEnabled}}">

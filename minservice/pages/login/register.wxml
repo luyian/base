@@ -16,11 +16,11 @@
     </view>
     <view class="input-group">
       <view class="input-icon">🔒</view>
-      <input class="input password" type="password" placeholder="密码（6-20位）" value="{{password}}" bindinput="onPasswordInput" />
+      <input class="input password" password="{{true}}" placeholder="密码（6-20位）" value="{{password}}" bindinput="onPasswordInput" />
     </view>
     <view class="input-group">
       <view class="input-icon">🔐</view>
-      <input class="input password" type="password" placeholder="确认密码" value="{{confirmPassword}}" bindinput="onConfirmPasswordInput" />
+      <input class="input password" password="{{true}}" placeholder="确认密码" value="{{confirmPassword}}" bindinput="onConfirmPasswordInput" />
     </view>
     <view class="input-group">
       <view class="input-icon">👔</view>

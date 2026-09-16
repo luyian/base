@@ -754,7 +754,8 @@ public class AuthServiceImpl implements AuthService {
             response.setWxOpenid(userOauth.getOauthId());
         }
 
-        log.info("获取用户信息成功，username: {}", username);
+        log.info("获取用户信息成功，username: {}, appId: {}, wxOpenid: {}",
+                username, appId, userOauth != null ? userOauth.getOauthId() : null);
 
         return response;
     }

@@ -36,6 +36,12 @@ page {
   margin-bottom: 28rpx;
   animation: fade-up 0.4s ease both;
 }
+.avatar-img {
+  width: 108rpx;
+  height: 108rpx;
+  border-radius: 28rpx;
+  flex-shrink: 0;
+}
 .avatar-seal {
   width: 108rpx;
   height: 108rpx;

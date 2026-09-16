@@ -9,7 +9,8 @@ Page({
     displayName: '未登录',
     displaySub: '',
     userInitial: '灵',
-    wechatBound: false
+    wechatBound: false,
+    avatarUrl: ''
   },
 
   onLoad() {
@@ -34,13 +35,30 @@ Page({
   loadUserInfo() {
     const ui = wx.getStorageSync('userInfo') || app.globalData.userInfo;
     if (!ui) {
-      this.setData({ userInfo: null, wechatBound: false });
+      this.setData({ userInfo: null, wechatBound: false, avatarUrl: '' });
       return;
     }
     const name = ui.nickname || ui.username || '用户';
     const sub = this._buildSub(ui);
     const initial = (name || '灵').charAt(0).toUpperCase();
-    this.setData({ userInfo: ui, displayName: name, displaySub: sub, userInitial: initial, wechatBound: !!ui.wxOpenid });
+    this.setData({
+      userInfo: ui,
+      displayName: name,
+      displaySub: sub,
+      userInitial: initial,
+      wechatBound: !!ui.wxOpenid,
+      avatarUrl: this._resolveAvatar(ui.avatar)
+    });
+  },
+
+  // 头像地址：相对路径拼 baseUrl，加载失败回退首字母印章
+  _resolveAvatar(url) {
+    if (!url) return '';
+    if (/^https?:\/\//.test(url)) return url;
+    return app.globalData.baseUrl + url;
+  },
+  onAvatarError() {
+    this.setData({ avatarUrl: '' });
   },
 
   // ==================== 微信绑定 ====================

@@ -4,7 +4,8 @@
 
   <!-- 用户卡片 -->
   <view class="user-card">
-    <view class="avatar-seal"><text>{{userInitial}}</text></view>
+    <image wx:if="{{avatarUrl}}" class="avatar-img" src="{{avatarUrl}}" mode="aspectFill" binderror="onAvatarError" />
+    <view wx:else class="avatar-seal"><text>{{userInitial}}</text></view>
     <view class="user-meta">
       <text class="user-name">{{displayName}}</text>
       <text class="user-sub">{{displaySub}}</text>

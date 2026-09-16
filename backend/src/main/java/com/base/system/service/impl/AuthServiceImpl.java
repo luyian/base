@@ -442,22 +442,8 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("该微信已被其他账号绑定");
         }
 
-        // 检查当前用户是否已绑定微信（跨小程序下同一用户可能有多条 openid 记录）
-        List<UserOauth> existing = listWechatOauthByUserId(userId);
-        if (!existing.isEmpty()) {
-            // 同一微信（unionid 相同）：为当前小程序补录 openid，而非拒绝
-            boolean sameWechat = StringUtils.hasText(session.getUnionid())
-                    && existing.stream().anyMatch(o -> session.getUnionid().equals(o.getUnionId()));
-            if (sameWechat) {
-                addWechatOauth(userId, openid, session.getUnionid());
-                fillUnionIdForUser(userId, session.getUnionid());
-                log.info("用户 {} 补录微信 openid 成功，openid: {}, unionid: {}", userId, openid, session.getUnionid());
-                return;
-            }
-            throw new BusinessException("您已绑定微信，无法重复绑定");
-        }
-
-        // 绑定微信到当前用户
+        // 支持多小程序各自绑定：同一用户可持有多条微信记录（每个小程序的 openid 一条，
+        // 唯一键 oauth_type+oauth_id 保证 openid 不冲突）。同一 openid 的幂等/冲突已在上方处理。
         addWechatOauth(userId, openid, session.getUnionid());
         // 同一微信用户可能已绑定其他小程序：补齐该用户所有微信记录的 unionid
         fillUnionIdForUser(userId, session.getUnionid());
@@ -513,6 +499,8 @@ public class AuthServiceImpl implements AuthService {
                 WxSession session = new WxSession();
                 session.setOpenid(json.getString("openid"));
                 session.setUnionid(json.getString("unionid"));
+                // 诊断日志：确认 unionid 是否返回（unionid 为空 = 两小程序未绑定同一开放平台）
+                log.info("微信 jscode2session 成功，openid: {}, unionid: {}", session.getOpenid(), session.getUnionid());
                 return session;
             }
 

@@ -52,6 +52,10 @@ App({
   },
 
   onLaunch() {
+    // 冷启动重置「手动退出」标记：手动退出仅当前会话生效，
+    // 重新打开小程序后已绑定微信的账号仍自动登录
+    wx.removeStorageSync('manualLogout');
+
     const token = wx.getStorageSync('token');
     const userInfo = wx.getStorageSync('userInfo');
     if (token) {

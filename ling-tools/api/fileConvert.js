@@ -85,7 +85,7 @@ module.exports = {
    */
   createScanDoc: (docName) => {
     const url = '/system/scan-doc/create' + (docName ? `?docName=${encodeURIComponent(docName)}` : '');
-    return request.post(url, {});
+    return request.post(url, {}).then((res) => res.data);
   },
 
   /**
@@ -106,7 +106,7 @@ module.exports = {
   /**
    * 调整图片顺序（body 有序 ids[]，JSON）
    */
-  reorderScanImages: (docId, ids) => request.put(`/system/scan-doc/${docId}/order`, ids),
+  reorderScanImages: (docId, ids) => request.put(`/system/scan-doc/${docId}/order`, ids).then((res) => res.data),
 
   /**
    * 删除单张图片
@@ -125,5 +125,5 @@ module.exports = {
    * @param {number} quality JPEG 质量
    */
   finalizeScanDoc: (docId, maxSide, quality) =>
-    request.post(`/system/scan-doc/${docId}/finalize?maxSide=${maxSide}&quality=${quality}`, {})
+    request.post(`/system/scan-doc/${docId}/finalize?maxSide=${maxSide}&quality=${quality}`, {}).then((res) => res.data)
 };

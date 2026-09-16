@@ -33,67 +33,6 @@ page {
   box-sizing: border-box;
 }
 
-/* ==================== 顶部 Logo 区 ==================== */
-.hero {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 48rpx 0 40rpx;
-  animation: fade-up 0.4s ease both;
-}
-
-.hero-logo {
-  width: 150rpx;
-  height: 150rpx;
-  border-radius: 34rpx;
-  background: var(--card);
-  border: 1rpx solid var(--hairline);
-  box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 26rpx;
-}
-
-.hero-logo-img {
-  width: 112rpx;
-  height: 112rpx;
-}
-
-.hero-title-row {
-  display: flex;
-  align-items: center;
-  gap: 16rpx;
-}
-
-.hero-title {
-  font-size: 52rpx;
-  font-weight: 700;
-  letter-spacing: 4rpx;
-  color: var(--ink);
-}
-
-.hero-seal {
-  width: 46rpx;
-  height: 46rpx;
-  border: 4rpx solid var(--seal);
-  border-radius: 8rpx 12rpx 8rpx 12rpx;
-  color: var(--seal);
-  font-size: 30rpx;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transform: rotate(-8deg);
-}
-
-.hero-sub {
-  margin-top: 14rpx;
-  font-size: 24rpx;
-  letter-spacing: 4rpx;
-  color: var(--ink-3);
-}
-
 /* ==================== 桌面应用网格 ==================== */
 .desktop-label {
   font-size: 26rpx;
@@ -174,7 +113,6 @@ page {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero,
   .app-icon {
     animation: none !important;
   }

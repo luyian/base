@@ -27,10 +27,10 @@ Page({
     this.applyTheme();
   },
 
-  // 进入文件转换指定 tab（switchTab 不带参数，用 storage 传递目标 tab）
+  // 进入文件转换指定 tab（普通页导航，用 storage 传递目标 tab）
   goToFileTab(e) {
     const tab = e.currentTarget.dataset.tab;
     wx.setStorageSync('pendingFileConvertTab', tab);
-    wx.switchTab({ url: '/pages/fileconvert/fileconvert' });
+    wx.navigateTo({ url: '/pages/fileconvert/fileconvert' });
   }
 });

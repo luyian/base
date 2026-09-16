@@ -3,18 +3,6 @@
   <nav-bar title="元灵工具箱" />
 
   <scroll-view class="desktop" scroll-y enhanced show-scrollbar="{{false}}">
-    <!-- 顶部 Logo 区：元灵 + 朱砂方章 -->
-    <view class="hero">
-      <view class="hero-logo">
-        <image class="hero-logo-img" src="/assets/logo.png" mode="aspectFit" />
-      </view>
-      <view class="hero-title-row">
-        <text class="hero-title">元灵工具箱</text>
-        <view class="hero-seal"><text>灵</text></view>
-      </view>
-      <text class="hero-sub">文件转换 · 打卡 · 效率工具</text>
-    </view>
-
     <!-- 桌面应用区：PDF 工具图标（点击进入文件转换对应 tab） -->
     <view class="desktop-label">文件工具</view>
     <view class="app-grid">

@@ -1,6 +1,6 @@
 <!--pages/fileconvert/fileconvert.wxml - 元灵工具箱文件转换（三 tab：转换/压缩/整理）-->
 <view class="container {{themeClass}}">
-  <nav-bar title="文件转换" />
+  <nav-bar title="文件转换" back />
 
   <!-- tab 切换 -->
   <view class="tabs">

@@ -28,12 +28,6 @@
         "selectedIconPath": "assets/home-active.png"
       },
       {
-        "pagePath": "pages/fileconvert/fileconvert",
-        "text": "转换",
-        "iconPath": "assets/file.png",
-        "selectedIconPath": "assets/file-active.png"
-      },
-      {
         "pagePath": "pages/checkin/checkin",
         "text": "打卡",
         "iconPath": "assets/checkin.png",

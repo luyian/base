@@ -17,12 +17,12 @@
         <text class="panel-title">压缩强度</text>
         <text class="panel-tip num">{{compressDpi}} DPI</text>
       </view>
-      <slider value="{{compressDpi}}" min="40" max="250" step="5" activeColor="#C6402E"
+      <slider value="{{sliderPos}}" min="0" max="210" step="5" activeColor="#C6402E"
         backgroundColor="#E1E5DF" block-size="24" bindchanging="onCompressDpiChg" bindchange="onCompressDpiChg" />
       <view class="marks-row">
-        <text class="mark">高清 200</text>
-        <text class="mark">均衡 150</text>
-        <text class="mark">极致 100</text>
+        <text class="mark" style="left: 23.8%">高清 200</text>
+        <text class="mark" style="left: 47.6%">均衡 150</text>
+        <text class="mark" style="left: 71.4%">极致 100</text>
       </view>
       <!-- 低于极致 tips -->
       <view class="tip-warn" wx:if="{{compressDpi < 100}}">

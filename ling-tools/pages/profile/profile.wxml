@@ -23,6 +23,13 @@
           <view class="theme-knob"></view>
         </view>
       </view>
+      <view class="setting-row" bindtap="onToggleWechat">
+        <view class="setting-left">
+          <text class="setting-icon">💬</text>
+          <text class="setting-label">微信</text>
+        </view>
+        <text class="setting-value {{wechatBound ? '' : 'value-unbound'}}">{{wechatBound ? '已绑定' : '未绑定，点击绑定'}}</text>
+      </view>
       <view class="setting-row">
         <view class="setting-left">
           <text class="setting-icon">⚙️</text>

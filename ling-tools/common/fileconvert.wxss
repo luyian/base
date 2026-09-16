@@ -144,12 +144,15 @@ page {
 .compress-controls {
   margin-top: 8rpx;
 }
+/* 刻度标注：按滑块实际位置（sliderPos/210）绝对定位，与轨道对齐 */
 .marks-row {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 30rpx;
   margin: 6rpx 4rpx 14rpx;
 }
 .mark {
+  position: absolute;
+  transform: translateX(-50%);
   font-size: 22rpx;
   color: var(--ink-3);
 }

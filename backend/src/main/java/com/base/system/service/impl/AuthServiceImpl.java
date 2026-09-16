@@ -239,17 +239,30 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException(500, "微信登录未启用");
         }
 
-        // 2. 调用微信API获取openid（按 appId 路由对应 secret）
-        String openid = getWechatOpenid(request.getCode(), request.getAppId());
-        if (openid == null) {
+        // 2. 调用微信API获取openid/unionid（按 appId 路由对应 secret）
+        WxSession session = getWechatSession(request.getCode(), request.getAppId());
+        if (session == null || session.getOpenid() == null) {
             throw new BusinessException("微信登录失败：无效的code");
         }
+        String openid = session.getOpenid();
 
         // 3. 查询是否已绑定用户
-        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
-        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
-        oauthWrapper.eq(UserOauth::getOauthId, openid);
-        UserOauth userOauth = userOauthMapper.selectOne(oauthWrapper);
+        UserOauth userOauth = findWechatOauthByOpenid(openid);
+
+        // 3.1 跨小程序：openid 未命中时按 unionid 兜底（同一微信开放平台下 unionid 唯一）。
+        //     命中说明该微信用户已在其他小程序绑定过 → 自动补录当前小程序的 openid，下次直接命中。
+        if (userOauth == null && StringUtils.hasText(session.getUnionid())) {
+            userOauth = findWechatOauthByUnionid(session.getUnionid());
+            if (userOauth != null) {
+                addWechatOauth(userOauth.getUserId(), openid, session.getUnionid());
+                log.info("微信跨小程序自动补录 openid，userId: {}, appId: {}", userOauth.getUserId(), request.getAppId());
+            }
+        } else if (userOauth != null && !StringUtils.hasText(userOauth.getUnionId())
+                && StringUtils.hasText(session.getUnionid())) {
+            // 3.2 openid 命中但缺 unionid：顺手补齐，便于其他小程序识别
+            userOauth.setUnionId(session.getUnionid());
+            userOauthMapper.updateById(userOauth);
+        }
 
         SysUser user;
         if (userOauth == null) {
@@ -323,11 +336,12 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse bindWechat(WxBindRequest request) {
-        // 1. 调用微信API获取openid
-        String openid = getWechatOpenid(request.getCode(), request.getAppId());
-        if (openid == null) {
+        // 1. 调用微信API获取openid/unionid
+        WxSession session = getWechatSession(request.getCode(), request.getAppId());
+        if (session == null || session.getOpenid() == null) {
             throw new BusinessException("微信绑定失败：无效的code");
         }
+        String openid = session.getOpenid();
 
         // 2. 检查微信是否已被绑定
         LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
@@ -383,10 +397,13 @@ public class AuthServiceImpl implements AuthService {
         oauth.setUserId(user.getId());
         oauth.setOauthType("wechat");
         oauth.setOauthId(openid);
+        oauth.setUnionId(session.getUnionid());
         oauth.setCreateTime(java.time.LocalDateTime.now());
         userOauthMapper.insert(oauth);
+        // 同一微信用户可能已绑定其他小程序：补齐该用户所有微信记录的 unionid
+        fillUnionIdForUser(user.getId(), session.getUnionid());
 
-        log.info("微信绑定成功，userId: {}, openid: {}", user.getId(), openid);
+        log.info("微信绑定成功，userId: {}, openid: {}, unionid: {}", user.getId(), openid, session.getUnionid());
 
         // 5. 生成 Token
         String token = jwtUtil.generateToken(user.getId(), user.getUsername());
@@ -400,11 +417,12 @@ public class AuthServiceImpl implements AuthService {
         // 从SecurityUtils获取当前登录用户
         Long userId = SecurityUtils.getCurrentUserId();
 
-        // 调用微信API获取openid
-        String openid = getWechatOpenid(code, appId);
-        if (openid == null) {
+        // 调用微信API获取openid/unionid
+        WxSession session = getWechatSession(code, appId);
+        if (session == null || session.getOpenid() == null) {
             throw new BusinessException("微信绑定失败：无效的code");
         }
+        String openid = session.getOpenid();
 
         // 检查微信是否已被绑定
         LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
@@ -413,60 +431,67 @@ public class AuthServiceImpl implements AuthService {
         UserOauth existOauth = userOauthMapper.selectOne(oauthWrapper);
         if (existOauth != null) {
             if (existOauth.getUserId().equals(userId)) {
-                // 已经是当前用户绑定的
+                // 已经是当前用户绑定的（顺带补齐 unionid）
+                if (!StringUtils.hasText(existOauth.getUnionId()) && StringUtils.hasText(session.getUnionid())) {
+                    existOauth.setUnionId(session.getUnionid());
+                    userOauthMapper.updateById(existOauth);
+                    fillUnionIdForUser(userId, session.getUnionid());
+                }
                 return;
             }
             throw new BusinessException("该微信已被其他账号绑定");
         }
 
-        // 检查当前用户是否已绑定微信
-        oauthWrapper = new LambdaQueryWrapper<>();
-        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
-        oauthWrapper.eq(UserOauth::getUserId, userId);
-        existOauth = userOauthMapper.selectOne(oauthWrapper);
-        if (existOauth != null) {
+        // 检查当前用户是否已绑定微信（跨小程序下同一用户可能有多条 openid 记录）
+        List<UserOauth> existing = listWechatOauthByUserId(userId);
+        if (!existing.isEmpty()) {
+            // 同一微信（unionid 相同）：为当前小程序补录 openid，而非拒绝
+            boolean sameWechat = StringUtils.hasText(session.getUnionid())
+                    && existing.stream().anyMatch(o -> session.getUnionid().equals(o.getUnionId()));
+            if (sameWechat) {
+                addWechatOauth(userId, openid, session.getUnionid());
+                fillUnionIdForUser(userId, session.getUnionid());
+                log.info("用户 {} 补录微信 openid 成功，openid: {}, unionid: {}", userId, openid, session.getUnionid());
+                return;
+            }
             throw new BusinessException("您已绑定微信，无法重复绑定");
         }
 
         // 绑定微信到当前用户
-        UserOauth oauth = new UserOauth();
-        oauth.setUserId(userId);
-        oauth.setOauthType("wechat");
-        oauth.setOauthId(openid);
-        oauth.setCreateTime(java.time.LocalDateTime.now());
-        userOauthMapper.insert(oauth);
+        addWechatOauth(userId, openid, session.getUnionid());
+        // 同一微信用户可能已绑定其他小程序：补齐该用户所有微信记录的 unionid
+        fillUnionIdForUser(userId, session.getUnionid());
 
-        log.info("用户 {} 绑定微信成功，openid: {}", userId, openid);
+        log.info("用户 {} 绑定微信成功，openid: {}, unionid: {}", userId, openid, session.getUnionid());
     }
 
     @Override
     public void unbindWechatForCurrentUser() {
         Long userId = SecurityUtils.getCurrentUserId();
-        
-        // 检查当前用户是否已绑定微信
-        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
-        oauthWrapper.eq(UserOauth::getOauthType, "wechat");
-        oauthWrapper.eq(UserOauth::getUserId, userId);
-        UserOauth existOauth = userOauthMapper.selectOne(oauthWrapper);
-        
-        if (existOauth == null) {
+
+        // 查询当前用户的全部微信绑定记录
+        List<UserOauth> existing = listWechatOauthByUserId(userId);
+
+        if (existing.isEmpty()) {
             throw new BusinessException("您未绑定微信");
         }
 
-        // 删除绑定记录
-        userOauthMapper.deleteById(existOauth.getId());
-        
-        log.info("用户 {} 解绑微信成功", userId);
+        // 删除该用户全部微信绑定记录（跨小程序的所有 openid 一并解绑）
+        existing.forEach(o -> userOauthMapper.deleteById(o.getId()));
+
+        log.info("用户 {} 解绑微信成功，共删除 {} 条绑定记录", userId, existing.size());
     }
 
     /**
-     * 调用微信API获取openid
+     * 调用微信API获取openid与unionid
      * <p>支持多小程序：优先按 appId 从 {@link WechatOauthProperties#getAppSecrets()} 路由对应 secret，未命中时回退默认 appId/appSecret。</p>
+     * <p>unionid 仅在小程序绑定到微信开放平台账号时返回，用于跨小程序识别同一用户。</p>
      *
      * @param code  微信登录code
      * @param appId 发起登录的小程序 appId（可为空）
+     * @return 包含 openid/unionid 的会话信息，失败返回 null
      */
-    private String getWechatOpenid(String code, String appId) {
+    private WxSession getWechatSession(String code, String appId) {
         try {
             String resolvedAppId = wechatOauthProperties.getAppId();
             String resolvedSecret = wechatOauthProperties.getAppSecret();
@@ -485,7 +510,10 @@ public class AuthServiceImpl implements AuthService {
             JSONObject json = JSON.parseObject(response);
 
             if (json.containsKey("openid")) {
-                return json.getString("openid");
+                WxSession session = new WxSession();
+                session.setOpenid(json.getString("openid"));
+                session.setUnionid(json.getString("unionid"));
+                return session;
             }
 
             log.error("微信登录失败：{}", response);
@@ -493,6 +521,94 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             log.error("调用微信API失败", e);
             return null;
+        }
+    }
+
+    /**
+     * 按 openid 查询微信绑定记录
+     */
+    private UserOauth findWechatOauthByOpenid(String openid) {
+        LambdaQueryWrapper<UserOauth> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserOauth::getOauthType, "wechat");
+        wrapper.eq(UserOauth::getOauthId, openid);
+        return userOauthMapper.selectOne(wrapper);
+    }
+
+    /**
+     * 按 unionid 查询微信绑定记录（跨小程序识别同一用户；unionid 理论上唯一，limit 1 兜底）
+     */
+    private UserOauth findWechatOauthByUnionid(String unionid) {
+        LambdaQueryWrapper<UserOauth> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserOauth::getOauthType, "wechat");
+        wrapper.eq(UserOauth::getUnionId, unionid);
+        wrapper.orderByDesc(UserOauth::getId);
+        wrapper.last("limit 1");
+        return userOauthMapper.selectOne(wrapper);
+    }
+
+    /**
+     * 新增一条微信绑定记录（openid + unionid）
+     */
+    private void addWechatOauth(Long userId, String openid, String unionid) {
+        UserOauth oauth = new UserOauth();
+        oauth.setUserId(userId);
+        oauth.setOauthType("wechat");
+        oauth.setOauthId(openid);
+        oauth.setUnionId(unionid);
+        oauth.setCreateTime(java.time.LocalDateTime.now());
+        userOauthMapper.insert(oauth);
+    }
+
+    /**
+     * 查询指定用户的全部微信绑定记录（按 id 升序，先绑定的在前）
+     */
+    private List<UserOauth> listWechatOauthByUserId(Long userId) {
+        LambdaQueryWrapper<UserOauth> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserOauth::getOauthType, "wechat");
+        wrapper.eq(UserOauth::getUserId, userId);
+        wrapper.orderByAsc(UserOauth::getId);
+        return userOauthMapper.selectList(wrapper);
+    }
+
+    /**
+     * 补齐指定用户所有微信绑定记录的 unionid（同一微信用户在多个小程序的 openid 共享同一 unionid）
+     */
+    private void fillUnionIdForUser(Long userId, String unionid) {
+        if (!StringUtils.hasText(unionid)) {
+            return;
+        }
+        LambdaQueryWrapper<UserOauth> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserOauth::getOauthType, "wechat");
+        wrapper.eq(UserOauth::getUserId, userId);
+        wrapper.and(w -> w.isNull(UserOauth::getUnionId).or().eq(UserOauth::getUnionId, ""));
+        java.util.List<UserOauth> list = userOauthMapper.selectList(wrapper);
+        for (UserOauth o : list) {
+            o.setUnionId(unionid);
+            userOauthMapper.updateById(o);
+        }
+    }
+
+    /**
+     * 微信 jscode2session 会话结果
+     */
+    private static class WxSession {
+        private String openid;
+        private String unionid;
+
+        String getOpenid() {
+            return openid;
+        }
+
+        void setOpenid(String openid) {
+            this.openid = openid;
+        }
+
+        String getUnionid() {
+            return unionid;
+        }
+
+        void setUnionid(String unionid) {
+            this.unionid = unionid;
         }
     }
 
@@ -633,11 +749,10 @@ public class AuthServiceImpl implements AuthService {
                 .filter(StringUtils::hasText)
                 .collect(Collectors.toList()));
 
-        // 查询微信绑定状态
-        LambdaQueryWrapper<UserOauth> oauthWrapper = new LambdaQueryWrapper<>();
-        oauthWrapper.eq(UserOauth::getUserId, user.getId())
-                .eq(UserOauth::getOauthType, "wechat");
-        UserOauth userOauth = userOauthMapper.selectOne(oauthWrapper);
+        // 查询微信绑定状态（跨小程序下同一用户可能有多条 openid 记录，取一条即可）
+        UserOauth userOauth = listWechatOauthByUserId(user.getId()).stream()
+                .findFirst()
+                .orElse(null);
         if (userOauth != null) {
             response.setWxOpenid(userOauth.getOauthId());
         }

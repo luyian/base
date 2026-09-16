@@ -176,6 +176,7 @@ const FEATURES = {
     data: {
       compressFile: null,
       compressDpi: 150,
+      sliderPos: 100,      // 滑块位置（0~210），compressDpi = 250 - sliderPos：左清晰、右极致
       estimatedSize: '--',
       compressLoading: false,
       compressResult: null,
@@ -183,9 +184,11 @@ const FEATURES = {
     },
     methods: {
       ...choosePdfBehavior,
+      // 滑块：向右 = 更极致压缩（DPI 更低、文件更小），与下方标注方向一致
       onCompressDpiChg(e) {
-        const dpi = Number(e.detail.value);
-        this.setData({ compressDpi: dpi });
+        const pos = Number(e.detail.value);
+        const dpi = 250 - pos;
+        this.setData({ sliderPos: pos, compressDpi: dpi });
         if (this.data.compressFile) {
           this.setData({ estimatedSize: this._estimate(dpi, this.data.compressFile.size) });
         }

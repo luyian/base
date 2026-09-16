@@ -104,6 +104,10 @@ page {
   font-size: 26rpx;
   color: var(--ink-3);
 }
+/* 未绑定微信：用主题色提示可点击绑定 */
+.value-unbound {
+  color: var(--seal);
+}
 
 /* 主题开关 */
 .theme-switch {

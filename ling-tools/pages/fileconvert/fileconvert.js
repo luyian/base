@@ -357,10 +357,13 @@ Page({
       if (ids.length) {
         await api.reorderScanImages(docId, ids);
       }
-      // 2) 完成归档
+      // 2) 完成归档（后端返回 targetFile 嵌套结构）
       const p = this.levelParams();
       const res = await api.finalizeScanDoc(docId, p.maxSide, p.quality);
-      this.setData({ arrangeResult: res });
+      const tf = res.targetFile || {};
+      this.setData({
+        arrangeResult: { fileName: tf.fileName, fileSize: tf.fileSize, fileUrl: tf.fileUrl, count: list.length }
+      });
       wx.showToast({ title: '已生成 PDF', icon: 'success' });
     } catch (e) {
       // api 已提示

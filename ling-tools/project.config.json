@@ -20,7 +20,17 @@
       "ignore": [],
       "disablePlugins": [],
       "outputPath": ""
-    }
+    },
+    "compileWorklet": false,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": true,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "localPlugins": false,
+    "disableUseStrict": false,
+    "condition": false,
+    "swc": false,
+    "disableSWC": true
   },
   "condition": {},
   "srcMiniprogramRoot": "miniprogram/",
@@ -31,5 +41,6 @@
   "packOptions": {
     "ignore": [],
     "include": []
-  }
+  },
+  "simulatorPluginLibVersion": {}
 }

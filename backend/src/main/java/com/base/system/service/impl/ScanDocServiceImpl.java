@@ -318,7 +318,7 @@ public class ScanDocServiceImpl implements ScanDocService {
      * 上传 PDF 到 COS 并写入 sys_file 记录
      */
     private SysFile uploadPdfBytesAndRecord(byte[] data, String fileName) {
-        String cosKey = cosService.uploadFile(data, "scan-doc", "pdf");
+        String cosKey = cosService.uploadFile(data, "scan-doc", "pdf", fileName);
         SysFile sysFile = new SysFile();
         sysFile.setFileName(cosKey);
         sysFile.setOriginalName(fileName);

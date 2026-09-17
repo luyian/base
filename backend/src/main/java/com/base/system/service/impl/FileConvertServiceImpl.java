@@ -174,8 +174,9 @@ public class FileConvertServiceImpl implements FileConvertService {
      */
     private SysFile uploadAndRecord(MultipartFile file, String fileExt) {
         try {
-            String cosKey = cosService.uploadFile(file.getBytes(), "convert", fileExt);
-            return saveSysFile(file.getOriginalFilename(), fileExt, file.getSize(),
+            String originalName = file.getOriginalFilename();
+            String cosKey = cosService.uploadFile(file.getBytes(), "convert", fileExt, originalName);
+            return saveSysFile(originalName, fileExt, file.getSize(),
                     file.getContentType(), cosKey);
         } catch (Exception e) {
             throw new BusinessException("源文件上传失败，请稍后重试");
@@ -186,7 +187,7 @@ public class FileConvertServiceImpl implements FileConvertService {
      * 上传 byte[] 到 COS 并写入 sys_file 记录
      */
     private SysFile uploadBytesAndRecord(byte[] data, String fileName, String fileExt, String contentType) {
-        String cosKey = cosService.uploadFile(data, "convert", fileExt);
+        String cosKey = cosService.uploadFile(data, "convert", fileExt, fileName);
         return saveSysFile(fileName, fileExt, (long) data.length, contentType, cosKey);
     }
 

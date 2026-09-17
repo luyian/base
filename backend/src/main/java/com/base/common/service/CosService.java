@@ -9,6 +9,8 @@ import com.qcloud.cos.http.HttpProtocol;
 import com.qcloud.cos.model.*;
 import java.net.URL;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import com.qcloud.cos.region.Region;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,15 +50,67 @@ public class CosService {
      * @param fileExt   扩展名（如 jpg、pdf），不含点号
      * @return COS 对象 key，如 "default/2026/05/28/a1b2c3d4.jpg"
      */
+    /**
+     * 上传文件（使用哈希文件名）
+     */
     public String uploadFile(byte[] fileBytes, String fileGroup, String fileExt) {
-        String key = buildKey(fileGroup, fileExt);
+        return uploadFile(fileBytes, fileGroup, fileExt, null);
+    }
+
+    /**
+     * 上传文件
+     *
+     * @param fileBytes 文件内容
+     * @param fileGroup 分组（如 default、avatar、images、convert、scan-doc）
+     * @param fileExt   扩展名（如 jpg、pdf），不含点号
+     * @param originalName 真实文件名（含扩展名，如 123.pdf）；为 null/空则用哈希命名
+     * @return COS 对象 key，如 "convert/2026/09/17/123.pdf"
+     */
+    public String uploadFile(byte[] fileBytes, String fileGroup, String fileExt, String originalName) {
+        String key = (originalName == null || originalName.isEmpty())
+                ? buildKey(fileGroup, fileExt)
+                : buildKeyWithName(fileGroup, fileExt, originalName);
         ObjectMetadata metadata = new ObjectMetadata();
         metadata.setContentLength(fileBytes.length);
+        // 按扩展名设置正确 Content-Type，否则 COS 默认为 application/octet-stream，
+        // 浏览器 iframe 加载 PDF/图片等会因类型不对而无法内嵌预览
+        String contentType = contentTypeOf(fileExt);
+        if (contentType != null) {
+            metadata.setContentType(contentType);
+        }
         PutObjectRequest request = new PutObjectRequest(
                 getBucket(), key, new ByteArrayInputStream(fileBytes), metadata);
         getClient().putObject(request);
-        log.info("COS 上传成功: {}", key);
+        log.info("COS 上传成功: {}, contentType={}", key, contentType);
         return key;
+    }
+
+    /**
+     * 常用扩展名 → Content-Type 映射
+     * <p>仅收录会用于前端预览/内嵌的类型，其余让 COS 使用默认值。</p>
+     */
+    private static final Map<String, String> CONTENT_TYPES = new HashMap<>();
+
+    static {
+        CONTENT_TYPES.put("pdf", "application/pdf");
+        CONTENT_TYPES.put("png", "image/png");
+        CONTENT_TYPES.put("jpg", "image/jpeg");
+        CONTENT_TYPES.put("jpeg", "image/jpeg");
+        CONTENT_TYPES.put("gif", "image/gif");
+        CONTENT_TYPES.put("svg", "image/svg+xml");
+        CONTENT_TYPES.put("webp", "image/webp");
+        CONTENT_TYPES.put("txt", "text/plain");
+        CONTENT_TYPES.put("md", "text/markdown");
+        CONTENT_TYPES.put("html", "text/html");
+        CONTENT_TYPES.put("csv", "text/csv");
+        CONTENT_TYPES.put("json", "application/json");
+    }
+
+    private String contentTypeOf(String fileExt) {
+        if (fileExt == null || fileExt.isEmpty()) {
+            return null;
+        }
+        return CONTENT_TYPES.get(fileExt.toLowerCase());
     }
 
     /**
@@ -177,5 +231,48 @@ public class CosService {
         String uuid = UUID.randomUUID().toString().replace("-", "");
         String ext = (fileExt != null && !fileExt.isEmpty()) ? "." + fileExt : "";
         return fileGroup + "/" + datePath + "/" + uuid + ext;
+    }
+
+    /**
+     * 构建存储路径（保留真实文件名）: fileGroup/yyyy/MM/dd/真实文件名
+     * <p>真实文件名做安全清洗，去除路径分隔符/特殊字符，避免路径穿越与非法字符。</p>
+     */
+    private String buildKeyWithName(String fileGroup, String fileExt, String originalName) {
+        String datePath = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+        String safeName = sanitizeFileName(originalName);
+        if (safeName.isEmpty()) {
+            safeName = UUID.randomUUID().toString().replace("-", "");
+        }
+        return fileGroup + "/" + datePath + "/" + safeName;
+    }
+
+    /**
+     * 清洗真实文件名：仅保留字母、数字、-、_、.，其余替换为 _；
+     * 去除路径分隔符与潜在路径穿越（../ 等）。
+     */
+    private String sanitizeFileName(String originalName) {
+        if (originalName == null) {
+            return "";
+        }
+        String name = originalName.replace('\\', '/');
+        int slash = name.lastIndexOf('/');
+        if (slash >= 0) {
+            name = name.substring(slash + 1);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (Character.isLetterOrDigit(c) || c == '-' || c == '_' || c == '.') {
+                sb.append(c);
+            } else {
+                sb.append('_');
+            }
+        }
+        String cleaned = sb.toString().trim();
+        // 防止路径穿越（.. 变 .._）
+        while (cleaned.contains("..")) {
+            cleaned = cleaned.replace("..", ".._");
+        }
+        return cleaned;
     }
 }

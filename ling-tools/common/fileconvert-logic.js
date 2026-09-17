@@ -3,6 +3,7 @@
 // 只装配对应功能的 data 与方法，页面间互不携带其他功能。
 const app = getApp();
 const api = require('../api/fileConvert');
+const authApi = require('../api/auth');
 
 // 预计压缩系数：dpi 越低压得越狠（clamp 0.15 ~ 0.85）
 function estFactor(dpi) {
@@ -18,13 +19,26 @@ function dpiToQuality(dpi) {
 const COMMON_METHODS = {
   onLoad() {
     this.applyTheme();
+    // 进入功能页即校验登录态：未登录直接去登录页，避免选完图/填完名才被后端 401 踢回
+    this._ensureLogin();
   },
   onShow() {
     this.applyTheme();
   },
+  // 未登录跳登录页；已登录但 token 失效时由 request 统一 401 → 提前跳登录
+  _ensureLogin() {
+    const token = wx.getStorageSync('token') || app.globalData.token;
+    if (!token) {
+      wx.redirectTo({ url: '/pages/login/login' });
+      return;
+    }
+    // 用一次轻量请求确认 token 有效（401 时 request 内部会清 token 并跳登录）
+    authApi.getUserInfo().catch(() => {});
+  },
   onUnload() {
     // 整理功能：离开时清理本地图片路径引用（后端保留可二次整理）
     this._imgPaths = {};
+    this._localStack = [];
   },
   applyTheme() {
     this.setData({ themeClass: app.getTheme() === 'dark' ? 'dark-theme' : 'light-theme' });
@@ -314,6 +328,7 @@ const FEATURES = {
         }
         this.setData({ creatingWork: true });
         this._imgPaths = {};
+        this._localStack = [];
         try {
           const doc = await api.createScanDoc(docName);
           this.setData({
@@ -339,43 +354,56 @@ const FEATURES = {
         if (!docId) return;
         this._pickMedia({ count: 1, sourceType: ['camera'] });
       },
-      // 追加图片：逐张上传，返回 sync
+      // 追加图片：逐张上传，返回全量 images；本地路径按上传顺序暂存，供缩略图/原图查看
       async _addImages(paths) {
         const docId = this.data.workDoc.docId;
-        const map = this._imgPaths || (this._imgPaths = {});
-        for (const p of paths) {
-          const fileName = 'img_' + Date.now() + '_' + Math.floor(Math.random() * 1000) + '.jpg';
-          map[fileName] = p;
-        }
+        if (!docId) return;
+        // 记录本次新增的本地路径（按顺序，与后端 images 按 sort 顺序一致），供 _syncImages 配 localPath
+        this._localStack = (this._localStack || []).concat(paths);
         wx.showLoading({ title: '上传中...', mask: true });
         try {
-          // 上传后返回全量有序 images
           const res = await api.pushScanImages(docId, paths);
           const images = res.images || res || [];
           this._syncImages(images);
         } catch (e) {
+          // 上传失败：从栈里回退本次路径，避免后续错位
+          this._localStack.splice(this._localStack.length - paths.length, paths.length);
           // api 已提示
         } finally {
           wx.hideLoading();
         }
       },
-      // 用后端全量 images 重建本地列表（保留本地缩略图路径）
+      // 用后端全量 images 重建本地列表：旧图按 fileName 复用上一轮 localPath，新图按顺序取 _localStack
       _syncImages(images) {
-        const map = this._imgPaths || (this._imgPaths = {});
-        const prev = this.data.workImages;
-        const prevKey = {};
-        (prev || []).forEach((i) => { prevKey[i.fileName] = i._k; });
-        const next = (images || []).map((it) => {
-          const fileName = it.fileName;
+        const list = images || [];
+        const prev = this.data.workImages || [];
+        const prevByFile = {};
+        prev.forEach((i) => { if (i.fileName) prevByFile[i.fileName] = i; });
+        const stack = this._localStack || [];
+        const next = list.map((it) => {
+          const old = prevByFile[it.fileName];
+          let localPath = '';
+          if (old) {
+            localPath = old.localPath || '';
+          } else if (stack.length) {
+            localPath = stack.shift() || '';
+          }
           return {
-            _k: prevKey[fileName] || this.genKey(),
+            _k: (old && old._k) || this.genKey(),
             id: it.id,
-            fileName,
+            fileName: it.fileName,
             size: it.size,
-            localPath: map[fileName] || ''
+            localPath
           };
         });
+        this._localStack = stack;
         this.setData({ workImages: next });
+      },
+      // 点击缩略图查看原图
+      previewImage(e) {
+        const url = e.currentTarget.dataset.url;
+        const urls = (this.data.workImages || []).map((i) => i.localPath).filter(Boolean);
+        wx.previewImage({ urls: urls.length ? urls : [url], current: url || urls[0] });
       },
       arrangeMove(e) {
         const { mode, index } = e.currentTarget.dataset;

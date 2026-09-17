@@ -49,7 +49,7 @@
       <!-- 图片列表（可排序） -->
       <view wx:if="{{workImages.length > 0}}" class="img-list">
         <view wx:for="{{workImages}}" wx:key="_k" class="img-row">
-          <image class="img-thumb" src="{{item.localPath}}" mode="aspectFill" />
+          <image class="img-thumb" src="{{item.localPath}}" mode="aspectFill" bindtap="previewImage" data-url="{{item.localPath}}" />
           <view class="img-actions">
             <view class="img-act {{index === 0 ? 'disabled' : ''}}" bindtap="arrangeMove" data-mode="up" data-index="{{index}}">↑</view>
             <view class="img-act {{index === workImages.length - 1 ? 'disabled' : ''}}" bindtap="arrangeMove" data-mode="down" data-index="{{index}}">↓</view>

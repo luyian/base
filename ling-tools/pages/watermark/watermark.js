@@ -1,4 +1,5 @@
-// pages/watermark/watermark.js - 图片去水印（自动识别 + 手动框选）
+// pages/watermark/watermark.js - 图片去水印（手动框选擦除）
+// 交互：双指缩放 / 单指拖选框整体移动 / 拖角调整选区大小 / 放大后可把框移到水印处
 const api = require('../../api/fileConvert');
 
 const app = getApp();
@@ -10,17 +11,21 @@ Page({
     srcPath: '',
     realW: 0,
     realH: 0,
-    // 图片渲染尺寸（用于换算框选坐标）
+    // 图片渲染基准尺寸（未缩放，widthFix 满宽）
     bdW: 0,
     bdH: 0,
-    // 是否显示手动框选层
-    showBox: false,
-    // 框选标记（左上/右下）在容器内的位置 px
+    // 画布缩放/平移（transform: translate(tx,ty) scale(s)，origin 左上）
+    s: 1,
+    tx: 0,
+    ty: 0,
+    // 选区矩形（逻辑坐标，0..bdW × 0..bdH）
     boxTLX: 0,
     boxTLY: 0,
     boxBRX: 0,
     boxBRY: 0,
-    // 结果（去水印后 COS URL）
+    boxW: 0,
+    boxH: 0,
+    // 结果
     resultUrl: '',
     busy: false
   },
@@ -58,7 +63,6 @@ Page({
               srcPath: path,
               realW: info.width,
               realH: info.height,
-              showBox: false,
               resultUrl: ''
             });
           },
@@ -68,52 +72,189 @@ Page({
     });
   },
 
-  // 图片渲染完成，测量展示区实际尺寸并初始化框选标记
+  // 图片渲染完成：测量视口基准 + 初始化画布与选区
   onImgLoad() {
     this.createSelectorQuery()
-      .select('.wm-img')
+      .select('.canvas-viewport')
       .boundingClientRect((res) => {
         if (!res) return;
-        const bdW = res.width;
-        const bdH = res.height;
-        // 标记初始落在图片右下 15% 区域（水印常见位置），用户可拖拽调整
-        this.setData({
-          bdW,
-          bdH,
-          boxTLX: Math.round(bdW * 0.62),
-          boxTLY: 0,
-          boxBRX: Math.round(bdW * 0.99),
-          boxBRY: Math.round(bdH * 0.16)
-        });
+        const vpW = res.width;
+        const vpH = res.height;
+        // 视口内没有内边距时，图片基准 = 视口宽高
+        const bdW = vpW;
+        const bdH = vpH;
+        this._vpLeft = res.left;
+        this._vpTop = res.top;
+        this.setData({ bdW, bdH });
+        // 初始选区：紧凑包裹右下角水印（常见位置），留出大片空白供平移画面
+        this._updateBox(Math.round(bdW * 0.72), Math.round(bdH * 0.78), Math.round(bdW * 0.96), Math.round(bdH * 0.97));
       })
       .exec();
   },
 
-  // 自动识别并去除（不框选）
-  autoClean() {
-    this.doProcess('');
+  // ==================== 触摸手势 ====================
+
+  // 触摸物理坐标 → 画布逻辑坐标（除以缩放、减平移）
+  _logic(e) {
+    const { tx, ty, s } = this.data;
+    const t = e.touches[0];
+    return [
+      (t.clientX - this._vpLeft - tx) / s,
+      (t.clientY - this._vpTop - ty) / s
+    ];
   },
 
-  // 进入手动框选模式
-  startBox() {
-    if (this.data.busy) return;
-    this.setData({ showBox: true, resultUrl: '' });
+  // 两点距离
+  _dist(t0, t1) {
+    return Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
   },
 
+  onCanvasTouchStart(e) {
+    const t = e.touches;
+    if (t.length >= 2) {
+      const d = this.data;
+      this._gesture = {
+        type: 'pinch',
+        startS: d.s,
+        startTx: d.tx,
+        startTy: d.ty,
+        startDist: this._dist(t[0], t[1]),
+        startMid: this._mid(t)
+      };
+      return;
+    }
+    // 单指：落在选区内＝整体移动选框；否则＝平移画布
+    const [lx, ly] = this._logic(e);
+    const d = this.data;
+    const inBox = lx >= d.boxTLX && lx <= d.boxBRX && ly >= d.boxTLY && ly <= d.boxBRY;
+    this._gesture = {
+      type: 'single',
+      mode: inBox ? 'box' : 'pan',
+      lastX: t[0].clientX,
+      lastY: t[0].clientY
+    };
+  },
+
+  onCanvasTouchMove(e) {
+    const t = e.touches;
+    if (!this._gesture) return;
+
+    if (t.length >= 2) {
+      // 双指：以「起始中点」为锚缩放并平移——两指距离变 = 缩放，两指整体移动 = 拖动画布
+      const d = this.data;
+      const g = this._gesture;
+      const ratio = this._dist(t[0], t[1]) / g.startDist;
+      const newS = Math.min(5, Math.max(1, g.startS * ratio));
+      const mid = this._mid(t);
+      // 起始中点对应的逻辑坐标（用起始时的 t 与 s，保证 s 不变时 tx 随中点位移平移）
+      const lx = (g.startMid.x - this._vpLeft - g.startTx) / g.startS;
+      const ly = (g.startMid.y - this._vpTop - g.startTy) / g.startS;
+      this._setPan(
+        mid.x - this._vpLeft - newS * lx,
+        mid.y - this._vpTop - newS * ly,
+        newS
+      );
+      return;
+    }
+
+    // 单指（或缩放后保留单指）
+    const g = this._gesture;
+    const dx = t[0].clientX - g.lastX;
+    const dy = t[0].clientY - g.lastY;
+    if (g.type !== 'single') {
+      // 从双指落下到单指，重新判定
+      this.onCanvasTouchStart(e);
+      return;
+    }
+    if (g.mode === 'box') {
+      // 整体移动选框
+      this._moveBox(dx / this.data.s, dy / this.data.s);
+    } else {
+      this._setPan(this.data.tx + dx, this.data.ty + dy, this.data.s);
+    }
+    g.lastX = t[0].clientX;
+    g.lastY = t[0].clientY;
+  },
+
+  onCanvasTouchEnd() {
+    this._gesture = null;
+  },
+
+  // 两点中点
+  _mid(t) {
+    return {
+      x: (t[0].clientX + t[1].clientX) / 2,
+      y: (t[0].clientY + t[1].clientY) / 2
+    };
+  },
+
+  // 设置平移/缩放，并把平移限制在不留空洞、不无限拖出的范围
+  _setPan(nx, ny, ns) {
+    const { bdW, bdH } = this.data;
+    const minX = bdW * (1 - ns); // <=0
+    const minY = bdH * (1 - ns);
+    const tx = Math.min(0, Math.max(minX, nx));
+    const ty = Math.min(0, Math.max(minY, ny));
+    this.setData({ tx, ty, s: ns });
+  },
+
+  // 整体移动选框（逻辑坐标，dx/dy 为逻辑增量）
+  _moveBox(dx, dy) {
+    const { boxTLX, boxTLY, boxW, boxH, bdW, bdH } = this.data;
+    const nx = Math.min(Math.max(boxTLX + dx, 0), bdW - boxW);
+    const ny = Math.min(Math.max(boxTLY + dy, 0), bdH - boxH);
+    this._updateBox(nx, ny, nx + boxW, ny + boxH);
+  },
+
+  // ==================== 角标拖拽（改大小） ====================
+
+  onTLStart(e) {
+    this.onTLMove(e);
+  },
+
+  // 拖左上角：不越过右下角
   onTLMove(e) {
-    this.setData({ boxTLX: e.detail.x, boxTLY: e.detail.y });
+    const { boxBRX, boxBRY } = this.data;
+    const [x, y] = this._logic(e);
+    const lx = Math.min(Math.max(x, 0), boxBRX);
+    const ly = Math.min(Math.max(y, 0), boxBRY);
+    this._updateBox(lx, ly, boxBRX, boxBRY);
   },
 
+  onBRStart(e) {
+    this.onBRMove(e);
+  },
+
+  // 拖右下角：不越过左上角
   onBRMove(e) {
-    this.setData({ boxBRX: e.detail.x, boxBRY: e.detail.y });
+    const { boxTLX, boxTLY, bdW, bdH } = this.data;
+    const [x, y] = this._logic(e);
+    const rx = Math.min(Math.max(x, boxTLX), bdW);
+    const ry = Math.min(Math.max(y, boxTLY), bdH);
+    this._updateBox(boxTLX, boxTLY, rx, ry);
   },
 
-  // 取消框选
-  cancelBox() {
-    this.setData({ showBox: false });
+  // 更新选区四角 + 矩形宽高
+  _updateBox(tlx, tly, brx, bry) {
+    this.setData({
+      boxTLX: Math.round(tlx),
+      boxTLY: Math.round(tly),
+      boxBRX: Math.round(brx),
+      boxBRY: Math.round(bry),
+      boxW: Math.round(brx - tlx),
+      boxH: Math.round(bry - tly)
+    });
   },
 
-  // 确认框选并擦除：将容器内坐标换算为源图像素 region x,y,w,h
+  // 重置视图：回到原始缩放，并把选区复位到右下角
+  resetView() {
+    if (this.data.busy) return;
+    const { bdW, bdH } = this.data;
+    this._updateBox(Math.round(bdW * 0.72), Math.round(bdH * 0.78), Math.round(bdW * 0.96), Math.round(bdH * 0.97));
+    this.setData({ s: 1, tx: 0, ty: 0 });
+  },
+
+  // 确认框选并擦除：将逻辑坐标换算为源图像素 region x,y,w,h
   confirmBox() {
     const {
       boxTLX, boxTLY, boxBRX, boxBRY, bdW, bdH, realW, realH
@@ -135,13 +276,13 @@ Page({
     this.doProcess(`${x1},${y1},${w},${h}`);
   },
 
-  // 统一提交：region 为空走自动识别，否则手动擦除
+  // 提交手动框选擦除
   async doProcess(region) {
     if (this.data.busy || !this.data.srcPath) return;
-    this.setData({ busy: true, showBox: false, resultUrl: '' });
+    this.setData({ busy: true, resultUrl: '' });
     try {
       // wxUpload 成功 resolve 后端 data，失败已内部 toast
-      const res = await api.removeWatermark(this.data.srcPath, region ? { region } : {});
+      const res = await api.removeWatermark(this.data.srcPath, { region, backend: 'cv2' });
       this.setData({ resultUrl: res.targetFile.fileUrl });
       wx.showToast({ title: '去水印完成', icon: 'success' });
     } catch (err) {
@@ -149,6 +290,12 @@ Page({
     } finally {
       this.setData({ busy: false });
     }
+  },
+
+  // 预览结果大图
+  previewResult() {
+    if (!this.data.resultUrl) return;
+    wx.previewImage({ urls: [this.data.resultUrl] });
   },
 
   // 保存结果到相册
@@ -172,6 +319,6 @@ Page({
   // 再处理一张
   processAnother() {
     if (this.data.busy) return;
-    this.setData({ srcPath: '', resultUrl: '', showBox: false });
+    this.setData({ srcPath: '', resultUrl: '', s: 1, tx: 0, ty: 0 });
   }
 });

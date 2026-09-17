@@ -1,5 +1,6 @@
 // pages/index/index.js - 元灵工具箱首页（手机桌面式工具宫格）
 const app = getApp();
+const authApi = require('../../api/auth');
 
 Page({
   data: {
@@ -8,6 +9,19 @@ Page({
 
   onLoad() {
     this.applyTheme();
+    this.checkLogin();
+  },
+
+  // 进入主页前校验登录态：无 token 或 token 已失效 → 去登录页
+  // （token 失效时 getUserInfo 返回 401，request.js 已兜底清 token 并跳登录）
+  checkLogin() {
+    if (!wx.getStorageSync('token')) {
+      wx.reLaunch({ url: '/pages/login/login' });
+      return;
+    }
+    authApi.getUserInfo().catch(() => {
+      // 401 已由 request.js 统一处理
+    });
   },
 
   onShow() {

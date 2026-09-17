@@ -28,9 +28,9 @@ const request = (options) => {
           }
           resolve(res.data);
         } else if (res.data.code === 401 && !options.skipAuthRedirect) {
-          // Token expired, redirect to login
+          // Token expired, redirect to login（清栈，最稳）
           app.logout();
-          wx.redirectTo({
+          wx.reLaunch({
             url: '/pages/login/login'
           });
           reject(res.data);

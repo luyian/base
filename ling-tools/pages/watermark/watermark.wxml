@@ -1,73 +1,110 @@
-<!--pages/watermark/watermark.wxml - 图片去水印（自动识别 + 手动框选）-->
+<!--pages/watermark/watermark.wxml - 图片去水印（手动框选擦除）-->
 <view class="container {{themeClass}}">
-  <nav-bar title="图片去水印" />
+  <nav-bar title="图片去水印" back />
 
   <view class="page-body">
-    <!-- 未选图：选择按钮 -->
-    <view class="pick-area" wx:if="{{!srcPath}}">
+
+    <!-- ==================== 未选图：工具卡 ==================== -->
+    <view class="tool-card" wx:if="{{!srcPath}}">
+      <view class="tool-badge">元灵工具箱 · 图片工具</view>
+      <view class="tool-desc">放大画面，手动框出要擦除的水印；支持整体拖动框、拖角调整大小。</view>
+      <view class="cap-row">
+        <view class="cap-chip">双指缩放</view>
+        <view class="cap-chip">拖框移动</view>
+        <view class="cap-chip">拖角调整</view>
+      </view>
       <view class="pick-btn" hover-class="pick-btn-hover" bindtap="chooseImage">
-        <text class="pick-glyph">＋</text>
+        <view class="pick-ring">
+          <text class="pick-glyph">＋</text>
+        </view>
         <text class="pick-hint">选择需要去水印的图片</text>
-        <text class="pick-sub">支持 JPG / PNG / BMP / WebP，小于 50MB</text>
+        <text class="pick-sub">JPG · PNG · BMP · WebP　小于 50MB</text>
       </view>
     </view>
 
-    <!-- 已选图 -->
-    <view class="edit-area" wx:elif="{{srcPath}}">
-      <view class="canvas-box">
-        <image
-          class="wm-img"
-          src="{{srcPath}}"
-          mode="widthFix"
-          show-menu-by-longpress
-          bindload="onImgLoad"
-        />
-        <!-- 手动框选层（覆盖在图片上，与图片同宽高） -->
-        <movable-area
-          class="box-area"
-          style="width:100%; height:{{bdH}}px;"
-          wx:if="{{showBox}}"
-        >
-          <movable-view
-            class="box-mark box-mark-tl"
-            style="left:0; top:0;"
-            x="{{boxTLX}}" y="{{boxTLY}}"
-            direction="all" bindchange="onTLMove"
-          ></movable-view>
-          <movable-view
-            class="box-mark box-mark-br"
-            style="left:0; top:0;"
-            x="{{boxBRX}}" y="{{boxBRY}}"
-            direction="all" bindchange="onBRMove"
-          ></movable-view>
-        </movable-area>
+    <!-- ==================== 已选图：手动框选画布 ==================== -->
+    <view class="edit-area" wx:else>
+
+      <view class="canvas-card">
+        <view class="canvas-head">
+          <view class="canvas-title">
+            <view class="dot"></view>
+            <text class="canvas-title-text">框选要去除的水印</text>
+          </view>
+          <view class="canvas-tip">双指缩放/拖动画面 · 拖框移动 · 拖角调整</view>
+        </view>
+
+        <!-- 画布：viewport 固定裁剪，尺寸由图片自然撑开；wrap 承载图片/选区并整体缩放平移 -->
+        <view class="canvas-viewport">
+          <view
+            class="canvas-wrap"
+            style="transform: translate({{tx}}px, {{ty}}px) scale({{s}});"
+            bindtouchstart="onCanvasTouchStart"
+            bindtouchmove="onCanvasTouchMove"
+            bindtouchend="onCanvasTouchEnd"
+          >
+            <image
+              class="wm-img"
+              src="{{srcPath}}"
+              mode="widthFix"
+              bindload="onImgLoad"
+            />
+            <!-- 选区矩形 -->
+            <view class="box-dim" style="left:{{boxTLX}}px; top:{{boxTLY}}px; width:{{boxW}}px; height:{{boxH}}px;"></view>
+            <!-- 两个可拖角标：外层 34px 透明命中区，内层小色点显示 -->
+            <view class="box-mark" style="left:{{boxTLX}}px; top:{{boxTLY}}px;"
+              catchtouchstart="onTLStart" catchtouchmove="onTLMove">
+              <view class="mark-dot mark-dot-tl"></view>
+            </view>
+            <view class="box-mark" style="left:{{boxBRX}}px; top:{{boxBRY}}px;"
+              catchtouchstart="onBRStart" catchtouchmove="onBRMove">
+              <view class="mark-dot mark-dot-br"></view>
+            </view>
+          </view>
+        </view>
       </view>
 
+      <!-- 处理中 -->
       <view class="actions" wx:if="{{busy}}">
-        <text class="busy-tip">正在处理，请稍候…</text>
+        <view class="busy-wrap">
+          <view class="spinner"></view>
+          <text class="busy-text">正在拭去水印，请稍候…</text>
+        </view>
       </view>
 
-      <!-- 未处理时操作 -->
+      <!-- 未处理：操作区 -->
       <view class="actions" wx:elif="{{!resultUrl}}">
-        <block wx:if="{{!showBox}}">
-          <button class="btn btn-primary" bindtap="autoClean">自动识别去水印</button>
-          <button class="btn btn-plain" bindtap="startBox">手动框选擦除</button>
-        </block>
-        <block wx:else>
-          <button class="btn btn-primary" bindtap="confirmBox">确认框选擦除</button>
-          <button class="btn btn-plain" bindtap="cancelBox">取消</button>
-        </block>
+        <button class="btn btn-sky btn-stretch" hover-class="btn-sky-hover" bindtap="confirmBox">
+          <text>一键擦除</text>
+        </button>
+        <view class="op-row">
+          <view class="op-link" bindtap="resetView">重置框选</view>
+          <view class="op-dot">·</view>
+          <view class="op-link" bindtap="chooseImage">重新选图</view>
+        </view>
       </view>
 
       <!-- 结果展示 -->
-      <view class="result" wx:else>
-        <view class="result-label">处理结果</view>
-        <image class="result-img" src="{{resultUrl}}" mode="widthFix" show-menu-by-longpress />
-        <view class="actions">
-          <button class="btn btn-primary" bindtap="saveImage">保存到相册</button>
-          <button class="btn btn-plain" bindtap="processAnother">再处理一张</button>
+      <view class="actions" wx:else>
+        <view class="result-card">
+          <view class="result-head">
+            <view class="canvas-title">
+              <view class="dot dot-ok"></view>
+              <text class="canvas-title-text">已拭去水印</text>
+            </view>
+            <view class="result-stamp">净</view>
+          </view>
+          <image class="result-img" src="{{resultUrl}}" mode="widthFix" bindtap="previewResult" />
+          <view class="result-foot">
+            <button class="btn btn-primary btn-chunky" hover-class="btn-hover" bindtap="saveImage">
+              <text class="btn-icon">↓</text>
+              <text>保存到相册</text>
+            </button>
+            <view class="result-another" bindtap="processAnother">再处理一张　</view>
+          </view>
         </view>
       </view>
+
     </view>
   </view>
 </view>

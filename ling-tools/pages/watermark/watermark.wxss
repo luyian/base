@@ -1,94 +1,238 @@
-/* pages/watermark/watermark.wxss - 图片去水印 */
+/* pages/watermark/watermark.wxss - 图片去水印（手动框选擦除） */
+/* 视觉：瓷青纸面 + 墨色结构，朱砂只用于「触发去水印」这一主操作 */
+page {
+  --paper: #F3F2EC;
+  --card: #FCFBF6;
+  --ink: #2C2E25;
+  --ink-2: #6B6E62;
+  --ink-3: #A5A79B;
+  --seal: #C6402E;
+  --seal-deep: #A8301F;
+  --seal-soft: rgba(198, 64, 46, 0.10);
+  --gold: #B08D46;
+  --hairline: #E4E2D6;
+  --shadow: 0 2rpx 6rpx rgba(44, 46, 37, 0.05), 0 12rpx 34rpx rgba(44, 46, 37, 0.08);
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif;
+}
+
+.container {
+  min-height: 100vh;
+  background: var(--paper);
+  box-sizing: border-box;
+}
+
 .page-body {
-  padding: 30rpx;
-  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+  padding: 32rpx 40rpx calc(48rpx + env(safe-area-inset-bottom));
 }
 
-/* ============ 未选图：选择按钮 ============ */
-.pick-area {
+/* ==================== 未选图：工具卡 ==================== */
+.tool-card {
+  position: relative;
+  margin-top: 32rpx;
+  padding: 48rpx 44rpx 44rpx;
+  background: var(--card);
+  border-radius: 32rpx;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: fade-up 0.42s ease both;
+}
+
+.tool-badge {
+  display: inline-block;
+  padding: 8rpx 18rpx;
+  font-size: 22rpx;
+  letter-spacing: 3rpx;
+  color: var(--gold);
+  border: 1rpx solid var(--hairline);
+  border-radius: 999rpx;
+}
+
+.tool-desc {
+  margin-top: 26rpx;
+  font-size: 27rpx;
+  line-height: 1.72;
+  color: var(--ink-2);
+}
+
+.cap-row {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 30rpx;
 }
 
+.cap-chip {
+  padding: 10rpx 22rpx;
+  font-size: 23rpx;
+  color: var(--ink-2);
+  background: var(--paper);
+  border-radius: 999rpx;
+}
+
+/* 选图按钮：朱砂虚线框 */
 .pick-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-height: 480rpx;
-  border-radius: 28rpx;
-  border: 3rpx dashed var(--line, #cbd5e1);
-  background: var(--card);
+  margin-top: 40rpx;
+  min-height: 280rpx;
+  border-radius: 24rpx;
+  border: 3rpx dashed rgba(198, 64, 46, 0.5);
+  background: var(--seal-soft);
   box-sizing: border-box;
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease, background 0.2s ease;
 }
 
 .pick-btn-hover {
-  transform: scale(0.98);
+  transform: scale(0.985);
+  background: rgba(198, 64, 46, 0.14);
+}
+
+.pick-ring {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 50%;
+  background: var(--seal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6rpx 18rpx rgba(198, 64, 46, 0.35);
 }
 
 .pick-glyph {
-  font-size: 120rpx;
-  color: var(--seal);
+  font-size: 64rpx;
+  color: #fff;
   line-height: 1;
+  font-weight: 400;
 }
 
 .pick-hint {
   margin-top: 24rpx;
   font-size: 30rpx;
   color: var(--ink);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .pick-sub {
-  margin-top: 12rpx;
-  font-size: 24rpx;
-  color: var(--muted, #8a94a6);
+  margin-top: 10rpx;
+  font-size: 23rpx;
+  color: var(--ink-3);
+  letter-spacing: 1rpx;
 }
 
-/* ============ 已选图：画布 + 框选层 ============ */
-.canvas-box {
+/* ==================== 已选图：画布 ==================== */
+.edit-area {
+  margin-top: 24rpx;
+  animation: fade-up 0.4s ease both;
+}
+
+.canvas-card {
+  background: var(--card);
+  border-radius: 28rpx;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1rpx solid var(--hairline);
+}
+
+.canvas-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26rpx 32rpx;
+  border-bottom: 1rpx solid var(--hairline);
+}
+
+.canvas-title {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+}
+
+.dot {
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: var(--gold);
+}
+
+.dot-ok {
+  background: #3c9c5f;
+}
+
+.canvas-title-text {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.canvas-tip {
+  font-size: 22rpx;
+  color: var(--ink-3);
+}
+
+/* 视口：固定裁剪，wrap 在其内部缩放平移 */
+.canvas-viewport {
   position: relative;
   width: 100%;
-  border-radius: 20rpx;
   overflow: hidden;
-  background: var(--card);
+  background: #EFEEE8;
+}
+
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  transform-origin: 0 0;
 }
 
 .wm-img {
   display: block;
   width: 100%;
+  pointer-events: none; /* 触摸统一交给 wrap/角标处理 */
 }
 
-/* 框选标记：左上红柄 / 右下蓝柄 */
-.box-area {
+/* 选区矩形 */
+.box-dim {
   position: absolute;
-  left: 0;
-  top: 0;
-}
-
-.box-mark {
-  width: 56rpx;
-  height: 56rpx;
-  border-radius: 12rpx;
-  border-width: 6rpx;
-  border-style: solid;
   box-sizing: border-box;
-  box-shadow: var(--shadow);
+  min-width: 2px;
+  min-height: 2px;
+  background: rgba(37, 99, 235, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.9);
 }
 
-.box-mark-tl {
-  border-color: #e5484d;
-  background: rgba(229, 72, 77, 0.35);
+/* 角标：外层 34px 透明命中区（可拖范围大），内层 mark-dot 才是可见小色点 */
+.box-mark {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  margin-left: -17px;
+  margin-top: -17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.box-mark-br {
-  border-color: #2563eb;
-  background: rgba(37, 99, 235, 0.35);
+.mark-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.35);
 }
 
-/* ============ 操作区 ============ */
+.mark-dot-tl {
+  background: #e5484d;
+}
+
+.mark-dot-br {
+  background: #2563eb;
+}
+
+/* ==================== 操作区 ==================== */
 .actions {
   margin-top: 28rpx;
   display: flex;
@@ -97,52 +241,229 @@
 }
 
 .btn {
-  height: 92rpx;
-  border-radius: 46rpx;
+  height: 104rpx;
+  border-radius: 52rpx;
   font-size: 30rpx;
-  font-weight: 500;
+  font-weight: 600;
+  letter-spacing: 1rpx;
   display: flex;
   align-items: center;
   justify-content: center;
   border: none;
-  line-height: 92rpx;
+  line-height: 104rpx;
   padding: 0;
+  box-sizing: border-box;
+  box-shadow: var(--shadow);
 }
 
 .btn::after {
   border: none;
 }
 
-.btn-primary {
-  background: var(--seal);
+.btn-icon {
+  margin-right: 14rpx;
+  font-size: 34rpx;
+  line-height: 1;
+}
+
+/* 主操作：半透明天蓝玻璃质感（触发去水印的唯一强调） */
+.btn-sky {
+  background: linear-gradient(160deg, rgba(88, 175, 255, 0.88) 0%, rgba(46, 139, 255, 0.88) 48%, rgba(31, 111, 238, 0.88) 100%);
   color: #ffffff;
+  text-shadow: 0 1rpx 3rpx rgba(0, 40, 120, 0.35);
+  box-shadow:
+    0 14rpx 30rpx rgba(46, 139, 255, 0.40),
+    0 4rpx 12rpx rgba(31, 111, 238, 0.20),
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.32),
+    inset 0 -2rpx 0 rgba(0, 40, 120, 0.18);
 }
 
-.btn-plain {
+.btn-sky-hover {
+  transform: translateY(1rpx);
+  background: linear-gradient(160deg, rgba(78, 167, 255, 0.9) 0%, rgba(43, 136, 254, 0.9) 48%, rgba(29, 107, 235, 0.9) 100%);
+  box-shadow:
+    0 8rpx 18rpx rgba(46, 139, 255, 0.32),
+    0 2rpx 8rpx rgba(31, 111, 238, 0.16),
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.24),
+    inset 0 -2rpx 0 rgba(0, 40, 120, 0.12);
+}
+
+/* 次级（结果区）保留朱砂品牌色 */
+.btn-primary {
+  background: linear-gradient(135deg, var(--seal) 0%, var(--seal-deep) 100%);
+  color: #ffffff;
+  box-shadow: 0 10rpx 26rpx rgba(198, 64, 46, 0.35);
+}
+
+.btn-chunky {
+  flex: 1;
+  height: 96rpx;
+  line-height: 96rpx;
+}
+
+/* 主按钮：占满一行、加高，更醒目 */
+.btn-stretch {
+  width: 100%;
+  height: 112rpx;
+  line-height: 112rpx;
+  font-size: 32rpx;
+}
+
+.dark-theme .btn-sky {
+  box-shadow:
+    0 14rpx 30rpx rgba(46, 139, 255, 0.30),
+    0 4rpx 12rpx rgba(31, 111, 238, 0.16),
+    inset 0 2rpx 0 rgba(255, 255, 255, 0.22),
+    inset 0 -2rpx 0 rgba(0, 40, 120, 0.30);
+}
+
+.btn-hover {
+  opacity: 0.9;
+  transform: translateY(1rpx);
+}
+
+/* 次级文字操作行 */
+.op-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  padding: 8rpx 0 4rpx;
+}
+
+.op-link {
+  font-size: 26rpx;
+  color: var(--ink-2);
+  padding: 12rpx 8rpx;
+}
+
+.op-dot {
+  font-size: 26rpx;
+  color: var(--ink-3);
+}
+
+/* 处理中 */
+.busy-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+  padding: 36rpx 0;
+}
+
+.spinner {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 50%;
+  border: 6rpx solid var(--seal-soft);
+  border-top-color: var(--seal);
+  animation: spin 0.8s linear infinite;
+}
+
+.busy-text {
+  font-size: 26rpx;
+  color: var(--ink-3);
+  letter-spacing: 2rpx;
+}
+
+/* ==================== 结果卡 ==================== */
+.result-card {
   background: var(--card);
-  color: var(--ink);
-  border: 1rpx solid var(--line, #cbd5e1);
+  border-radius: 28rpx;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  border: 1rpx solid var(--hairline);
+  animation: fade-up 0.4s ease both;
 }
 
-.busy-tip {
-  text-align: center;
-  color: var(--muted, #8a94a6);
-  font-size: 28rpx;
-  padding: 20rpx 0;
+.result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26rpx 32rpx;
+  border-bottom: 1rpx solid var(--hairline);
 }
 
-/* ============ 结果区 ============ */
-.result {
-  margin-top: 24rpx;
-}
-
-.result-label {
-  font-size: 28rpx;
-  color: var(--muted, #8a94a6);
-  margin-bottom: 16rpx;
+.result-stamp {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 8rpx;
+  background: #3c9c5f;
+  color: #fff;
+  font-size: 30rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(3deg);
+  box-shadow: 0 4rpx 12rpx rgba(60, 156, 95, 0.35);
 }
 
 .result-img {
+  display: block;
   width: 100%;
-  border-radius: 20rpx;
+  padding: 28rpx;
+  box-sizing: border-box;
+  border-radius: 40rpx;
+}
+
+.result-foot {
+  display: flex;
+  align-items: center;
+  gap: 28rpx;
+  padding: 0 32rpx 32rpx;
+  padding-top: 28rpx;
+  border-top: 1rpx solid var(--hairline);
+}
+
+.result-another {
+  font-size: 27rpx;
+  color: var(--ink-3);
+  letter-spacing: 1rpx;
+  padding: 20rpx 0;
+}
+
+/* ==================== 动效 ==================== */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-card,
+  .edit-area,
+  .result-card {
+    animation: none !important;
+  }
+}
+
+/* ==================== Dark Theme ==================== */
+.dark-theme,
+.dark-theme page {
+  --paper: #13170F;
+  --card: #1C2117;
+  --ink: #E9ECE2;
+  --ink-2: #A7AC9C;
+  --ink-3: #6C7266;
+  --seal: #E25A45;
+  --seal-deep: #C83F2C;
+  --seal-soft: rgba(226, 90, 69, 0.16);
+  --gold: #C6A25C;
+  --hairline: #2A2F23;
+  --shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.3), 0 14rpx 34rpx rgba(0, 0, 0, 0.28);
+
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.dark-theme .cap-chip {
+  background: var(--paper);
+}
+
+.dark-theme .canvas-viewport {
+  background: #0E120C;
 }

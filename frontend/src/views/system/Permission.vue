@@ -156,7 +156,8 @@
           </el-col>
         </el-row>
 
-        <el-row :gutter="20" v-if="permissionForm.type === 1">
+        <!-- 路由路径/组件路径仅菜单需要：route.js 只对 type=菜单(2) 且有 component 时生成路由 -->
+        <el-row :gutter="20" v-if="permissionForm.type === 2">
           <el-col :span="12">
             <el-form-item label="路由路径" prop="path">
               <el-input v-model="permissionForm.path" placeholder="请输入路由路径" />
@@ -169,7 +170,8 @@
           </el-col>
         </el-row>
 
-        <el-row :gutter="20" v-if="permissionForm.type === 1">
+        <!-- 图标/是否可见：目录与菜单共用（按钮 type=3 不需要） -->
+        <el-row :gutter="20" v-if="permissionForm.type === 1 || permissionForm.type === 2">
           <el-col :span="12">
             <el-form-item label="图标" prop="icon">
               <el-input v-model="permissionForm.icon" placeholder="请输入图标名称">

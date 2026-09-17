@@ -98,6 +98,17 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 请求体解析失败（JSON 无效/字段类型不匹配等）
+     * <p>缺此分支会落到兜底 Exception → 返回 500 系统内部错误，难以排查。</p>
+     */
+    @ExceptionHandler(org.springframework.http.converter.HttpMessageNotReadableException.class)
+    public Result<Void> handleHttpMessageNotReadableException(
+            org.springframework.http.converter.HttpMessageNotReadableException e) {
+        log.error("请求体解析失败", e);
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), "请求参数格式错误，请检查后重试");
+    }
+
+    /**
      * 权限不足异常
      */
     @ExceptionHandler(AccessDeniedException.class)

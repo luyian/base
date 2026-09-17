@@ -31,11 +31,17 @@ Page({
   },
 
   onLoad() {
+    this._scrollTop = 0;
     this.applyTheme();
   },
 
   onShow() {
     this.applyTheme();
+  },
+
+  // 页面滚动：记录位移，供 viewport 坐标实时换算
+  onPageScroll(e) {
+    this._scrollTop = e.scrollTop;
   },
 
   applyTheme() {
@@ -84,7 +90,8 @@ Page({
         const bdW = vpW;
         const bdH = vpH;
         this._vpLeft = res.left;
-        this._vpTop = res.top;
+        // 记录 viewport 相对文档顶部的坐标，滚动时可按 scrollTop 实时还原当前视口位置
+        this._docTop = res.top + (this._scrollTop || 0);
         this.setData({ bdW, bdH });
         // 初始选区：紧凑包裹右下角水印（常见位置），留出大片空白供平移画面
         this._updateBox(Math.round(bdW * 0.72), Math.round(bdH * 0.78), Math.round(bdW * 0.96), Math.round(bdH * 0.97));
@@ -94,13 +101,18 @@ Page({
 
   // ==================== 触摸手势 ====================
 
+  // 当前 viewport 相对视口顶部的 Y 坐标（按滚动位移实时换算）
+  _getVpTop() {
+    return this._docTop - (this._scrollTop || 0);
+  },
+
   // 触摸物理坐标 → 画布逻辑坐标（除以缩放、减平移）
   _logic(e) {
     const { tx, ty, s } = this.data;
     const t = e.touches[0];
     return [
       (t.clientX - this._vpLeft - tx) / s,
-      (t.clientY - this._vpTop - ty) / s
+      (t.clientY - this._getVpTop() - ty) / s
     ];
   },
 
@@ -148,10 +160,10 @@ Page({
       const mid = this._mid(t);
       // 起始中点对应的逻辑坐标（用起始时的 t 与 s，保证 s 不变时 tx 随中点位移平移）
       const lx = (g.startMid.x - this._vpLeft - g.startTx) / g.startS;
-      const ly = (g.startMid.y - this._vpTop - g.startTy) / g.startS;
+      const ly = (g.startMid.y - this._getVpTop() - g.startTy) / g.startS;
       this._setPan(
         mid.x - this._vpLeft - newS * lx,
-        mid.y - this._vpTop - newS * ly,
+        mid.y - this._getVpTop() - newS * ly,
         newS
       );
       return;

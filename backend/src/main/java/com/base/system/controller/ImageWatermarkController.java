@@ -36,7 +36,7 @@ public class ImageWatermarkController {
      */
     @ApiOperation("去除图片水印")
     @PostMapping("/remove-watermark")
-    @PreAuthorize("hasAuthority('system:fileConvert:use')")
+    @PreAuthorize("hasAuthority('system:imageWatermark:use')")
     public Result<Map<String, Object>> removeWatermark(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "region", required = false) String region,

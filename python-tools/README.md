@@ -72,6 +72,28 @@ systemctl enable python-tools
 systemctl start python-tools
 ```
 
+### 图片去水印依赖（可选服务能力）
+
+接口 `POST /api/image/remove-watermark` 依赖 `remove-ai-watermarks`（已在 `requirements.txt`）。它可按部署方式选择性的安装方式：
+
+- **使用独立 venv（推荐）**：`pip install -r requirements.txt` 时已一并安装，无需额外操作。
+- **不使用 venv（系统全局 Python 直接跑）**：直接用跑服务的同一套 Python 全局安装即可：
+
+  ```bash
+  # 系统全局安装（无需创建虚拟环境）
+  pip install "remove-ai-watermarks[visible]"
+
+  # 重启服务使其生效
+  systemctl restart python-tools      # 或重新执行 python start.py
+  ```
+
+要点：
+
+- 服务启动时会自动按「PATH → 当前运行 Python 的 bin 目录」定位 `remove-ai-watermarks` 可执行文件，无需手动配置路径。
+- 首次安装/运行需服务器可联网（下载 opencv 等依赖）。
+- 若系统 Python 权限受限，用 `sudo -H pip install ...` 或 `pip install --user ...`；`--user` 装到用户目录也能被自动定位到。
+- 手动框选擦除：小程序端框选水印区域，后端自动换算 `region` 传给本接口。
+
 ### 方式二：Docker 部署
 
 ```dockerfile
@@ -119,6 +141,12 @@ ai:
 |------|------|------|
 | POST | `/api/pdf/to-word` | PDF 转 Word（multipart 上传，返回 docx 文件流） |
 
+### 图片工具
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/api/image/remove-watermark` | 去除图片水印（multipart 上传，返回图片文件流；`region=x,y,w,h` 手动框选，`backend=cv2/migan/lama`） |
+
 ### 股票数据
 
 | 方法 | 路径 | 说明 |
@@ -161,10 +189,12 @@ python-tools/
 │   ├── schema.py            # 统一响应模型
 │   ├── routers/
 │   │   ├── pdf.py           # PDF 工具接口
+│   │   ├── image.py         # 图片工具接口（去水印）
 │   │   └── stock.py         # 股票数据接口
 │   └── services/
 │       ├── em_helper.py     # 东财公共模块（限流+会话）
 │       ├── pdf_service.py   # PDF 转换逻辑
+│       ├── watermark_service.py # 图片去水印逻辑
 │       └── stock_service.py # 股票数据查询
 ├── temp/                    # 临时文件（自动创建，gitignore）
 ├── requirements.txt         # 依赖清单

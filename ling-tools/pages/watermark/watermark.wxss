@@ -1,0 +1,148 @@
+/* pages/watermark/watermark.wxss - 图片去水印 */
+.page-body {
+  padding: 30rpx;
+  padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+}
+
+/* ============ 未选图：选择按钮 ============ */
+.pick-area {
+  display: flex;
+  justify-content: center;
+}
+
+.pick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 480rpx;
+  border-radius: 28rpx;
+  border: 3rpx dashed var(--line, #cbd5e1);
+  background: var(--card);
+  box-sizing: border-box;
+  transition: transform 0.12s ease;
+}
+
+.pick-btn-hover {
+  transform: scale(0.98);
+}
+
+.pick-glyph {
+  font-size: 120rpx;
+  color: var(--seal);
+  line-height: 1;
+}
+
+.pick-hint {
+  margin-top: 24rpx;
+  font-size: 30rpx;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.pick-sub {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  color: var(--muted, #8a94a6);
+}
+
+/* ============ 已选图：画布 + 框选层 ============ */
+.canvas-box {
+  position: relative;
+  width: 100%;
+  border-radius: 20rpx;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.wm-img {
+  display: block;
+  width: 100%;
+}
+
+/* 框选标记：左上红柄 / 右下蓝柄 */
+.box-area {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.box-mark {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 12rpx;
+  border-width: 6rpx;
+  border-style: solid;
+  box-sizing: border-box;
+  box-shadow: var(--shadow);
+}
+
+.box-mark-tl {
+  border-color: #e5484d;
+  background: rgba(229, 72, 77, 0.35);
+}
+
+.box-mark-br {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.35);
+}
+
+/* ============ 操作区 ============ */
+.actions {
+  margin-top: 28rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.btn {
+  height: 92rpx;
+  border-radius: 46rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  line-height: 92rpx;
+  padding: 0;
+}
+
+.btn::after {
+  border: none;
+}
+
+.btn-primary {
+  background: var(--seal);
+  color: #ffffff;
+}
+
+.btn-plain {
+  background: var(--card);
+  color: var(--ink);
+  border: 1rpx solid var(--line, #cbd5e1);
+}
+
+.busy-tip {
+  text-align: center;
+  color: var(--muted, #8a94a6);
+  font-size: 28rpx;
+  padding: 20rpx 0;
+}
+
+/* ============ 结果区 ============ */
+.result {
+  margin-top: 24rpx;
+}
+
+.result-label {
+  font-size: 28rpx;
+  color: var(--muted, #8a94a6);
+  margin-bottom: 16rpx;
+}
+
+.result-img {
+  width: 100%;
+  border-radius: 20rpx;
+}

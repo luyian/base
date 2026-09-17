@@ -125,5 +125,18 @@ module.exports = {
    * @param {number} quality JPEG 质量
    */
   finalizeScanDoc: (docId, maxSide, quality) =>
-    request.post(`/system/scan-doc/${docId}/finalize?maxSide=${maxSide}&quality=${quality}`, {}).then((res) => res.data)
+    request.post(`/system/scan-doc/${docId}/finalize?maxSide=${maxSide}&quality=${quality}`, {}).then((res) => res.data),
+
+  // ==================== 图片去水印 ====================
+
+  /**
+   * 去除图片水印
+   * @param {string} filePath 图片本地路径
+   * @param {object} formData 额外表单字段
+   * @param {string} [formData.region] 手动框选区域 "x,y,w,h"，为空则自动识别
+   * @param {string} [formData.backend] 擦除后端，默认后端兜底 cv2
+   * @returns {Promise<{sourceFile, targetFile}>}  原始图与去水印结果文件信息
+   */
+  removeWatermark: (filePath, formData = {}) =>
+    wxUpload('/system/image/remove-watermark', filePath, 'file', formData)
 };

@@ -1,0 +1,73 @@
+<!--pages/watermark/watermark.wxml - 图片去水印（自动识别 + 手动框选）-->
+<view class="container {{themeClass}}">
+  <nav-bar title="图片去水印" />
+
+  <view class="page-body">
+    <!-- 未选图：选择按钮 -->
+    <view class="pick-area" wx:if="{{!srcPath}}">
+      <view class="pick-btn" hover-class="pick-btn-hover" bindtap="chooseImage">
+        <text class="pick-glyph">＋</text>
+        <text class="pick-hint">选择需要去水印的图片</text>
+        <text class="pick-sub">支持 JPG / PNG / BMP / WebP，小于 50MB</text>
+      </view>
+    </view>
+
+    <!-- 已选图 -->
+    <view class="edit-area" wx:elif="{{srcPath}}">
+      <view class="canvas-box">
+        <image
+          class="wm-img"
+          src="{{srcPath}}"
+          mode="widthFix"
+          show-menu-by-longpress
+          bindload="onImgLoad"
+        />
+        <!-- 手动框选层（覆盖在图片上，与图片同宽高） -->
+        <movable-area
+          class="box-area"
+          style="width:100%; height:{{bdH}}px;"
+          wx:if="{{showBox}}"
+        >
+          <movable-view
+            class="box-mark box-mark-tl"
+            style="left:0; top:0;"
+            x="{{boxTLX}}" y="{{boxTLY}}"
+            direction="all" bindchange="onTLMove"
+          ></movable-view>
+          <movable-view
+            class="box-mark box-mark-br"
+            style="left:0; top:0;"
+            x="{{boxBRX}}" y="{{boxBRY}}"
+            direction="all" bindchange="onBRMove"
+          ></movable-view>
+        </movable-area>
+      </view>
+
+      <view class="actions" wx:if="{{busy}}">
+        <text class="busy-tip">正在处理，请稍候…</text>
+      </view>
+
+      <!-- 未处理时操作 -->
+      <view class="actions" wx:elif="{{!resultUrl}}">
+        <block wx:if="{{!showBox}}">
+          <button class="btn btn-primary" bindtap="autoClean">自动识别去水印</button>
+          <button class="btn btn-plain" bindtap="startBox">手动框选擦除</button>
+        </block>
+        <block wx:else>
+          <button class="btn btn-primary" bindtap="confirmBox">确认框选擦除</button>
+          <button class="btn btn-plain" bindtap="cancelBox">取消</button>
+        </block>
+      </view>
+
+      <!-- 结果展示 -->
+      <view class="result" wx:else>
+        <view class="result-label">处理结果</view>
+        <image class="result-img" src="{{resultUrl}}" mode="widthFix" show-menu-by-longpress />
+        <view class="actions">
+          <button class="btn btn-primary" bindtap="saveImage">保存到相册</button>
+          <button class="btn btn-plain" bindtap="processAnother">再处理一张</button>
+        </view>
+      </view>
+    </view>
+  </view>
+</view>

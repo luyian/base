@@ -20,6 +20,15 @@
       </view>
     </view>
 
+    <!-- 图片工具区 -->
+    <view class="desktop-label">图片工具</view>
+    <view class="app-grid">
+      <view class="app-icon" bindtap="goToFileTab" data-tab="watermark">
+        <view class="app-glyph"><text class="glyph-text">✨</text></view>
+        <text class="app-name">去水印</text>
+      </view>
+    </view>
+
     <!-- 底部版本 -->
     <view class="footer">
       <text class="footer-text">元灵工具箱 · v1.0</text>

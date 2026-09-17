@@ -6,6 +6,7 @@
     "pages/pdfconvert/pdfconvert",
     "pages/pdfcompress/pdfcompress",
     "pages/pdfarrange/pdfarrange",
+    "pages/watermark/watermark",
     "pages/checkin/checkin",
     "pages/profile/profile"
   ],

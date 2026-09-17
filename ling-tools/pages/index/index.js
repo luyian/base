@@ -33,7 +33,8 @@ Page({
     const urls = {
       compress: '/pages/pdfcompress/pdfcompress',
       arrange: '/pages/pdfarrange/pdfarrange',
-      convert: '/pages/pdfconvert/pdfconvert'
+      convert: '/pages/pdfconvert/pdfconvert',
+      watermark: '/pages/watermark/watermark'
     };
     wx.navigateTo({ url: urls[tab] || urls.convert });
   }

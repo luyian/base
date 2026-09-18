@@ -78,17 +78,15 @@ Page({
     });
   },
 
-  // 图片渲染完成：测量视口基准 + 初始化画布与选区
+  // 图片渲染完成：测量视口宽度 + 初始化画布与选区
   onImgLoad() {
     this.createSelectorQuery()
       .select('.canvas-viewport')
       .boundingClientRect((res) => {
         if (!res) return;
-        const vpW = res.width;
-        const vpH = res.height;
-        // 视口内没有内边距时，图片基准 = 视口宽高
-        const bdW = vpW;
-        const bdH = vpH;
+        const bdW = res.width;
+        // 图片 widthFix 满宽，高度 = 宽 × 原图宽高比（确定性强，不依赖首次加载未稳定的高度）
+        const bdH = Math.round((bdW * this.data.realH) / this.data.realW);
         this._vpLeft = res.left;
         // 记录 viewport 相对文档顶部的坐标，滚动时可按 scrollTop 实时还原当前视口位置
         this._docTop = res.top + (this._scrollTop || 0);

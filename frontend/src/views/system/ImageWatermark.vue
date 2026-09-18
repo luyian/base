@@ -199,7 +199,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Picture, UploadFilled, Download } from '@element-plus/icons-vue'
 import { removeWatermark } from '@/api/imageWatermark'
@@ -252,6 +252,7 @@ const drawStart = ref(null)
 const moving = ref(null) // 移动选区时：{ startX, startY, bx, by }
 const cornerDrag = ref(null) // 拖角：{ type, bx, by, bw, bh }
 const canvasHover = ref(false)
+const resizeObserver = ref(null)
 
 const hasBox = computed(() => !!box.value && box.value.w > 0 && box.value.h > 0)
 
@@ -270,10 +271,32 @@ function onImgLoad(e) {
   const img = e.target
   realW.value = img.naturalWidth
   realH.value = img.naturalHeight
-  // stage 尺寸 = 图片渲染尺寸（等比缩放后）
-  displayW.value = img.getBoundingClientRect().width
-  displayH.value = img.getBoundingClientRect().height
+  // 用 stage 实测宽度 × 原图宽高比 推算渲染尺寸（确定性强，不受加载时序影响）
+  measureStage()
+  watchStage()
 }
+
+// 按 stage 实际宽度等比推算显示尺寸
+function measureStage() {
+  const w = stageRef.value?.clientWidth || 0
+  if (!w || !realW.value || !realH.value) return
+  displayW.value = w
+  displayH.value = Math.round((w * realH.value) / realW.value)
+}
+
+// 监听 stage 尺寸变化（换图、窗口缩放、容器宽度变化时校准）
+function watchStage() {
+  if (!stageRef.value) return
+  if (resizeObserver.value) {
+    resizeObserver.value.disconnect()
+  }
+  resizeObserver.value = new ResizeObserver(measureStage)
+  resizeObserver.value.observe(stageRef.value)
+}
+
+onBeforeUnmount(() => {
+  if (resizeObserver.value) resizeObserver.value.disconnect()
+})
 
 // 相对 stage 的坐标
 function stagePos(e) {
@@ -556,9 +579,10 @@ function formatSize(bytes) {
   position: relative;
   border: 1px solid #e4e7ed;
   border-radius: 6px;
-  overflow: hidden;
+  overflow: auto;
   background: #f5f7fa;
   cursor: crosshair;
+  max-height: calc(100vh - 280px);
 }
 
 .stage-relative {

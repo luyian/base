@@ -7,6 +7,10 @@ import com.base.common.result.ResultCode;
 import com.base.system.dto.*;
 import com.base.system.entity.SysUser;
 import com.base.system.entity.SysUserRole;
+import com.base.system.entity.Dept;
+import com.base.system.entity.Role;
+import com.base.system.mapper.DeptMapper;
+import com.base.system.mapper.RoleMapper;
 import com.base.system.mapper.SysUserMapper;
 import com.base.system.mapper.SysUserRoleMapper;
 import com.base.system.service.UserService;
@@ -38,6 +42,12 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private SysUserRoleMapper userRoleMapper;
+
+    @Autowired
+    private DeptMapper deptMapper;
+
+    @Autowired
+    private RoleMapper roleMapper;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -97,8 +107,11 @@ public class UserServiceImpl implements UserService {
             // 转换头像 COS key 为预签名 URL
             resolveAvatar(user, response);
 
-            // TODO: 查询部门名称
-            // TODO: 查询角色列表
+            // 查询部门名称
+            response.setDeptName(resolveDeptName(user.getDeptId()));
+
+            // 查询角色名称列表
+            response.setRoleNames(resolveRoleNames(user.getId()));
 
             return response;
         }).collect(Collectors.toList());
@@ -133,8 +146,11 @@ public class UserServiceImpl implements UserService {
         List<Long> roleIds = getUserRoleIds(id);
         response.setRoleIds(roleIds);
 
-        // TODO: 查询部门名称
-        // TODO: 查询角色名称列表
+        // 查询部门名称
+        response.setDeptName(resolveDeptName(user.getDeptId()));
+
+        // 查询角色名称列表
+        response.setRoleNames(resolveRoleNames(id));
 
         return response;
     }
@@ -383,5 +399,25 @@ public class UserServiceImpl implements UserService {
         if (avatar != null && !avatar.isEmpty() && !avatar.startsWith("http")) {
             response.setAvatar(cosService.getFileUrl(avatar));
         }
+    }
+
+    /**
+     * 根据部门ID查询部门名称
+     */
+    private String resolveDeptName(Long deptId) {
+        if (deptId == null) {
+            return null;
+        }
+        Dept dept = deptMapper.selectById(deptId);
+        return dept == null ? null : dept.getDeptName();
+    }
+
+    /**
+     * 根据用户ID查询其角色名称列表
+     */
+    private List<String> resolveRoleNames(Long userId) {
+        return roleMapper.selectRolesByUserId(userId).stream()
+                .map(Role::getRoleName)
+                .collect(Collectors.toList());
     }
 }

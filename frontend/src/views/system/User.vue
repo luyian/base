@@ -53,10 +53,10 @@
           </template>
         </el-table-column>
         <el-table-column prop="deptName" label="部门" width="150" align="center" />
-        <el-table-column prop="roles" label="角色" width="200" align="center">
+        <el-table-column prop="roleNames" label="角色" width="200" align="center">
           <template #default="{ row }">
-            <el-tag v-for="role in row.roles" :key="role.id" size="small" style="margin-right: 5px">
-              {{ role.roleName }}
+            <el-tag v-for="roleName in row.roleNames" :key="roleName" size="small" style="margin-right: 5px">
+              {{ roleName }}
             </el-tag>
           </template>
         </el-table-column>
@@ -130,14 +130,20 @@
           </el-radio-group>
         </el-form-item>
         <el-form-item label="部门" prop="deptId">
-          <el-select v-model="form.deptId" placeholder="请选择部门" clearable style="width: 100%">
-            <el-option
-              v-for="dept in deptList"
-              :key="dept.id"
-              :label="dept.name"
-              :value="dept.id"
-            />
-          </el-select>
+          <el-tree-select
+            v-model="form.deptId"
+            :data="deptList"
+            :props="{ label: 'deptName', children: 'children' }"
+            node-key="id"
+            check-strictly
+            :render-after-expand="false"
+            default-expand-all
+            fit-input-width
+            popper-class="dept-tree-select"
+            clearable
+            placeholder="请选择部门"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="状态" prop="status">
           <el-radio-group v-model="form.status">
@@ -494,7 +500,7 @@ onMounted(() => {
   loadDeptList()
 })
 
-// 获取部门列表
+// 获取部门列表（保留树形结构，供 el-tree-select 展示）
 const loadDeptList = async () => {
   try {
     const { data } = await getDeptTree()
@@ -518,5 +524,19 @@ const loadDeptList = async () => {
 
 .el-pagination {
   display: flex;
+}
+</style>
+
+<!-- 部门树下拉（popper 挂载到 body，需非 scoped 样式）：每个节点独占一行、文字完整显示 -->
+<style>
+.dept-tree-select .el-tree-node__content {
+  height: auto;
+  min-height: 34px;
+  padding-right: 8px;
+}
+.dept-tree-select .el-tree-node__label {
+  white-space: normal;
+  word-break: break-all;
+  line-height: 1.4;
 }
 </style>

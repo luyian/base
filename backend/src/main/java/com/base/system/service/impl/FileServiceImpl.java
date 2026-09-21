@@ -207,6 +207,64 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public SysFile uploadBytes(byte[] data, String originalName, String fileGroup, String fileDesc, String fileType) {
+        long startTime = System.currentTimeMillis();
+        try {
+            // 上传到 COS（服务端内部生成场景，无真实上传请求，IP 记录留空）
+            String fileExt = getFileExt(originalName);
+            String filePath = cosService.uploadFile(data, fileGroup, fileExt);
+            long fileSize = data == null ? 0 : data.length;
+
+            // 保存文件记录
+            Long currentUserId = SecurityUtils.getCurrentUserId();
+            String currentUsername = SecurityUtils.getCurrentUsername();
+
+            SysFile sysFile = new SysFile();
+            sysFile.setFileName(filePath);
+            sysFile.setOriginalName(originalName);
+            sysFile.setFileExt(fileExt);
+            sysFile.setFileSize(fileSize);
+            sysFile.setFileType(fileType);
+            sysFile.setFilePath(filePath);
+            sysFile.setFileUrl(filePath);
+            sysFile.setFileGroup(fileGroup);
+            sysFile.setFileDesc(fileDesc);
+            sysFile.setStatus(1);
+            sysFile.setCreateTime(LocalDateTime.now());
+            sysFile.setUpdateTime(LocalDateTime.now());
+            if (currentUserId != null) {
+                sysFile.setUploadUserId(currentUserId);
+                sysFile.setUploadUserName(currentUsername);
+            }
+            sysFileMapper.insert(sysFile);
+
+            // 记录日志（操作类型 1 上传）
+            long executeTime = System.currentTimeMillis() - startTime;
+            SysFileLog fileLog = new SysFileLog();
+            fileLog.setFileId(sysFile.getId());
+            fileLog.setFileName(originalName);
+            fileLog.setFilePath(filePath);
+            fileLog.setFileSize(fileSize);
+            fileLog.setOperationType(1);
+            fileLog.setStatus(1);
+            fileLog.setExecuteTime((int) executeTime);
+            fileLog.setCreateTime(LocalDateTime.now());
+            if (currentUserId != null) {
+                fileLog.setOperatorId(currentUserId);
+                fileLog.setOperatorName(currentUsername);
+            }
+            sysFileLogMapper.insert(fileLog);
+
+            logger.info("服务端字节文件上传成功: {}, 分组: {}, 耗时: {}ms", originalName, fileGroup, executeTime);
+            return sysFile;
+        } catch (Exception e) {
+            logger.error("服务端字节文件上传失败: {}", originalName, e);
+            throw new RuntimeException("文件上传失败: " + e.getMessage());
+        }
+    }
+
+    @Override
     public SysFile getFileById(Long id) {
         SysFile file = sysFileMapper.selectById(id);
         resolveFileUrl(file);

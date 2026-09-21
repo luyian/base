@@ -5,7 +5,9 @@ import router from '@/router'
 // 创建 axios 实例
 const service = axios.create({
   baseURL: '/api',
-  timeout: 10000
+  // 默认 30s：普通查询接口实测均 <1s，放宽避免偶发慢请求/首屏并发被 10s 默认误掐；
+  // 大请求（生成/文件类）在具体 api 里已单独设更长 timeout（60s~120s），不受此默认影响
+  timeout: 30000
 })
 
 // 401 状态防抖：避免多个请求同时触发多次"未授权"提示

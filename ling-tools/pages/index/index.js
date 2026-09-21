@@ -51,5 +51,10 @@ Page({
       watermark: '/pages/watermark/watermark'
     };
     wx.navigateTo({ url: urls[tab] || urls.convert });
+  },
+
+  // 条码工具 → 扫码 + 编辑页
+  goToBarcode() {
+    wx.navigateTo({ url: '/pages/barcode/barcode' });
   }
 });

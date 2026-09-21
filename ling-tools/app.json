@@ -8,6 +8,7 @@
     "pages/pdfarrange/pdfarrange",
     "pages/watermark/watermark",
     "pages/checkin/checkin",
+    "pages/barcode/barcode",
     "pages/profile/profile"
   ],
   "window": {

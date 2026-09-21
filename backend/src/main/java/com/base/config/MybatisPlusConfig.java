@@ -26,7 +26,9 @@ import org.springframework.context.annotation.Configuration;
     "com.base.approval.mapper",
     "com.base.dev.mapper",
     "com.base.gaokao.mapper",
-    "com.base.checkin.mapper"
+    "com.base.checkin.mapper",
+    "com.base.barcode.mapper",
+    "com.base.product.mapper"
 })
 public class MybatisPlusConfig {
 

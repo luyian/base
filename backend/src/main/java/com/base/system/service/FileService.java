@@ -71,6 +71,18 @@ public interface FileService {
     void batchDownloadFiles(List<Long> ids, HttpServletResponse response, HttpServletRequest request);
 
     /**
+     * 上传字节流到 COS 并记录系统文件（供服务端内部生成类文件使用，如条码图片）
+     *
+     * @param data         文件字节数据
+     * @param originalName 原始文件名
+     * @param fileGroup    文件分组
+     * @param fileDesc     文件描述
+     * @param fileType     文件 MIME 类型（如 image/png）
+     * @return 文件信息（filePath/fileUrl 为 COS Key）
+     */
+    SysFile uploadBytes(byte[] data, String originalName, String fileGroup, String fileDesc, String fileType);
+
+    /**
      * 根据 COS Key 获取文件信息
      *
      * @param cosKey COS 对象 key（即 filePath 字段）

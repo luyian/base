@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.config import settings
-from app.routers import image, pdf, stock
+from app.routers import barcode, image, pdf, stock
 from app.schema import Result
 
 
@@ -54,4 +54,5 @@ async def health_check() -> Result:
 # 注册路由
 app.include_router(pdf.router, prefix="/api/pdf", tags=["PDF工具"])
 app.include_router(image.router, prefix="/api/image", tags=["图片工具"])
+app.include_router(barcode.router, prefix="/api/barcode", tags=["条码识别"])
 app.include_router(stock.router, prefix="/api/stock", tags=["股票数据"])

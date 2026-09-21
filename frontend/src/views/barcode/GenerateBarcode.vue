@@ -89,13 +89,15 @@
         </div>
       </div>
 
-      <div v-if="total > pageSize" class="pager-row">
+      <div v-if="total > 0" class="pager-row">
         <el-pagination
           background
-          layout="prev, pager, next, total"
+          layout="total, sizes, prev, pager, next, jumper"
           :current-page="page"
           :page-size="pageSize"
+          :page-sizes="pageSizeOptions"
           :total="total"
+          @size-change="handleSizeChange"
           @current-change="handlePageChange"
         />
       </div>
@@ -115,7 +117,8 @@ const activeType = ref('QR')
 const genLoading = ref(false)
 const listLoading = ref(false)
 const page = ref(1)
-const pageSize = ref(12)
+const pageSize = ref(10)
+const pageSizeOptions = [10, 20, 50, 100]
 const total = ref(0)
 const records = ref([])
 const boundFilter = ref(null)
@@ -312,6 +315,12 @@ function handleSearch() {
 
 function handlePageChange(p) {
   page.value = p
+  loadList()
+}
+
+function handleSizeChange(size) {
+  pageSize.value = size
+  page.value = 1
   loadList()
 }
 

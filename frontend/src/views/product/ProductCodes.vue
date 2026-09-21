@@ -2,7 +2,20 @@
   <div class="product-codes">
     <!-- 已有条码列表 -->
     <el-table :data="codeList" border stripe size="small" style="margin-bottom: 16px">
-      <el-table-column prop="code" label="条码内容" min-width="180" show-overflow-tooltip />
+      <el-table-column label="条码图" width="90" align="center">
+        <template #default="{ row }">
+          <el-image
+            v-if="row.fileUrl"
+            :src="row.fileUrl"
+            :preview-src-list="[row.fileUrl]"
+            preview-teleported
+            fit="contain"
+            style="width: 56px; height: 56px"
+          />
+          <el-tag v-else type="info" size="small">无图</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="code" label="条码内容" min-width="170" show-overflow-tooltip />
       <el-table-column label="类型" width="80">
         <template #default="{ row }">
           <el-tag :type="row.type === 2 ? 'warning' : ''" size="small">

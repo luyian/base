@@ -42,6 +42,17 @@
     <el-form-item label="备注">
       <el-input v-model="form.remark" type="textarea" :rows="2" placeholder="备注" maxlength="200" />
     </el-form-item>
+
+    <!-- 编辑态回显已绑定条码/二维码（含图片，可查看大图、可解绑） -->
+    <el-collapse v-if="props.isEdit && props.productId" class="barcode-collapse">
+      <el-collapse-item>
+        <template #title>
+          <span class="collapse-title">商品条码 / 二维码（点击展开查看）</span>
+        </template>
+        <ProductCodes :product-id="props.productId" />
+      </el-collapse-item>
+    </el-collapse>
+
     <div class="dialog-footer">
       <el-button @click="$emit('cancel')">取消</el-button>
       <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
@@ -53,6 +64,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getProduct, createProduct, updateProduct } from '@/api/product'
+import ProductCodes from './ProductCodes.vue'
 
 const props = defineProps({
   productId: { type: Number, default: null },
@@ -127,5 +139,15 @@ async function handleSave() {
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
+}
+.barcode-collapse {
+  margin-bottom: 16px;
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+}
+.collapse-title {
+  font-weight: 600;
+  color: #303133;
+  font-size: 14px;
 }
 </style>

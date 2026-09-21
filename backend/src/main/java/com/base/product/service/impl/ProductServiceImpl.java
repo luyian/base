@@ -7,12 +7,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.base.barcode.entity.Barcode;
 import com.base.barcode.mapper.BarcodeMapper;
 import com.base.common.exception.BusinessException;
+import com.base.common.service.CosService;
 import com.base.product.dto.ProductBarcodeResponse;
 import com.base.product.dto.ProductRequest;
 import com.base.product.dto.ProductResponse;
 import com.base.product.entity.Product;
 import com.base.product.mapper.ProductMapper;
 import com.base.product.service.ProductService;
+import com.base.system.entity.SysFile;
+import com.base.system.service.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -55,6 +58,8 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductMapper productMapper;
     private final BarcodeMapper barcodeMapper;
+    private final FileService fileService;
+    private final CosService cosService;
 
     @Override
     public IPage<ProductResponse> pageProducts(Long userId, String name, long page, long size) {
@@ -290,7 +295,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /**
-     * 条码实体转响应
+     * 条码实体转响应（回显条码图片地址）
      */
     private ProductBarcodeResponse toBarcodeResponse(Barcode barcode) {
         ProductBarcodeResponse response = new ProductBarcodeResponse();
@@ -298,7 +303,22 @@ public class ProductServiceImpl implements ProductService {
         response.setCode(barcode.getCode());
         response.setType(barcode.getType() != null ? barcode.getType() : TYPE_CODE128);
         response.setSource(barcode.getSource() != null ? barcode.getSource() : SOURCE_GENERATED);
+        response.setFileUrl(resolveBarcodeFileUrl(barcode.getFileId()));
         response.setCreateTime(barcode.getCreateTime());
         return response;
+    }
+
+    /**
+     * 据条码归档文件ID解析预签名图片 URL（file_id → sys_file.file_path → COS URL）
+     */
+    private String resolveBarcodeFileUrl(Long fileId) {
+        if (fileId == null) {
+            return null;
+        }
+        SysFile sysFile = fileService.getFileById(fileId);
+        if (sysFile == null || sysFile.getFilePath() == null) {
+            return null;
+        }
+        return cosService.getFileUrl(sysFile.getFilePath());
     }
 }

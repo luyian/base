@@ -41,6 +41,12 @@ public class ProductBarcodeResponse {
     private Integer source;
 
     /**
+     * 条码/二维码图片访问 URL（COS 预签名地址，可空）
+     */
+    @ApiModelProperty("条码/二维码图片访问URL")
+    private String fileUrl;
+
+    /**
      * 创建时间
      */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

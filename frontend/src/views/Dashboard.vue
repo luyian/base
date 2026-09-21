@@ -454,22 +454,31 @@ function initOperationChart() {
 
 let refreshTimer = null
 
+// resize 回调保存为命名引用，卸载时据此 removeEventListener，避免对已 dispose 实例调用 resize 触发警告
+function handleLoginResize() {
+  loginChart?.resize()
+}
+
+function handleOperationResize() {
+  operationChart?.resize()
+}
+
 onMounted(() => {
   loadServerStats()
   loadLoginLogs()
   loadNotices()
   loadLoginTrend()
-  
+
   nextTick(() => {
     if (loginChartRef.value) {
       loginChart = echarts.init(loginChartRef.value)
       updateLoginChart()
-      window.addEventListener('resize', () => loginChart?.resize())
+      window.addEventListener('resize', handleLoginResize)
     }
     initOperationChart()
-    window.addEventListener('resize', () => operationChart?.resize())
+    window.addEventListener('resize', handleOperationResize)
   })
-  
+
   // 仅有监控权限时才定时刷新服务器状态
   if (hasMonitorPermission.value) {
     refreshTimer = setInterval(() => {
@@ -481,6 +490,8 @@ onMounted(() => {
 onUnmounted(() => {
   isUnmounted.value = true
   if (refreshTimer) clearInterval(refreshTimer)
+  window.removeEventListener('resize', handleLoginResize)
+  window.removeEventListener('resize', handleOperationResize)
   loginChart?.dispose()
   operationChart?.dispose()
 })

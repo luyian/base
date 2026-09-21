@@ -1,83 +1,139 @@
-<!--pages/barcode/barcode.wxml - 商品条码扫码 + 编辑（元灵工具箱）-->
+<!--pages/barcode/barcode.wxml - 商品管理（元灵工具箱）-->
 <view class="container {{themeClass}}">
-  <nav-bar title="条码/二维码" back />
+  <nav-bar title="商品管理" back />
 
   <view class="page-body">
 
-    <!-- 主操作区：扫码按钮 -->
+    <!-- 主操作区：扫码（命中编辑） -->
     <view class="hero-card">
-      <view class="hero-badge">元灵工具箱 · 条码工具</view>
+      <view class="hero-badge">元灵工具箱 · 商品管理</view>
       <view class="hero-title">扫码读取商品</view>
-      <view class="hero-desc">对准商品上的条码或二维码，自动识别并读取商品信息，可现场编辑保存。</view>
+      <view class="hero-desc">对准商品上的条码或二维码，自动识别并读取商品信息，可现场编辑保存。未命中的码可用列表行「扫码绑定」。</view>
       <view class="scan-btn" hover-class="scan-btn-hover" bindtap="onScan">
         <view class="scan-ring">
           <text class="scan-glyph">▦</text>
         </view>
         <text class="scan-hint">扫码</text>
       </view>
+      <view class="hero-add" bindtap="onAdd">
+        <text class="hero-add-icon">＋</text>
+        <text class="hero-add-text">添加商品</text>
+      </view>
       <view class="hero-tip">支持条形码（CODE128 等）与二维码</view>
     </view>
 
-    <!-- 扫码结果 + 编辑表单 -->
-    <view class="result-card" wx:if="{{showResult}}">
-      <!-- 结果头 -->
-      <view class="result-head">
-        <text class="result-brand">{{found ? '已命中商品' : '未命中，新建商品'}}</text>
-        <view class="code-chip" bindtap="onClose">
-          <text class="code-text">{{code}}</text>
-          <text class="code-close">×</text>
+    <!-- 商品列表 -->
+    <block wx:if="{{list.length > 0}}">
+      <view class="list-card">
+        <view class="list-head">
+          <text class="list-title">我的商品</text>
+          <text class="list-count">{{list.length}} 件</text>
         </view>
-      </view>
 
-      <!-- 编辑表单 -->
-      <view class="form-list">
-        <view class="form-row">
-          <text class="form-label">名称 *</text>
-          <input class="form-input" value="{{form.name}}" data-field="name" bindinput="onInput" placeholder="商品名称" />
+        <view class="product-list">
+          <view class="product-item" wx:for="{{list}}" wx:key="id">
+            <view class="product-info">
+              <view class="product-name">{{item.name}}</view>
+              <view class="product-meta">
+                <text class="meta-code">{{item.code}}</text>
+                <text wx:if="{{item.category}}" class="meta-cat">{{item.category}}</text>
+              </view>
+              <view class="product-sub">
+                <text>库存 {{item.stock}}</text>
+              </view>
+            </view>
+            <view class="product-actions">
+              <view class="mini-btn mini-edit" data-id="{{item.id}}" data-product="{{item}}" bindtap="onRowEdit">编辑</view>
+              <view class="mini-btn mini-bind" data-id="{{item.id}}" bindtap="onBindScan">扫码绑定</view>
+              <view class="mini-btn mini-del" data-id="{{item.id}}" data-name="{{item.name}}" bindtap="onDelete">删除</view>
+            </view>
+          </view>
         </view>
-        <view class="form-row">
-          <text class="form-label">分类</text>
-          <input class="form-input" value="{{form.category}}" data-field="category" bindinput="onInput" placeholder="如食品/日用品" />
-        </view>
-        <view class="form-row">
-          <text class="form-label">规格</text>
-          <input class="form-input" value="{{form.spec}}" data-field="spec" bindinput="onInput" placeholder="如 500ml" />
-        </view>
-        <view class="form-row">
-          <text class="form-label">单位</text>
-          <input class="form-input" value="{{form.unit}}" data-field="unit" bindinput="onInput" placeholder="瓶/盒/件" />
-        </view>
-        <view class="form-row form-half">
-          <text class="form-label">售价</text>
-          <input class="form-input" type="digit" value="{{form.salePrice}}" data-field="salePrice" bindinput="onInput" placeholder="0.00" />
-        </view>
-        <view class="form-row form-half">
-          <text class="form-label">成本价</text>
-          <input class="form-input" type="digit" value="{{form.costPrice}}" data-field="costPrice" bindinput="onInput" placeholder="0.00" />
-        </view>
-        <view class="form-row form-half">
-          <text class="form-label">库存</text>
-          <input class="form-input" type="number" value="{{form.stock}}" data-field="stock" bindinput="onInput" placeholder="0" />
-        </view>
-        <view class="form-row form-half">
-          <text class="form-label">供应商</text>
-          <input class="form-input" value="{{form.supplier}}" data-field="supplier" bindinput="onInput" placeholder="供应商" />
-        </view>
-        <view class="form-row">
-          <text class="form-label">生产日期</text>
-          <picker mode="date" value="{{form.productionDate}}" data-field="productionDate" bindchange="onInput">
-            <view class="form-input picker-fake {{form.productionDate ? '' : 'picker-placeholder'}}">{{form.productionDate || '选择日期'}}</view>
-          </picker>
-        </view>
-        <view class="form-row">
-          <text class="form-label">备注</text>
-          <textarea class="form-input form-textarea" value="{{form.remark}}" data-field="remark" bindinput="onInput" placeholder="备注" auto-height />
-        </view>
-      </view>
 
-      <!-- 保存 -->
-      <view class="save-btn {{saving ? 'save-btn-disabled' : ''}}" hover-class="{{saving ? '' : 'save-btn-hover'}}" bindtap="onSave">
-        <text>{{saving ? '保存中...' : '保存'}}</text>
+        <view class="list-more" wx:if="{{hasMore}}">
+          <text wx:if="{{loading}}">加载中...</text>
+          <text wx:else>上拉加载更多</text>
+        </view>
+        <view class="list-end" wx:else>已显示全部商品</view>
+      </view>
+    </block>
+
+    <view class="empty-card" wx:else>
+      <text class="empty-icon">📦</text>
+      <text class="empty-text">还没有商品，点右上「添加商品」或扫码新建</text>
+    </view>
+
+    <!-- 添加 / 编辑表单弹层 -->
+    <view class="form-mask" wx:if="{{formVisible}}" bindtap="onCloseForm">
+      <view class="form-sheet" catchtap="noop">
+        <view class="form-head">
+          <text class="form-title">{{formTitle}}</text>
+          <text class="form-close" bindtap="onCloseForm">×</text>
+        </view>
+        <block wx:if="{{scanCodeTitle}}">
+          <view class="scan-code-chip">
+            <text class="chip-label">扫码：</text>
+            <text class="chip-code">{{scanCodeTitle}}</text>
+          </view>
+        </block>
+
+        <scroll-view class="form-scroll" scroll-y>
+          <view class="form-list">
+            <view class="form-row">
+              <text class="form-label">名称 *</text>
+              <input class="form-input" value="{{form.name}}" data-field="name" bindinput="onInput" placeholder="商品名称" />
+            </view>
+            <view class="form-row">
+              <text class="form-label">编码</text>
+              <block wx:if="{{editingId}}">
+                <text class="form-readonly">{{form.code || ''}}</text>
+              </block>
+              <text class="form-readonly-empty" wx:else>保存后系统自动生成</text>
+            </view>
+            <view class="form-row">
+              <text class="form-label">分类</text>
+              <input class="form-input" value="{{form.category}}" data-field="category" bindinput="onInput" placeholder="如食品/日用品" />
+            </view>
+            <view class="form-row">
+              <text class="form-label">规格</text>
+              <input class="form-input" value="{{form.spec}}" data-field="spec" bindinput="onInput" placeholder="如 500ml" />
+            </view>
+            <view class="form-row">
+              <text class="form-label">单位</text>
+              <input class="form-input" value="{{form.unit}}" data-field="unit" bindinput="onInput" placeholder="瓶/盒/件" />
+            </view>
+            <view class="form-row form-half">
+              <text class="form-label">售价</text>
+              <input class="form-input" type="digit" value="{{form.salePrice}}" data-field="salePrice" bindinput="onInput" placeholder="0.00" />
+            </view>
+            <view class="form-row form-half">
+              <text class="form-label">成本价</text>
+              <input class="form-input" type="digit" value="{{form.costPrice}}" data-field="costPrice" bindinput="onInput" placeholder="0.00" />
+            </view>
+            <view class="form-row form-half">
+              <text class="form-label">库存</text>
+              <input class="form-input" type="number" value="{{form.stock}}" data-field="stock" bindinput="onInput" placeholder="0" />
+            </view>
+            <view class="form-row form-half">
+              <text class="form-label">供应商</text>
+              <input class="form-input" value="{{form.supplier}}" data-field="supplier" bindinput="onInput" placeholder="供应商" />
+            </view>
+            <view class="form-row">
+              <text class="form-label">生产日期</text>
+              <picker mode="date" value="{{form.productionDate}}" data-field="productionDate" bindchange="onInput">
+                <view class="form-input picker-fake {{form.productionDate ? '' : 'picker-placeholder'}}">{{form.productionDate || '选择日期'}}</view>
+              </picker>
+            </view>
+            <view class="form-row">
+              <text class="form-label">备注</text>
+              <textarea class="form-input form-textarea" value="{{form.remark}}" data-field="remark" bindinput="onInput" placeholder="备注" auto-height />
+            </view>
+          </view>
+        </scroll-view>
+
+        <view class="save-btn {{saving ? 'save-btn-disabled' : ''}}" hover-class="{{saving ? '' : 'save-btn-hover'}}" bindtap="onSave">
+          <text>{{saving ? '保存中...' : '保存'}}</text>
+        </view>
       </view>
     </view>
   </view>

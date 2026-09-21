@@ -1,5 +1,5 @@
-/* pages/barcode/barcode.wxss - 商品条码扫码 + 编辑（元灵工具箱） */
-/* 视觉：瓷青纸面 + 墨色结构，朱砂用于「扫码」与「保存」主操作 */
+/* pages/barcode/barcode.wxss - 商品管理（元灵工具箱） */
+/* 视觉：瓷青纸面 + 墨色结构，朱砂用于「扫码」「保存」与主操作 */
 page {
   --paper: #F3F2EC;
   --card: #FCFBF6;
@@ -107,6 +107,273 @@ page {
   margin-top: 24rpx;
   font-size: 22rpx;
   color: var(--ink-3);
+}
+
+/* 添加商品按钮（主扫码下横排副入口） */
+.hero-add {
+  margin-top: 32rpx;
+  height: 88rpx;
+  padding: 0 44rpx;
+  border-radius: 999rpx;
+  border: 2rpx solid var(--seal);
+  background: var(--seal-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  transition: transform 0.1s ease;
+}
+
+.hero-add-icon {
+  font-size: 34rpx;
+  line-height: 1;
+  color: var(--seal);
+}
+
+.hero-add-text {
+  font-size: 30rpx;
+  font-weight: 600;
+  letter-spacing: 4rpx;
+  color: var(--seal-deep);
+}
+
+/* ==================== 商品列表 ==================== */
+.list-card {
+  margin-top: 32rpx;
+  background: var(--card);
+  border-radius: 32rpx;
+  box-shadow: var(--shadow);
+  padding: 36rpx 40rpx 28rpx;
+  animation: fade-up 0.42s ease both;
+}
+
+.list-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid var(--hairline);
+}
+
+.list-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.list-count {
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+
+.product-list {
+  margin-top: 8rpx;
+}
+
+.product-item {
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid var(--hairline);
+}
+
+.product-item:last-child {
+  border-bottom: none;
+}
+
+.product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.product-name {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.product-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  flex-wrap: wrap;
+}
+
+.meta-code {
+  font-size: 24rpx;
+  color: var(--gold);
+  font-family: monospace;
+}
+
+.meta-cat {
+  font-size: 22rpx;
+  color: var(--ink-3);
+  padding: 4rpx 14rpx;
+  background: var(--seal-soft);
+  border-radius: 999rpx;
+}
+
+.product-sub {
+  font-size: 24rpx;
+  color: var(--ink-2);
+}
+
+.product-actions {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.mini-btn {
+  height: 56rpx;
+  padding: 0 26rpx;
+  border-radius: 999rpx;
+  font-size: 24rpx;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.mini-edit {
+  color: var(--ink-2);
+  border: 1rpx solid var(--hairline);
+}
+
+.mini-bind {
+  color: var(--seal);
+  border: 1rpx solid var(--seal);
+}
+
+.mini-del {
+  color: var(--ink-3);
+}
+
+.list-more,
+.list-end {
+  padding: 20rpx 0 4rpx;
+  text-align: center;
+  font-size: 24rpx;
+  color: var(--ink-3);
+}
+
+.empty-card {
+  margin-top: 32rpx;
+  padding: 72rpx 40rpx;
+  background: var(--card);
+  border-radius: 32rpx;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.empty-icon {
+  font-size: 72rpx;
+  line-height: 1;
+}
+
+.empty-text {
+  font-size: 26rpx;
+  color: var(--ink-2);
+  text-align: center;
+}
+
+/* ==================== 添加/编辑表单弹层 ==================== */
+.form-mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(20, 20, 14, 0.55);
+  z-index: 99;
+  display: flex;
+  align-items: flex-end;
+}
+
+.form-sheet {
+  width: 100%;
+  background: var(--card);
+  border-radius: 40rpx 40rpx 0 0;
+  padding: 36rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  animation: slide-up 0.3s ease both;
+}
+
+.form-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid var(--hairline);
+}
+
+.form-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.form-close {
+  font-size: 44rpx;
+  color: var(--ink-3);
+  line-height: 1;
+  padding: 0 8rpx;
+}
+
+.scan-code-chip {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  padding: 14rpx 22rpx;
+  background: var(--seal-soft);
+  border-radius: 999rpx;
+}
+
+.chip-label {
+  font-size: 24rpx;
+  color: var(--ink-2);
+}
+
+.chip-code {
+  font-size: 26rpx;
+  color: var(--seal-deep);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.form-scroll {
+  flex: 1;
+  max-height: 52vh;
+  margin-top: 4rpx;
+}
+
+.form-readonly,
+.form-readonly-empty {
+  flex: 1;
+  font-size: 29rpx;
+  line-height: 1.5;
+}
+
+.form-readonly {
+  color: var(--ink);
+}
+
+.form-readonly-empty {
+  color: var(--ink-3);
+}
+
+@keyframes slide-up {
+  from { transform: translateY(48rpx); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 /* ==================== 结果 + 编辑表单 ==================== */

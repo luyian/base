@@ -29,12 +29,12 @@
       </view>
     </view>
 
-    <!-- 商品条码区 -->
-    <view class="desktop-label">条码工具</view>
+    <!-- 商品管理区 -->
+    <view class="desktop-label">商品管理</view>
     <view class="app-grid">
       <view class="app-icon" bindtap="goToBarcode">
         <view class="app-glyph"><text class="glyph-text">📦</text></view>
-        <text class="app-name">条码/二维码</text>
+        <text class="app-name">商品管理</text>
       </view>
     </view>
 

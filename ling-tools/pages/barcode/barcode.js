@@ -1,22 +1,26 @@
-// pages/barcode/barcode.js - 商品条码扫码 + 编辑（元灵工具箱）
-// 职责：仅负责扫码命中商品 + 编辑表单保存，不生成条码。
+// pages/barcode/barcode.js - 商品管理（元灵工具箱）
+// 职责：商品列表管理（浏览/添加/编辑/删除）+ 扫码编辑 + 行内扫码绑定（先选商品再扫码）。
 const productApi = require('../../api/product');
 const app = getApp();
 
-// 补零
-function pad(n) {
-  return n < 10 ? '0' + n : '' + n;
-}
+// 条码类型（与后端一致：1条码 2二维码）
+const TYPE_CODE = 1;
+const TYPE_QR = 2;
 
 Page({
   data: {
     themeClass: '',
-    // 扫码结果态
-    scanned: false,       // 是否已完成一次扫码
-    found: false,         // 是否命中已有商品
-    code: '',             // 当前扫码内容
-    productId: null,      // 命中商品ID（未命中为 null）
-    // 商品表单
+    // 商品列表
+    list: [],
+    page: 1,
+    size: 10,
+    hasMore: true,
+    loading: false,
+    // 表单弹层态
+    formVisible: false,   // 是否显示添加/编辑表单弹层
+    formTitle: '',        // 弹层标题
+    editingId: null,      // 编辑中商品ID（null 表示新增）
+    scanCodeTitle: '',    // 顶部扫码命中时的 code 徽章（可空）
     form: {
       name: '',
       category: '',
@@ -29,16 +33,20 @@ Page({
       productionDate: '',
       remark: ''
     },
-    saving: false,
-    showResult: false
+    saving: false
   },
 
   onLoad() {
     this.applyTheme();
+    this.loadList(true);
   },
 
   onShow() {
     this.applyTheme();
+  },
+
+  onReachBottom() {
+    this.loadList(false);
   },
 
   applyTheme() {
@@ -53,7 +61,39 @@ Page({
     this.applyTheme();
   },
 
-  // 扫码
+  // 加载商品列表（reset=true 时从第一页重新加载）
+  async loadList(reset) {
+    if (this.loading) {
+      return;
+    }
+    this.loading = true;
+    const page = reset ? 1 : this.data.page;
+    const size = this.data.size;
+    if (reset) {
+      this.setData({ list: [], hasMore: true });
+    }
+    this.setData({ loading: true });
+    try {
+      const res = await productApi.listProducts({ page, size });
+      const pageData = res.data || res || {};
+      const records = pageData.records || [];
+      const total = pageData.total || 0;
+      const list = reset ? records : this.data.list.concat(records);
+      this.setData({
+        list,
+        page: page + 1,
+        hasMore: list.length < total,
+        loading: false
+      });
+    } catch (e) {
+      this.setData({ loading: false });
+      // 错误由 request 统一提示
+    } finally {
+      this.loading = false;
+    }
+  },
+
+  // 顶部大扫码：命中的商品进入编辑，否则提示
   onScan() {
     const that = this;
     wx.scanCode({
@@ -65,7 +105,7 @@ Page({
           wx.showToast({ title: '未识别到条码内容', icon: 'none' });
           return;
         }
-        await that.lookupCode(code);
+        await that.lookupProduct(code);
       },
       fail: () => {
         // 用户取消扫码，不提示
@@ -73,72 +113,94 @@ Page({
     });
   },
 
-  // 根据编码查商品：命中 → 展示编辑；未命中 → 新建表单带 code
-  async lookupCode(code) {
+  // 扫码命中：命中 → 打开编辑表单；未命中 → 提示
+  async lookupProduct(code) {
     wx.showLoading({ title: '查询中...' });
     try {
       const res = await productApi.scanProduct(code);
       const product = res.data || res;
       if (product) {
-        this.setData({
-          scanned: true,
-          found: true,
-          code,
-          productId: product.id,
-          form: {
-            name: product.name || '',
-            category: product.category || '',
-            spec: product.spec || '',
-            unit: product.unit || '',
-            salePrice: product.salePrice != null ? String(product.salePrice) : '',
-            costPrice: product.costPrice != null ? String(product.costPrice) : '',
-            stock: product.stock || 0,
-            supplier: product.supplier || '',
-            productionDate: product.productionDate || '',
-            remark: product.remark || ''
-          },
-          showResult: true
-        });
+        this.fillForm(product, product.id, code);
       } else {
-        // 未命中：新建表单，绑定该码
-        this.setData({
-          scanned: true,
-          found: false,
-          code,
-          productId: null,
-          form: {
-            name: '',
-            category: '',
-            spec: '',
-            unit: '',
-            salePrice: '',
-            costPrice: '',
-            stock: 0,
-            supplier: '',
-            productionDate: '',
-            remark: ''
-          },
-          showResult: true
-        });
+        wx.showToast({ title: '未命中商品，可用列表「扫码绑定」', icon: 'none' });
       }
     } catch (e) {
-      // 查询异常由 request 统一提示
+      // 异常由 request 统一提示
     } finally {
       wx.hideLoading();
     }
   },
 
-  // 输入绑定
+  // 打开新增表单
+  onAdd() {
+    this.setData({
+      formTitle: '添加商品',
+      editingId: null,
+      scanCodeTitle: '',
+      form: this.emptyForm(),
+      formVisible: true
+    });
+  },
+
+  // 打开编辑表单（列表行 or 扫码命中共用）
+  openEdit(product) {
+    this.fillForm(product, product.id, '');
+  },
+
+  // 列表行「编辑」入口
+  onRowEdit(e) {
+    const product = e.currentTarget.dataset.product || {};
+    this.fillForm(product, product.id, '');
+  },
+
+  // 空操作（拦截弹层背景点击冒泡）
+  noop() {},
+
+  fillForm(product, id, codeTitle) {
+    this.setData({
+      formTitle: id ? '编辑商品' : '添加商品',
+      editingId: id,
+      scanCodeTitle: codeTitle,
+      form: {
+        code: product.code || '',
+        name: product.name || '',
+        category: product.category || '',
+        spec: product.spec || '',
+        unit: product.unit || '',
+        salePrice: product.salePrice != null ? String(product.salePrice) : '',
+        costPrice: product.costPrice != null ? String(product.costPrice) : '',
+        stock: product.stock || 0,
+        supplier: product.supplier || '',
+        productionDate: product.productionDate || '',
+        remark: product.remark || ''
+      },
+      formVisible: true
+    });
+  },
+
+  emptyForm() {
+    return {
+      name: '', category: '', spec: '', unit: '',
+      salePrice: '', costPrice: '', stock: 0, supplier: '',
+      productionDate: '', remark: ''
+    };
+  },
+
+  // 关闭表单弹层
+  onCloseForm() {
+    this.setData({ formVisible: false, scanCodeTitle: '' });
+  },
+
+  // 输入绑定（表单复用 onInput；picker date 以 detail.value 直接给到 target.dataset.field）
   onInput(e) {
     const field = e.currentTarget.dataset.field;
-    this.setData({
-      [`form.${field}`]: e.detail.value
-    });
+    const value = e.detail.value;
+    this.setData({ [`form.${field}`]: value });
   },
 
   // 保存（新增或编辑）
   async onSave() {
-    const { form, found, productId, code } = this.data;
+    const { form, editingId, scanCodeTitle } = this.data;
     if (!form.name || !form.name.trim()) {
       wx.showToast({ title: '请填写商品名称', icon: 'none' });
       return;
@@ -158,33 +220,15 @@ Page({
 
     this.setData({ saving: true });
     try {
-      if (found && productId) {
-        await productApi.updateProduct(productId, payload);
+      if (editingId) {
+        await productApi.updateProduct(editingId, payload);
         wx.showToast({ title: '保存成功', icon: 'success' });
       } else {
-        const res = await productApi.createProduct(payload);
-        const newId = res;
-        // 绑定这次扫码的条码到新商品
-        try {
-          await productApi.bindCode(newId, { code, type: 1, source: 1 });
-        } catch (e) {
-          // 绑定失败不阻断保存（同码已存在等场景）
-        }
+        await productApi.createProduct(payload);
         wx.showToast({ title: '新增成功', icon: 'success' });
       }
-      // 保存成功后复位，等待下一次扫码
-      this.setData({
-        showResult: false,
-        scanned: false,
-        found: false,
-        code: '',
-        productId: null,
-        form: {
-          name: '', category: '', spec: '', unit: '',
-          salePrice: '', costPrice: '', stock: 0, supplier: '',
-          productionDate: '', remark: ''
-        }
-      });
+      this.setData({ formVisible: false, scanCodeTitle: '' });
+      this.loadList(true);
     } catch (e) {
       // 错误由 request 统一提示
     } finally {
@@ -192,14 +236,62 @@ Page({
     }
   },
 
-  // 取消/关闭结果
-  onClose() {
-    this.setData({
-      showResult: false,
-      scanned: false,
-      found: false,
-      code: '',
-      productId: null
+  // 行内扫码绑定（先选商品再扫码，顺序已确认）
+  onBindScan(e) {
+    const { id } = e.currentTarget.dataset;
+    const that = this;
+    wx.scanCode({
+      onlyFromCamera: false,
+      scanType: ['barCode', 'qrCode'],
+      success: async (res) => {
+        const code = (res.result || '').trim();
+        if (!code) {
+          wx.showToast({ title: '未识别到条码内容', icon: 'none' });
+          return;
+        }
+        const type = (res.scanType === 'qrCode') ? TYPE_QR : TYPE_CODE;
+        await that.bindCode(id, code, type);
+      },
+      fail: () => {
+        // 用户取消扫码，不提示
+      }
+    });
+  },
+
+  // 绑定条码到指定商品
+  async bindCode(id, code, type) {
+    wx.showLoading({ title: '绑定中...' });
+    try {
+      await productApi.bindCode(id, { code, type, source: 1 });
+      wx.showToast({ title: '绑定成功', icon: 'success' });
+      this.loadList(false);
+    } catch (e) {
+      // 错误由 request 统一提示
+    } finally {
+      wx.hideLoading();
+    }
+  },
+
+  // 删除商品
+  onDelete(e) {
+    const { id, name } = e.currentTarget.dataset;
+    const that = this;
+    wx.showModal({
+      title: '删除商品',
+      content: `确定删除「${name || ''}」吗？删除后不可恢复。`,
+      confirmColor: '#C6402E',
+      success: async (r) => {
+        if (!r.confirm) {
+          return;
+        }
+        try {
+          await productApi.deleteProduct(id);
+          wx.showToast({ title: '删除成功', icon: 'success' });
+          that.loadList(true);
+        } catch (e) {
+          // 错误由 request 统一提示
+        }
+      }
     });
   }
 });

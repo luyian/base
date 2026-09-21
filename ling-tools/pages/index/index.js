@@ -53,7 +53,7 @@ Page({
     wx.navigateTo({ url: urls[tab] || urls.convert });
   },
 
-  // 条码工具 → 扫码 + 编辑页
+  // 商品管理页
   goToBarcode() {
     wx.navigateTo({ url: '/pages/barcode/barcode' });
   }

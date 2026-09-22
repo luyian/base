@@ -1,9 +1,7 @@
 package com.base.system.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.base.common.entity.BaseEntity;
+import com.base.entity.BaseEntity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -14,7 +12,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * 用户实体类
+ * 用户实体类（全系统唯一用户实体，映射 sys_user，实现 UserDetails 供 Spring Security 使用）
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -22,12 +20,6 @@ import java.util.List;
 public class User extends BaseEntity implements UserDetails {
 
     private static final long serialVersionUID = 1L;
-
-    /**
-     * 用户ID
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
 
     /**
      * 用户名
@@ -74,11 +66,6 @@ public class User extends BaseEntity implements UserDetails {
      * 状态（0-禁用 1-启用）
      */
     private Integer status;
-
-    /**
-     * 是否删除（0-未删除 1-已删除）
-     */
-    private Integer deleted;
 
     /**
      * 备注

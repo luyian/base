@@ -1,9 +1,9 @@
 package com.base.workflow.listener;
 
 import cn.hutool.json.JSONUtil;
-import com.base.system.entity.SysUser;
+import com.base.system.entity.User;
 import com.base.system.entity.SysUserRole;
-import com.base.system.mapper.SysUserMapper;
+import com.base.system.mapper.UserMapper;
 import com.base.system.mapper.SysUserRoleMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
 public class CandidateAssignmentTaskListener implements TaskListener {
 
     @Autowired
-    private SysUserMapper userMapper;
+    private UserMapper userMapper;
 
     @Autowired
     private SysUserRoleMapper userRoleMapper;
@@ -150,9 +150,9 @@ public class CandidateAssignmentTaskListener implements TaskListener {
         }
 
         // 将用户 ID 转换为用户名
-        List<SysUser> users = userMapper.selectBatchIds(userIds);
+        List<User> users = userMapper.selectBatchIds(userIds);
         return users.stream()
-                .map(SysUser::getUsername)
+                .map(User::getUsername)
                 .collect(Collectors.toList());
     }
 
@@ -184,12 +184,12 @@ public class CandidateAssignmentTaskListener implements TaskListener {
         if (deptIds == null || deptIds.isEmpty()) {
             return Collections.emptyList();
         }
-        List<SysUser> users = userMapper.selectList(
-                new LambdaQueryWrapper<SysUser>()
-                        .in(SysUser::getDeptId, deptIds)
-                        .eq(SysUser::getStatus, 1)
+        List<User> users = userMapper.selectList(
+                new LambdaQueryWrapper<User>()
+                        .in(User::getDeptId, deptIds)
+                        .eq(User::getStatus, 1)
         );
-        return users.stream().map(SysUser::getId).collect(Collectors.toList());
+        return users.stream().map(User::getId).collect(Collectors.toList());
     }
 
     private List<Long> findDeptLeaders(List<Long> deptIds) {
@@ -204,8 +204,8 @@ public class CandidateAssignmentTaskListener implements TaskListener {
         if (initiator == null) {
             return Collections.emptyList();
         }
-        SysUser user = userMapper.selectOne(
-                new LambdaQueryWrapper<SysUser>().eq(SysUser::getUsername, initiator)
+        User user = userMapper.selectOne(
+                new LambdaQueryWrapper<User>().eq(User::getUsername, initiator)
         );
         if (user == null || user.getDeptId() == null) {
             return Collections.emptyList();

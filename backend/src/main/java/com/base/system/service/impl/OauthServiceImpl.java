@@ -8,10 +8,10 @@ import com.base.common.util.HttpClientUtil;
 import com.base.config.OauthConfig;
 import com.base.system.dto.LoginResponse;
 import com.base.system.dto.oauth.*;
-import com.base.system.entity.SysUser;
+import com.base.system.entity.User;
 import com.base.system.entity.UserOauth;
 import com.base.system.entity.UserRole;
-import com.base.system.mapper.SysUserMapper;
+import com.base.system.mapper.UserMapper;
 import com.base.system.mapper.UserOauthMapper;
 import com.base.system.mapper.UserRoleMapper;
 import com.base.system.service.OauthService;
@@ -105,7 +105,7 @@ public class OauthServiceImpl implements OauthService {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private SysUserMapper sysUserMapper;
+    private UserMapper sysUserMapper;
 
     @Autowired
     private UserOauthMapper userOauthMapper;
@@ -170,7 +170,7 @@ public class OauthServiceImpl implements OauthService {
 
         if (userOauth != null) {
             // 已绑定，直接登录
-            SysUser user = sysUserMapper.selectById(userOauth.getUserId());
+            User user = sysUserMapper.selectById(userOauth.getUserId());
             if (user == null) {
                 throw new BusinessException("绑定的用户不存在");
             }
@@ -219,14 +219,14 @@ public class OauthServiceImpl implements OauthService {
 
         // 2. 生成用户名，确保唯一
         String username = "github_" + githubUser.getId();
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, username);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, username);
         if (sysUserMapper.selectCount(wrapper) > 0) {
             throw new BusinessException("该 GitHub 账号已被绑定");
         }
 
         // 3. 创建新用户
-        SysUser newUser = new SysUser();
+        User newUser = new User();
         newUser.setUsername(username);
         newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
         newUser.setNickname(githubUser.getName() != null ? githubUser.getName() : githubUser.getLogin());
@@ -267,9 +267,9 @@ public class OauthServiceImpl implements OauthService {
         GithubUserInfo githubUser = getGithubUserFromRedis(request.getOauthToken());
 
         // 2. 验证用户名和密码
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, request.getUsername());
-        SysUser user = sysUserMapper.selectOne(wrapper);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, request.getUsername());
+        User user = sysUserMapper.selectOne(wrapper);
 
         if (user == null) {
             throw new BusinessException("用户名或密码错误");

@@ -6,7 +6,7 @@ import com.base.common.service.CosService;
 import com.base.system.entity.SysFile;
 import com.base.system.mapper.SysFileMapper;
 import com.base.system.service.FileConvertService;
-import com.base.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;

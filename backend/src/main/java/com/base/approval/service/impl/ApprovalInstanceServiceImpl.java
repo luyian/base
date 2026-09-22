@@ -17,9 +17,9 @@ import com.base.common.thirdparty.approval.ApprovalInstanceInfo;
 import com.base.common.thirdparty.approval.ApprovalStatusEnum;
 import com.base.common.thirdparty.approval.ThirdPartyApprovalService;
 import com.base.common.util.SecurityUtils;
-import com.base.system.entity.SysUser;
+import com.base.system.entity.User;
 import com.base.system.entity.UserOauth;
-import com.base.system.mapper.SysUserMapper;
+import com.base.system.mapper.UserMapper;
 import com.base.system.mapper.UserOauthMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -50,7 +50,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
     private final ApprovalTemplateService approvalTemplateService;
     private final List<ThirdPartyApprovalService> approvalServiceList;
     private final UserOauthMapper userOauthMapper;
-    private final SysUserMapper sysUserMapper;
+    private final UserMapper sysUserMapper;
 
     private final Map<String, ThirdPartyApprovalService> approvalServiceMap = new HashMap<>();
 
@@ -287,7 +287,7 @@ public class ApprovalInstanceServiceImpl implements ApprovalInstanceService {
             resp.setTemplateName(template.getTemplateName());
         }
         // 填充发起人姓名
-        SysUser user = sysUserMapper.selectById(instance.getApplicantUserId());
+        User user = sysUserMapper.selectById(instance.getApplicantUserId());
         if (user != null) {
             resp.setApplicantName(user.getNickname());
         }

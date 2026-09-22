@@ -7,7 +7,7 @@ import com.base.stock.entity.Watchlist;
 import com.base.stock.service.FundService;
 import com.base.stock.service.ScoreService;
 import com.base.stock.service.WatchlistService;
-import com.base.system.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

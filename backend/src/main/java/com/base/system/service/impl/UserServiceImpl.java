@@ -5,13 +5,13 @@ import com.base.common.service.CosService;
 import com.base.system.exception.BusinessException;
 import com.base.common.result.ResultCode;
 import com.base.system.dto.*;
-import com.base.system.entity.SysUser;
+import com.base.system.entity.User;
 import com.base.system.entity.SysUserRole;
 import com.base.system.entity.Dept;
 import com.base.system.entity.Role;
 import com.base.system.mapper.DeptMapper;
 import com.base.system.mapper.RoleMapper;
-import com.base.system.mapper.SysUserMapper;
+import com.base.system.mapper.UserMapper;
 import com.base.system.mapper.SysUserRoleMapper;
 import com.base.system.service.UserService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     @Autowired
-    private SysUserMapper userMapper;
+    private UserMapper userMapper;
 
     @Autowired
     private SysUserRoleMapper userRoleMapper;
@@ -59,34 +59,34 @@ public class UserServiceImpl implements UserService {
     @DataScope(deptAlias = "", userAlias = "")
     public Page<UserResponse> pageUsers(UserQueryRequest request) {
         // 构建分页对象
-        Page<SysUser> page = request.buildPage();
+        Page<User> page = request.buildPage();
 
         // 构建查询条件
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(StringUtils.hasText(request.getUsername()), SysUser::getUsername, request.getUsername())
-                .like(StringUtils.hasText(request.getNickname()), SysUser::getNickname, request.getNickname())
-                .like(StringUtils.hasText(request.getPhone()), SysUser::getPhone, request.getPhone())
-                .like(StringUtils.hasText(request.getEmail()), SysUser::getEmail, request.getEmail())
-                .eq(request.getStatus() != null, SysUser::getStatus, request.getStatus())
-                .eq(request.getDeptId() != null, SysUser::getDeptId, request.getDeptId());
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.like(StringUtils.hasText(request.getUsername()), User::getUsername, request.getUsername())
+                .like(StringUtils.hasText(request.getNickname()), User::getNickname, request.getNickname())
+                .like(StringUtils.hasText(request.getPhone()), User::getPhone, request.getPhone())
+                .like(StringUtils.hasText(request.getEmail()), User::getEmail, request.getEmail())
+                .eq(request.getStatus() != null, User::getStatus, request.getStatus())
+                .eq(request.getDeptId() != null, User::getDeptId, request.getDeptId());
 
         // 时间范围查询
         if (StringUtils.hasText(request.getStartTime())) {
             LocalDateTime startTime = LocalDateTime.parse(request.getStartTime() + " 00:00:00",
                     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            wrapper.ge(SysUser::getCreateTime, startTime);
+            wrapper.ge(User::getCreateTime, startTime);
         }
         if (StringUtils.hasText(request.getEndTime())) {
             LocalDateTime endTime = LocalDateTime.parse(request.getEndTime() + " 23:59:59",
                     DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-            wrapper.le(SysUser::getCreateTime, endTime);
+            wrapper.le(User::getCreateTime, endTime);
         }
 
         // 排序
-        wrapper.orderByDesc(SysUser::getCreateTime);
+        wrapper.orderByDesc(User::getCreateTime);
 
         // 查询
-        Page<SysUser> userPage = userMapper.selectPage(page, wrapper);
+        Page<User> userPage = userMapper.selectPage(page, wrapper);
 
         // 转换为响应对象
         Page<UserResponse> responsePage = new Page<>();
@@ -123,7 +123,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse getUserById(Long id) {
-        SysUser user = userMapper.selectById(id);
+        User user = userMapper.selectById(id);
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
@@ -159,20 +159,20 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public Long addUser(UserSaveRequest request) {
         // 检查用户名是否已存在（排除已删除的软删除记录）
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, request.getUsername());
-        wrapper.eq(SysUser::getDeleted, 0);  // 只查询未删除的用户
-        SysUser existUser = userMapper.selectOne(wrapper);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, request.getUsername());
+        wrapper.eq(User::getDeleted, 0);  // 只查询未删除的用户
+        User existUser = userMapper.selectOne(wrapper);
         
         if (existUser != null) {
             throw new BusinessException(ResultCode.USERNAME_ALREADY_EXISTS);
         }
         
         // 检查是否有已删除的用户同名，如果有则恢复
-        LambdaQueryWrapper<SysUser> deletedWrapper = new LambdaQueryWrapper<>();
-        deletedWrapper.eq(SysUser::getUsername, request.getUsername());
-        deletedWrapper.eq(SysUser::getDeleted, 1);
-        SysUser deletedUser = userMapper.selectOne(deletedWrapper);
+        LambdaQueryWrapper<User> deletedWrapper = new LambdaQueryWrapper<>();
+        deletedWrapper.eq(User::getUsername, request.getUsername());
+        deletedWrapper.eq(User::getDeleted, 1);
+        User deletedUser = userMapper.selectOne(deletedWrapper);
         
         if (deletedUser != null) {
             // 恢复已删除的用户
@@ -204,7 +204,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 创建用户对象
-        SysUser user = new SysUser();
+        User user = new User();
         BeanUtils.copyProperties(request, user);
 
         // 加密密码
@@ -230,22 +230,22 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void updateUser(UserSaveRequest request) {
         // 检查用户是否存在
-        SysUser existUser = userMapper.selectById(request.getId());
+        User existUser = userMapper.selectById(request.getId());
         if (existUser == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
 
         // 检查用户名是否被其他用户占用
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, request.getUsername())
-                .ne(SysUser::getId, request.getId());
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, request.getUsername())
+                .ne(User::getId, request.getId());
         Long count = userMapper.selectCount(wrapper);
         if (count > 0) {
             throw new BusinessException(ResultCode.USERNAME_ALREADY_EXISTS);
         }
 
         // 更新用户信息
-        SysUser user = new SysUser();
+        User user = new User();
         BeanUtils.copyProperties(request, user);
 
         // 如果提供了密码，则更新密码
@@ -264,7 +264,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long id) {
         // 检查用户是否存在
-        SysUser user = userMapper.selectById(id);
+        User user = userMapper.selectById(id);
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
@@ -293,9 +293,9 @@ public class UserServiceImpl implements UserService {
         }
 
         // 检查是否包含超级管理员
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.in(SysUser::getId, ids)
-                .eq(SysUser::getUsername, "admin");
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(User::getId, ids)
+                .eq(User::getUsername, "admin");
         Long count = userMapper.selectCount(wrapper);
         if (count > 0) {
             throw new BusinessException(ResultCode.OPERATION_NOT_ALLOWED.getCode(), "不能删除超级管理员");
@@ -316,7 +316,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void toggleStatus(Long id, Integer status) {
         // 检查用户是否存在
-        SysUser user = userMapper.selectById(id);
+        User user = userMapper.selectById(id);
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
@@ -337,7 +337,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void resetPassword(UserResetPasswordRequest request) {
         // 检查用户是否存在
-        SysUser user = userMapper.selectById(request.getUserId());
+        User user = userMapper.selectById(request.getUserId());
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
@@ -356,7 +356,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void assignRoles(UserAssignRoleRequest request) {
         // 检查用户是否存在
-        SysUser user = userMapper.selectById(request.getUserId());
+        User user = userMapper.selectById(request.getUserId());
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }
@@ -394,7 +394,7 @@ public class UserServiceImpl implements UserService {
     /**
      * 将用户头像 COS key 转为预签名 URL
      */
-    private void resolveAvatar(SysUser user, UserResponse response) {
+    private void resolveAvatar(User user, UserResponse response) {
         String avatar = user.getAvatar();
         if (avatar != null && !avatar.isEmpty() && !avatar.startsWith("http")) {
             response.setAvatar(cosService.getFileUrl(avatar));

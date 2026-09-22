@@ -6,7 +6,7 @@ import com.base.checkin.dto.CheckinPlanResponse;
 import com.base.checkin.service.CheckinPlanService;
 import com.base.checkin.service.CheckinRecordService;
 import com.base.common.result.Result;
-import com.base.system.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

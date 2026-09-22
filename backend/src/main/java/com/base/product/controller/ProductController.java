@@ -6,7 +6,7 @@ import com.base.product.dto.ProductBarcodeResponse;
 import com.base.product.dto.ProductRequest;
 import com.base.product.dto.ProductResponse;
 import com.base.product.service.ProductService;
-import com.base.system.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -128,7 +128,6 @@ public class ProductController {
                              @ApiParam("类型(1条码 2二维码)") @RequestParam(required = false) Integer type,
                              @ApiParam("来源(1自生成 2图片识别录入)") @RequestParam(required = false) Integer source) {
         Long userId = SecurityUtils.getCurrentUserId();
-        productService.getProduct(userId, id);
         return Result.success(productService.bindCodeToProduct(userId, id, code, type, source));
     }
 

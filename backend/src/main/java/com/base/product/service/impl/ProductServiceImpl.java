@@ -8,6 +8,7 @@ import com.base.barcode.entity.Barcode;
 import com.base.barcode.mapper.BarcodeMapper;
 import com.base.common.exception.BusinessException;
 import com.base.common.service.CosService;
+import com.base.common.service.DataScopeHelper;
 import com.base.product.dto.ProductBarcodeResponse;
 import com.base.product.dto.ProductRequest;
 import com.base.product.dto.ProductResponse;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -60,13 +62,39 @@ public class ProductServiceImpl implements ProductService {
     private final BarcodeMapper barcodeMapper;
     private final FileService fileService;
     private final CosService cosService;
+    private final DataScopeHelper dataScopeHelper;
 
     @Override
     public IPage<ProductResponse> pageProducts(Long userId, String name, long page, long size) {
         LambdaQueryWrapper<Product> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Product::getUserId, userId)
+        applyDataScope(wrapper, userId)
                 .and(StringUtils.hasText(name), w -> w.like(Product::getName, name))
                 .orderByDesc(Product::getId);
+        return pageProductsResult(wrapper, page, size);
+    }
+
+    /**
+     * 通用部门子树数据权限过滤：仅返回「当前用户部门及其下级部门」的用户的商品。
+     * 超管(admin)全量可见；非超管且无部门不可见任何。
+     */
+    private LambdaQueryWrapper<Product> applyDataScope(LambdaQueryWrapper<Product> wrapper, Long userId) {
+        Set<Long> visible = dataScopeHelper.visibleDeptIds(userId);
+        if (visible == null) {
+            // 超级管理员：全量，不加过滤
+            return wrapper;
+        }
+        if (visible.isEmpty()) {
+            // 无可见部门：恒空
+            wrapper.eq(Product::getUserId, -1);
+            return wrapper;
+        }
+        String ids = visible.stream().map(String::valueOf).collect(Collectors.joining(","));
+        wrapper.inSql(Product::getUserId,
+                "SELECT id FROM sys_user WHERE dept_id IN (" + ids + ") AND deleted = 0");
+        return wrapper;
+    }
+
+    private IPage<ProductResponse> pageProductsResult(LambdaQueryWrapper<Product> wrapper, long page, long size) {
         Page<Product> productPage = new Page<>(page, size);
         Page<Product> resultPage = productMapper.selectPage(productPage, wrapper);
 
@@ -115,7 +143,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public ProductResponse getProduct(Long userId, Long id) {
-        Product product = checkOwnProduct(userId, id);
+        Product product = checkViewableProduct(userId, id);
         return toResponse(product);
     }
 
@@ -149,8 +177,8 @@ public class ProductServiceImpl implements ProductService {
         if (product == null || product.getDeleted() != null && product.getDeleted() == 1) {
             return null;
         }
-        // 商品归属校验：仅返回本人商品
-        if (!product.getUserId().equals(userId)) {
+        // 商品可见性校验：部门子树范围内可见（本人或同部门及上级部门）
+        if (!dataScopeHelper.isVisible(userId, product.getUserId())) {
             throw new BusinessException(403, "无权查看该商品");
         }
         return toResponse(product);
@@ -178,6 +206,8 @@ public class ProductServiceImpl implements ProductService {
         if (productId == null) {
             throw new BusinessException(400, "商品ID不能为空");
         }
+        // 写操作：绑定仅限本人商品（防止上级将条码绑到下级商品）
+        checkOwnProduct(userId, productId);
         // 按 code 定位记录：generate 已落库未绑定则复用打上商品 biz 标记，不存在才新建
         LambdaQueryWrapper<Barcode> existedWrapper = new LambdaQueryWrapper<>();
         existedWrapper.eq(Barcode::getCode, code).eq(Barcode::getDeleted, 0).last("LIMIT 1");
@@ -255,7 +285,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     /**
-     * 校验商品存在且属于当前用户
+     * 校验商品存在且属于当前用户（写操作专用）
      */
     private Product checkOwnProduct(Long userId, Long id) {
         Product product = productMapper.selectById(id);
@@ -264,6 +294,20 @@ public class ProductServiceImpl implements ProductService {
         }
         if (!product.getUserId().equals(userId)) {
             throw new BusinessException(403, "无权操作该商品");
+        }
+        return product;
+    }
+
+    /**
+     * 校验商品存在且为当前用户可见（读操作：部门子树范围内均可查看）
+     */
+    private Product checkViewableProduct(Long userId, Long id) {
+        Product product = productMapper.selectById(id);
+        if (product == null || (product.getDeleted() != null && product.getDeleted() == 1)) {
+            throw new BusinessException(404, "商品不存在");
+        }
+        if (!dataScopeHelper.isVisible(userId, product.getUserId())) {
+            throw new BusinessException(403, "无权查看该商品");
         }
         return product;
     }

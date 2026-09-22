@@ -16,7 +16,7 @@ import com.base.common.exception.BusinessException;
 import com.base.common.result.ResultCode;
 import com.base.system.entity.SysFile;
 import com.base.system.mapper.SysFileMapper;
-import com.base.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

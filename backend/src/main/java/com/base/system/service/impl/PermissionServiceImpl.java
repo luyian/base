@@ -12,12 +12,12 @@ import com.base.system.dto.permission.PermissionResponse;
 import com.base.system.dto.permission.PermissionSaveRequest;
 import com.base.system.entity.Permission;
 import com.base.system.entity.RolePermission;
-import com.base.system.entity.SysUser;
+import com.base.system.entity.User;
 import com.base.system.mapper.PermissionMapper;
 import com.base.system.mapper.RolePermissionMapper;
-import com.base.system.mapper.SysUserMapper;
+import com.base.system.mapper.UserMapper;
 import com.base.system.service.PermissionService;
-import com.base.system.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permission> implements PermissionService {
 
     private final RolePermissionMapper rolePermissionMapper;
-    private final SysUserMapper userMapper;
+    private final UserMapper userMapper;
 
     @Override
     public List<PermissionResponse> treePermissions(PermissionQueryRequest request) {
@@ -143,8 +143,8 @@ public class PermissionServiceImpl extends ServiceImpl<PermissionMapper, Permiss
     public List<PermissionResponse> getCurrentUserMenuTree() {
         // 获取当前用户
         String username = SecurityUtils.getCurrentUsername();
-        SysUser user = userMapper.selectOne(new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUsername, username));
+        User user = userMapper.selectOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUsername, username));
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
         }

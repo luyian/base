@@ -3,7 +3,7 @@ package com.base.system.controller;
 import com.base.common.result.Result;
 import com.base.system.entity.UserOauth;
 import com.base.system.service.OauthService;
-import com.base.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import lombok.extern.slf4j.Slf4j;

@@ -8,7 +8,7 @@ import com.base.system.dto.ScanDocWorkArea;
 import com.base.system.entity.SysFile;
 import com.base.system.mapper.SysFileMapper;
 import com.base.system.service.ScanDocService;
-import com.base.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;

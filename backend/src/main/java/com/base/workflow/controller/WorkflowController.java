@@ -9,7 +9,7 @@ import com.base.system.service.RoleService;
 import com.base.workflow.dto.*;
 import com.base.workflow.service.ProcessDefinitionService;
 import com.base.workflow.service.ProcessEngineService;
-import com.base.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;

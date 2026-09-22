@@ -8,7 +8,7 @@ import com.base.barcode.dto.BarcodeRecordRequest;
 import com.base.barcode.entity.Barcode;
 import com.base.barcode.service.BarcodeService;
 import com.base.common.result.Result;
-import com.base.system.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;

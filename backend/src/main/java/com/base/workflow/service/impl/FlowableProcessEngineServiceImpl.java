@@ -1,7 +1,7 @@
 package com.base.workflow.service.impl;
 
-import com.base.system.entity.SysUser;
-import com.base.system.mapper.SysUserMapper;
+import com.base.system.entity.User;
+import com.base.system.mapper.UserMapper;
 import com.base.workflow.dto.*;
 import com.base.workflow.handler.NodeEventHandlerManager;
 import com.base.workflow.handler.ProcessContext;
@@ -47,7 +47,7 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
     private HistoryService historyService;
 
     @Autowired
-    private SysUserMapper userMapper;
+    private UserMapper userMapper;
 
     @Autowired
     private RepositoryService repositoryService;
@@ -348,9 +348,9 @@ public class FlowableProcessEngineServiceImpl implements ProcessEngineService {
                     response.setEndTime(toLocalDateTime(activity.getEndTime()));
 
                     if (activity.getAssignee() != null) {
-                        SysUser user = userMapper.selectOne(
-                                new LambdaQueryWrapper<SysUser>()
-                                        .eq(SysUser::getUsername, activity.getAssignee())
+                        User user = userMapper.selectOne(
+                                new LambdaQueryWrapper<User>()
+                                        .eq(User::getUsername, activity.getAssignee())
                         );
                         if (user != null) {
                             response.setAssigneeName(user.getNickname());

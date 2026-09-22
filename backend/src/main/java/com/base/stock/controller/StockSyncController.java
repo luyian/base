@@ -7,7 +7,7 @@ import com.base.stock.entity.SyncFailure;
 import com.base.stock.service.StockSyncService;
 import com.base.stock.service.SyncFailureService;
 import com.base.stock.service.impl.StockSyncServiceImpl;
-import com.base.system.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;

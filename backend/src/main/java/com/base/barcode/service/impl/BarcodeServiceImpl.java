@@ -16,7 +16,7 @@ import com.base.common.exception.BusinessException;
 import com.base.common.service.CosService;
 import com.base.system.entity.SysFile;
 import com.base.system.service.FileService;
-import com.base.system.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;

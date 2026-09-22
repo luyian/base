@@ -9,7 +9,7 @@ import com.base.system.entity.SysFileLog;
 import com.base.system.mapper.SysFileLogMapper;
 import com.base.system.mapper.SysFileMapper;
 import com.base.system.service.FileService;
-import com.base.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import com.base.system.util.IpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

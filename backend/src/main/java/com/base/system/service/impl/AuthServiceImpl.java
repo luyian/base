@@ -15,12 +15,12 @@ import com.base.system.dto.WxLoginRequest;
 import com.base.system.entity.Dept;
 import com.base.system.entity.Permission;
 import com.base.system.entity.Role;
-import com.base.system.entity.SysUser;
+import com.base.system.entity.User;
 import com.base.system.entity.UserOauth;
 import com.base.system.mapper.DeptMapper;
 import com.base.system.mapper.PermissionMapper;
 import com.base.system.mapper.RoleMapper;
-import com.base.system.mapper.SysUserMapper;
+import com.base.system.mapper.UserMapper;
 import com.base.system.mapper.UserOauthMapper;
 import com.base.system.mapper.UserRoleMapper;
 import com.base.system.service.AuthService;
@@ -33,7 +33,7 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import javax.servlet.http.HttpServletRequest;
 import com.base.util.CaptchaUtil;
-import com.base.util.SecurityUtils;
+import com.base.common.util.SecurityUtils;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 public class AuthServiceImpl implements AuthService {
 
     @Autowired
-    private SysUserMapper userMapper;
+    private UserMapper userMapper;
 
     @Autowired
     private RoleMapper roleMapper;
@@ -191,9 +191,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 3. 查询用户
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, username);
-        SysUser user = userMapper.selectOne(wrapper);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, username);
+        User user = userMapper.selectOne(wrapper);
 
         if (user == null) {
             // 记录失败次数
@@ -264,7 +264,7 @@ public class AuthServiceImpl implements AuthService {
             userOauthMapper.updateById(userOauth);
         }
 
-        SysUser user;
+        User user;
         if (userOauth == null) {
             // 4.1 新用户：返回特定状态码，让小程序跳转到绑定页面
             // 这里我们抛出一个特殊异常，前端可以根据这个判断需要绑定
@@ -300,15 +300,15 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse register(RegisterRequest request) {
         // 1. 检查用户名是否已存在
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, request.getUsername());
-        SysUser existUser = userMapper.selectOne(wrapper);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, request.getUsername());
+        User existUser = userMapper.selectOne(wrapper);
         if (existUser != null) {
             throw new BusinessException("用户名已存在");
         }
 
         // 2. 创建用户
-        SysUser user = new SysUser();
+        User user = new User();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setNickname(request.getNickname());
@@ -352,13 +352,13 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("该微信已被绑定");
         }
 
-        SysUser user;
+        User user;
         
         // 3. 如果提供了用户名和密码，先验证账号密码登录
         if (StringUtils.hasText(request.getUsername()) && StringUtils.hasText(request.getPassword())) {
             // 账号密码登录验证
-            LambdaQueryWrapper<SysUser> userWrapper = new LambdaQueryWrapper<>();
-            userWrapper.eq(SysUser::getUsername, request.getUsername());
+            LambdaQueryWrapper<User> userWrapper = new LambdaQueryWrapper<>();
+            userWrapper.eq(User::getUsername, request.getUsername());
             user = userMapper.selectOne(userWrapper);
             
             if (user == null) {
@@ -375,7 +375,7 @@ public class AuthServiceImpl implements AuthService {
         } else {
             // 没有提供账号密码，创建新用户
             String username = "wx_" + openid.substring(0, 16);
-            user = new SysUser();
+            user = new User();
             user.setUsername(username);
             user.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
             user.setNickname("微信用户");
@@ -605,12 +605,12 @@ public class AuthServiceImpl implements AuthService {
     /**
      * 创建微信用户
      */
-    private SysUser createWechatUser(String openid, WxLoginRequest request) {
+    private User createWechatUser(String openid, WxLoginRequest request) {
         // 生成唯一用户名
         String username = "wx_" + openid.substring(0, 16);
 
         // 创建用户
-        SysUser user = new SysUser();
+        User user = new User();
         user.setUsername(username);
         user.setNickname(request.getNickname() != null ? request.getNickname() : "微信用户");
         user.setAvatar(request.getAvatarUrl());
@@ -651,9 +651,9 @@ public class AuthServiceImpl implements AuthService {
         String username = SecurityUtils.getCurrentUsername();
         if (username != null) {
             // 查询用户ID
-            LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(SysUser::getUsername, username);
-            SysUser user = userMapper.selectOne(wrapper);
+            LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(User::getUsername, username);
+            User user = userMapper.selectOne(wrapper);
 
             if (user != null) {
                 // 删除 Redis 中的 Token
@@ -694,9 +694,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 查询用户信息
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, username);
-        SysUser user = userMapper.selectOne(wrapper);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, username);
+        User user = userMapper.selectOne(wrapper);
 
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);
@@ -769,9 +769,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 查询用户信息
-        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getUsername, username);
-        SysUser user = userMapper.selectOne(wrapper);
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(User::getUsername, username);
+        User user = userMapper.selectOne(wrapper);
 
         if (user == null) {
             throw new BusinessException(ResultCode.USER_NOT_FOUND);

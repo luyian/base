@@ -296,6 +296,7 @@ page {
 
 .form-sheet {
   width: 100%;
+  box-sizing: border-box;
   background: var(--card);
   border-radius: 40rpx 40rpx 0 0;
   padding: 36rpx 40rpx calc(40rpx + env(safe-area-inset-bottom));

@@ -27,8 +27,11 @@ const request = (options) => {
             }
           }
           resolve(res.data);
-        } else if (res.data.code === 401 && !options.skipAuthRedirect) {
-          // Token expired, redirect to login（清栈，最稳）
+        } else if (!options.skipAuthRedirect && (res.data.code === 401 ||
+            // 携带 token 但后端返回「用户不存在」：旧 token 对应用户已不存在，
+            // 视为会话失效，自动清理并回登录页重新登录（否则会卡死在该提示）
+            (token && res.data.code === 404 && res.data.message === '用户不存在'))) {
+          // Token expired / user gone, redirect to login（清栈，最稳）
           app.logout();
           wx.reLaunch({
             url: '/pages/login/login'

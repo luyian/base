@@ -58,11 +58,16 @@ public class DevBranchServiceImpl implements DevBranchService {
         if (request.getStatus() != null) {
             if (request.getStatus() == 1) {
                 wrapper.eq(DevBranch::getStatus, 1);
+                // 已完成按上线时间倒序，越新越靠前
+                wrapper.orderByDesc(DevBranch::getOnlineTime);
             } else {
                 wrapper.and(w -> w.ne(DevBranch::getStatus, 1).or().isNull(DevBranch::getStatus));
+                // 进行中按上线时间正序，越急（越临近上线）越靠前
+                wrapper.orderByAsc(DevBranch::getOnlineTime);
             }
+        } else {
+            wrapper.orderByAsc(DevBranch::getOnlineTime);
         }
-        wrapper.orderByAsc(DevBranch::getOnlineTime);
 
         Page<DevBranch> resultPage = devBranchMapper.selectPage(page, wrapper);
 
